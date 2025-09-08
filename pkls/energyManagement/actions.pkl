@@ -1,0 +1,37 @@
+
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+// This module contains actions for the eletricalSafety SM
+
+
+// Raise to start arc fault detection
+aRaiseDeactiveEnergySaving = new CSM.RaiseActionDescription {
+    event {
+        name = Events.eDeactivateEnergySaving
+        channel = "global"
+    }
+}
+
+// Raise if an arc fault has been detected 
+// Includes location of arcFault as payload
+aRaiseStartDetectingEnergy = new CSM.RaiseActionDescription {
+    event {
+        name = Events.eStartEnergyCheck
+        channel = "internal"
+    }
+}
+
+aRaiseEnergySaving = new CSM.RaiseActionDescription {
+    event {
+        name = Events.eActivateEnergySaving
+        channel = "global"
+    }
+}
+
+aRaiseDrasticEnergySaving = new CSM.RaiseActionDescription {
+    event {
+        name = Event.eDrasticEnergySaving
+        channel = "global"
+    }
+}

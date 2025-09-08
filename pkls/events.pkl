@@ -109,6 +109,22 @@ eGasLeakDetectionComplete = "gasLeakDetectionComplete"
 eGasLeakDetected = "gasLeakDetected"
 
 // Raised manually when gas leak has been handled
-
 eGasPurged = "gasPurged"
 
+// Raised internally to start energy check
+eStartEnergyCheck = "startEnergyCheck"          
+
+// Raised internally to signify completion of energy check
+eEnergyCheckComplete = "energyCheckComplete"     
+
+// Raised to signify high current energy price
+eHighPriceDetected = "highPriceDetected"    
+
+// Raised to get grid demand response
+eGridDemandResponse = "gridDemandResponse"
+
+// Raised to return energy to normal
+eReturnToNormal = "returnToNormal" 
+
+// Raised to initiate more drastic energySaving
+eDrasticEnergySaving = "drasticEnergySaving"

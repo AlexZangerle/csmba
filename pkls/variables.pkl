@@ -29,7 +29,7 @@ vUserBlindLevel = new CSM.ContextVariableDescription {
                 value = "'0'"
             }
 
-// Variable containg the result from fire detection (String - none/fire/smoke)
+// Variable containing the result from fire detection (String - none/fire/smoke)
 vFireDetectionResult = "fireDetectionResult"    
 
 // Variable to show if fire alarm is currently active (Boolean)
@@ -38,20 +38,29 @@ vFireAlarm = "fireAlarm"
 // Variable to show if smoke alert is currently active (Boolean)
 vSmokeAlert = "smokeAlert"
 
-// Variable containg the temperature threshold for critical equipment (int)
+// Variable containing the temperature threshold for critical equipment (int)
 vTempThreshold = "tempThreshold"
 
-// Variable containg the current roomID (int)
+// Variable containing the current roomID (int)
 vRoomId = new CSM.ContextVariableDescription {
                 name = "roomId"
                 value = "'0'"
             }
 
-// Variable containg the temperature of critical equipment in vRoomId (int)
+// Variable containing the temperature of critical equipment in vRoomId (int)
 vRoomTemp = "roomTemp"
 
-// Variable containg the location where arc fault occured (String)
+// Variable containing the location where arc fault occured (String)
 vArcFaultLocation = "arcFaultLocation"
 
-// Variable containg the location where gas leak occured (String)
+// Variable containing the location where gas leak occured (String)
 vGasLeakLocation = "gasLeakLocation"
+
+// Variable containing the current external energy prices
+vEnergyPrice = "energyPrice"
+
+// Variable containing the predefined maximum energy price
+vMaxEnergyPrice = "maxEnergyPrice"
+
+// Variable containing the current status of the grid
+vGridStatus = "gridStatus"

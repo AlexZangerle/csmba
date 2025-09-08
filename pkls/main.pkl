@@ -49,5 +49,9 @@ persistentContext {
         name = Vars.vTempThreshold
         value = "'60'"
     }
+    new {
+      name = Vars.vMaxEnergyPrice
+      value = "'45.0'"
+    }
   }
 }

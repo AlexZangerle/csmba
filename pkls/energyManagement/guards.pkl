@@ -1,0 +1,22 @@
+
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+
+// This module contains all guards for energyManagement SM
+
+// Guard to check if arc fault has been detected
+gridDemandResponse = new CSM.GuardDescription {
+    expression = "\(Vars.vGridStatus) == 'demandResponse'"
+}
+
+gridNormal = new CSM.GuardDescription {
+    expression = "\(Vars.vGridStatus) == 'normal'"
+}
+
+priceAboveMax = new CSM.GuardDescription {
+    expression = "\(Vars.vEnergyPrice) > \(Vars.vMaxEnergyPrice)"
+}
+
+priceUnderMax = new CSM.GuardDescription {
+    expression = "\(Vars.vEnergyPrice) <= \(Vars.vMaxEnergyPrice)"
+}

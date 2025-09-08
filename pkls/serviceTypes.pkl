@@ -65,3 +65,9 @@ stGasLeakPurged = "gasLeakPurged"
 
 // Service to cut power
 stCutPower = "cutPower"
+
+// Service to get current energy prices
+stGetEnergyPrice = "getEnergyPrices"
+
+// Service to check current grid status
+stCheckGridStatus = "checkGridStatus"

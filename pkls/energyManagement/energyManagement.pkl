@@ -1,0 +1,202 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/actions.pkl" as Actions
+
+// This module contains the definition for the energyManagement SM
+
+//eletricalSafety is the second part for the fire prevention system
+//eletricalSafety detects arc faults across multiple rooms.
+//If an arc fault is detected, the location of that arc fault and a warning is published
+energyManagementSM = new CSM.StateMachineDescription {
+    name = "energyManagement"
+    localContext = Context.energyManagementContext
+    states{
+        emInit
+        emNormal
+        emPeak
+        emGridRequestResponse
+    }
+}
+
+local emInit: CSM.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = emNormal.name
+        }
+    }
+}
+//Always starts in monitoring state
+//Invokes service to check for arc faults every 30 seconds
+local esMonitoring: CSM.StateDescription = new {
+    name = "monitoring"
+    entry{
+        Actions.aRaiseDeactiveEnergySaving
+    }
+    after{
+        new CSM.TimeoutActionDescription {
+            name = "energyCheck"
+            delay = "30000"
+            action = Actions.aRaiseStartDetectingEnergy
+        }
+    }
+    on {
+        new {
+            event = Events.eStartEnergyCheck
+            actions {
+                new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stGetEnergyPrice
+                    output {
+                        new {
+                            reference = Vars.vEnergyPrice
+                        }
+                    }
+                }
+                new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stCheckGridStatus
+                    output {
+                        new {
+                            reference = Vars.vGridStatus
+                        }
+                    }
+                    done {
+                        new {
+                            name = Events.eEnergyCheckComplete
+                            channel = "internal"
+                        }
+                    }
+                }
+            }
+        }
+        new {
+            event = Events.eEnergyCheckComplete
+            guards{
+                Guards.gridDemandResponse
+            }
+            target = emGridRequestResponse.name
+        }
+        new {
+            event = Events.energyCheckComplete
+            guards {
+                Guards.priceAboveMax
+            }
+            target = emPeak.name
+        }
+    }
+}
+
+// If an arc fault is detected, invoke service to trip the corresponding circuit breaker
+local emPeak: CSM.StateDescription = new {
+    name = "peakDemand"
+    entry {
+        Actions.aRaiseEnergySaving
+    }
+    after{
+        new CSM.TimeoutActionDescription {
+            name = "energyCheck"
+            delay = "30000"
+            action = Actions.aRaiseStartDetectingEnergy
+        }
+    }
+    on {
+        new {
+            event = Events.eStartEnergyCheck
+            actions {
+                new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stGetEnergyPrice
+                    output {
+                        new {
+                            reference = Vars.vEnergyPrice
+                        }
+                    }
+                }
+                new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stCheckGridStatus
+                    output {
+                        new {
+                            reference = Vars.vGridStatus
+                        }
+                    }
+                    done {
+                        new {
+                            name = Events.eEnergyCheckComplete
+                            channel = "internal"
+                        }
+                    }
+                }
+            }
+        }
+        new {
+            event = Events.eEnergyCheckComplete
+            guards{
+                Guards.gridDemandResponse
+            }
+            target = emGridRequestResponse.name
+        }
+        new {
+            event = Events.energyCheckComplete
+            guards {
+                Guards.priceUnderMax
+            }
+            target = emNormal.name
+        }
+    }
+}
+
+// Invokes Ack Service and transitions back to monitoring state
+local emGridRequestResponse: CSM.StateDescription = new {
+    name = "requestReponse"
+    entry {
+        Actions.aRaiseDrasticEnergySaving
+    }
+    on {
+        new {
+            event = Events.eStartEnergyCheck
+            actions {
+                new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stGetEnergyPrice
+                    output {
+                        new {
+                            reference = Vars.vEnergyPrice
+                        }
+                    }
+                }
+                new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stCheckGridStatus
+                    output {
+                        new {
+                            reference = Vars.vGridStatus
+                        }
+                    }
+                    done {
+                        new {
+                            name = Events.eEnergyCheckComplete
+                            channel = "internal"
+                        }
+                    }
+                }
+            }
+        }
+        new {
+            event = Events.energyCheckComplete
+            guards {
+                Guards.gridNormal
+                Guards.priceAboveMax
+            }
+            target = emPeak.name
+        }
+        new {
+            event = Events.eEnergyCheckComplete
+            guards{
+                Guards.priceUnderMax
+                Guards.gridNormal
+            }
+            target = emNormal.name
+        }
+    }
+}
