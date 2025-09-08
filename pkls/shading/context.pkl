@@ -1,0 +1,13 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+/// This module contains all contexts for the shading SM
+
+local blindLockContext: CSM.ContextDescription = new {
+  variables {
+    new {
+      name = Vars.vIsLocked
+      value = "false"
+    }
+  }
+}

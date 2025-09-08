@@ -1,0 +1,18 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+/// This module contains actions for the shading SM
+
+aBlindLock: CSM.AssignActionDescription = new {
+  variable {
+    name = Vars.vIsLocked
+    value = "true"
+  }
+}
+
+aBlindUnlock: CSM.AssignActionDescription = new {
+  variable {
+    name = Vars.vIsLocked
+    value = "false"
+  }
+}

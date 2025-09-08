@@ -1,0 +1,23 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+
+/// This module contains all guards for shading SM
+
+/// Guard to check if blinds are locked
+isLockedGuard: CSM.GuardDescription = new {
+  expression = "\(Vars.vIsLocked) == false"
+}
+
+/// Guards to determine if the current temperature is hot/cold/medium
+isHotGuard: CSM.GuardDescription = new {
+  expression = "\(Vars.vTemperature) >= 22"
+}
+
+isMediumGuard: CSM.GuardDescription = new {
+  expression = "\(Vars.vTemperature) >= 15 && \(vTemperature) < 22"
+}
+
+isColdGuard: CSM.GuardDescription = new {
+  expression = "\(Vars.vTemperature) < 15"
+}
