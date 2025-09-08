@@ -2,7 +2,7 @@ amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/dev
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl?v=1" as Vars
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electricalSafety/electricalSafety.pkl" as electricalSafety
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/gasSafety.pkl" as gasSafety
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/tempSafety.pkl" as tempSafety
