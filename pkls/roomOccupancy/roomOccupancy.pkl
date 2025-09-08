@@ -11,7 +11,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccup
 // It also contains a nested state machine to monitor the detection process time
 roomOccupancySM = new CSM.StateMachineDescription {
     name = "roomOccupancy"
-    localContext = Context.occupancyontext
+    localContext = Context.occupancyLocalContext
     stateMachines {
         occupancyMonitor
     }
