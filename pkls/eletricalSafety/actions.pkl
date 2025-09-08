@@ -1,10 +1,10 @@
 amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-/// This module contains actions for the eletricalSafety SM
+// This module contains actions for the eletricalSafety SM
 
 
-/// Raise to start arc fault detection
+// Raise to start arc fault detection
 aRaiseStartArcFaultDetection: CSM.RaiseActionDescription = new {
     event {
         name = Events.eStartArcFaultDetection
@@ -12,8 +12,8 @@ aRaiseStartArcFaultDetection: CSM.RaiseActionDescription = new {
     }
 }
 
-/// Raise if an arc fault has been detected 
-/// Includes location of arcFault as payload
+// Raise if an arc fault has been detected 
+// Includes location of arcFault as payload
 aRaiseArcFaultDetected: CSM.RaiseActionDescription = new {
     event {
         name = Events.eArcFaultDetected

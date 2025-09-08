@@ -5,11 +5,11 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTy
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/guards.pkl" as Guards
 
-/// This module contains the definition for the lighting SM
+// This module contains the definition for the lighting SM
 
-/// The lighting SM contains five states:
-/// On, Off, Dim, UserLevel + an initialization state
-/// The state transitions are controlled by occupancy detection, except for userLevel, which is determined by the user
+// The lighting SM contains five states:
+// On, Off, Dim, UserLevel + an initialization state
+// The state transitions are controlled by occupancy detection, except for userLevel, which is determined by the user
 lightingSM: CSM.StateMachineDescription = new {
     name = "lighting"
     states {
@@ -21,7 +21,7 @@ lightingSM: CSM.StateMachineDescription = new {
     }
 }
 
-/// Initially always transitions to off
+// Initially always transitions to off
 lInit: CSM.StateDescription = new {
     name = "init"
     initial = true
@@ -32,7 +32,7 @@ lInit: CSM.StateDescription = new {
     }
 }
 
-/// Lights off - no occupancy detected
+// Lights off - no occupancy detected
 lOff: CSM.StateDescription = new {
     name = "off"
     entry {
@@ -41,7 +41,7 @@ lOff: CSM.StateDescription = new {
         }
     }
     on {
-        /// Only transitions to on if energy saving mode is not active
+        // Only transitions to on if energy saving mode is not active
         new {
             event = Events.eOccupancyDetected
             guards {
@@ -85,7 +85,7 @@ lOff: CSM.StateDescription = new {
     }
 }
 
-/// Lights on - occupancy detected
+// Lights on - occupancy detected
 lOn: CSM.StateDescription = new {
     name = "on"
     entry {
@@ -105,7 +105,7 @@ lOn: CSM.StateDescription = new {
     }
 }
 
-/// Lights dim - vacancy grace period
+// Lights dim - vacancy grace period
 lDim: CSM.StateDescription = new {
     name = "dim"
     entry {
@@ -154,7 +154,7 @@ lDim: CSM.StateDescription = new {
     }
 }
 
-/// Lights at manual level - lights are set to manual level, and dont change depending on occupancy anymore
+// Lights at manual level - lights are set to manual level, and dont change depending on occupancy anymore
 lUserLevel: CSM.StateDescription = new {
     name = "userLevel"
     staticContext {

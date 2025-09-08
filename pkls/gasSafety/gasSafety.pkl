@@ -7,11 +7,11 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/context.pkl" as Context
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/actions.pkl" as Actions
 
-/// This module contains the definition for the gasSafety SM
+// This module contains the definition for the gasSafety SM
 
-///gasSafety is the third part of the fire prevention system
-///gasSafety detects gas leak across multiple rooms
-///If a gas leak is detected, the location of that gas leak and a warning is published
+//gasSafety is the third part of the fire prevention system
+//gasSafety detects gas leak across multiple rooms
+//If a gas leak is detected, the location of that gas leak and a warning is published
 local gasSafetySM: CSM.StateMachineDescription = new {
     name = "gasSafety"
     localContext = Context.gasSafetyContext
@@ -33,8 +33,8 @@ local gsInit: CSM.StateDescription = new {
     }
 }
 
-/// Always starts in monitoring state
-/// Invokes gas detection service every 30 seconds
+// Always starts in monitoring state
+// Invokes gas detection service every 30 seconds
 local gsMonitoring: CSM.StateDescription = new {
     name = "monitoring"
     after {
@@ -64,7 +64,7 @@ local gsMonitoring: CSM.StateDescription = new {
             }   
             }
         }
-        /// Once gas leak has been detected, transition to gasLeak state
+        // Once gas leak has been detected, transition to gasLeak state
         new {
             event = Events.eGasLeakDetectionComplete
             guards {
@@ -75,7 +75,7 @@ local gsMonitoring: CSM.StateDescription = new {
     }
 }
 
-/// Invokes close valve service and raises global gas leak event
+// Invokes close valve service and raises global gas leak event
 local gsGasLeak: CSM.StateDescription = new {
     name = "gasLeak"
     entry {

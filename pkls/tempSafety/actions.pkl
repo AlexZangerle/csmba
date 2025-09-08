@@ -1,10 +1,10 @@
 amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-/// This module contains actions for the fireSafety SM
+// This module contains actions for the fireSafety SM
 
 
-/// Raise to get current temperature of critical equipment in room
+// Raise to get current temperature of critical equipment in room
 aRaiseGetRoomTemp: CSM.RaiseActionDescription = new {
     event {
         name = Events.eStartTempReading

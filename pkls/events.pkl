@@ -1,114 +1,114 @@
-/// This module contains all events for the CSM BMS
+// This module contains all events for the CSM BMS
 
-/// Raised when occupancy is detected
+// Raised when occupancy is detected
 eOccupancyDetected = "occupancyDetectedEvent"
 
-/// Raised when no occupancy is detected
+// Raised when no occupancy is detected
 eOccupancyVacant = "eOccupancyVacant"
 
-/// Raised the first time no occupancy is detected in a previously occupied room
+// Raised the first time no occupancy is detected in a previously occupied room
 eOccupancyTransient = "occupancyTransient"
 
-/// Raised by the sensor when outside temperature is low 
+// Raised by the sensor when outside temperature is low 
 eTempLow = "tempLow"
 
-/// Raised by the sensor when outside temperature is medium 
+// Raised by the sensor when outside temperature is medium 
 eTempMedium = "tempMedium"
 
-/// Raised by the sensor when outside temperature is high
+// Raised by the sensor when outside temperature is high
 eTempHigh = "tempHigh"
 
-/// Raised internally to signify the start of occupancy detection
+// Raised internally to signify the start of occupancy detection
 eStartDetectingOccupancy = "OccupancyDetectionStart"
 
-/// Raised internally to signify the end of occupancy detection
+// Raised internally to signify the end of occupancy detection
 eDetectionComplete = "detectionComplete"
 
-/// Raised manually to lock blinds 
+// Raised manually to lock blinds 
 eLockBlinds = "lockBlinds"
 
-/// Raised manually to unlock blinds 
+// Raised manually to unlock blinds 
 eUnlockBlinds = "unlockBlinds"
 
-/// Raised manually to set lights to a level defined by the user
+// Raised manually to set lights to a level defined by the user
 eActivateLightUserLevel = "userLevelLight"
 
-/// Raised manually to set lights based on occupancy detection
+// Raised manually to set lights based on occupancy detection
 eDeactivateLightUserLevel = "occupancyLight"
 
-/// Raised manually to set blinds to a level defined by the user
+// Raised manually to set blinds to a level defined by the user
 eActivateBlindsUserLevel = "userLevelBlinds"
 
-/// Raised manually to set blinds based on temperature
+// Raised manually to set blinds based on temperature
 eDeactivateBlindsUserLevel = "temperatureBlinds"
 
-/// Raised to put the system into energy saving mode
+// Raised to put the system into energy saving mode
 eActivateEnergySaving = "energySavingMode"
 
-/// Raised to put the system into normal energy mode
+// Raised to put the system into normal energy mode
 eDeactivateEnergySaving = "energyNormalMode"
 
-/// Raised internally to signify the start of fire detection
+// Raised internally to signify the start of fire detection
 eStartDetectingFire = "startDetectingFire"
 
-/// Raised internally to signify the end of fire detection
+// Raised internally to signify the end of fire detection
 eFireDetectionComplete = "fireDetectionComplete"
 
-/// Raised internally on detection of fire
+// Raised internally on detection of fire
 eFireDetected = "fireDetected"
 
-/// Raised internally on detection of smoke
+// Raised internally on detection of smoke
 eSmokeDetected = "smokeDetected"
 
-/// Raised globally to trigger fire alarm on fire detection
+// Raised globally to trigger fire alarm on fire detection
 eFireAlarm = "fireAlarm"
 
-/// Raised manually to disarm the fire alarm
+// Raised manually to disarm the fire alarm
 eDisarmFireAlarm = "disarmFireAlarm"
 
-/// Raised globally to trigger smoke alert on smoke detection
+// Raised globally to trigger smoke alert on smoke detection
 eSmokeAlert = "smokeAlert"
 
-/// Raised manually to disarm the smoke alert
+// Raised manually to disarm the smoke alert
 eDisarmSmokeAlert = "disarmSmokeAlert"
 
-/// Raised when occupancy detection took unusually long
+// Raised when occupancy detection took unusually long
 eMaintenanceRequired = "maintenanceRequired"
 
-/// Raised manually when maintenance is complete
+// Raised manually when maintenance is complete
 eMaintenanceDone = "maintenanceDone"
 
-/// Raised internally to signify start of temperature reading of critical components
+// Raised internally to signify start of temperature reading of critical components
 eStartTempReading = "startTempReading"
 
-/// Raised internally to signify end of temperature reading of critical components
+// Raised internally to signify end of temperature reading of critical components
 eTempReadingComplete = "tempReadingComplete"
 
-/// Raised manually once temperature risk has been cleared
+// Raised manually once temperature risk has been cleared
 eTempRiskCleared = "tempRiskCleared"
 
-/// Raised internally to signify start of arc fault detection
+// Raised internally to signify start of arc fault detection
 eStartArcFaultDetection = "startArcFaultDetection"
 
-/// Raised internally to signify end of arc fault detection
+// Raised internally to signify end of arc fault detection
 eArcFaultDetectionComplete = "arcFaultDetectionComplete"
 
-/// Raised once arc fault has been detected at some location
+// Raised once arc fault has been detected at some location
 eArcFaultDetected = "arcFaultDetected"
 
-/// Raised once arc fault has been handled
+// Raised once arc fault has been handled
 eResetElectricalFault = "electricalReset"
 
-/// Raised internally to signify start of gas leak detection
+// Raised internally to signify start of gas leak detection
 eStartGasLeakDetection = "startGasLeakDetection"
 
-/// Raised internally to signify end of gas leak detection
+// Raised internally to signify end of gas leak detection
 eGasLeakDetectionComplete = "gasLeakDetectionComplete"
 
-/// Raised globally once gas leak has been detected
+// Raised globally once gas leak has been detected
 eGasLeakDetected = "gasLeakDetected"
 
-/// Raised manually when gas leak has been handled
+// Raised manually when gas leak has been handled
 
 eGasPurged = "gasPurged"
 

@@ -1,67 +1,67 @@
-/// This module contains all service types for the CSM BMS
+// This module contains all service types for the CSM BMS
 
-/// Service to turn the lights on
+// Service to turn the lights on
 stTurnOn = "turnOnService"
 
-/// Service to turn the lights off
+// Service to turn the lights off
 stTurnOff = "turnOffService"
 
-/// Service to turn the lights to a specific level
+// Service to turn the lights to a specific level
 stTurnUserLevel = "turnUserLevelService"
 
-/// Service to turn the lights to dim
+// Service to turn the lights to dim
 stDim = "dimService"
 
-/// Service to open the blinds halfway
+// Service to open the blinds halfway
 stBlindsHalf = "blindsHalfService"
 
-/// Service to open the blinds
+// Service to open the blinds
 stBlindsOpen = "blindsOpenService"
 
-/// Service to close the blinds
+// Service to close the blinds
 stBlindsClose = "blindCloseService"
 
-/// Service to put the blinds to a specific level
+// Service to put the blinds to a specific level
 stBlindsUserLevel = "blindsUserLevelService"
 
-/// Service to detect occupancy in a room
+// Service to detect occupancy in a room
 stDetectOccupancy = "detectOccupancyService"
 
-/// Service to detect fire and smoke in a room
+// Service to detect fire and smoke in a room
 stDetectFire = "detectFireService"
 
-/// Service to close associated fire doors
+// Service to close associated fire doors
 stCloseFireDoor = "closeFireDoorService"
 
-/// Service to open associated fire doors
+// Service to open associated fire doors
 stOpenFireDoor = "openFireDoorService"
 
-/// Service to initiate maintenance
+// Service to initiate maintenance
 stMaintenance = "maintenance"
 
-/// Service to get temperature from critical equipment in a room
+// Service to get temperature from critical equipment in a room
 stTempSafety = "roomTemp"
 
-/// Service to initiate warning on a high temperature
+// Service to initiate warning on a high temperature
 stTempHighRisk = "highRisk"
 
-/// Service to detect arc faults
+// Service to detect arc faults
 stCheckArcFault = "checkArcFault"
 
-/// Service to trip circuit breaker
+// Service to trip circuit breaker
 stTripCircuitBreaker = "tripCircuitBreaker"
 
-/// Service to acknowledge arc faukt
+// Service to acknowledge arc faukt
 stAcknowledgedEletrical = "electricalFaultAcknowledged"
 
-/// Service to detect gas leaks
+// Service to detect gas leaks
 stCheckGasLeak = "checkGasLeak"
 
-/// Service to close gas valve
+// Service to close gas valve
 stCloseGasValve = "closeGasValve"
 
-/// Service to acknowledge gas leak
+// Service to acknowledge gas leak
 stGasLeakPurged = "gasLeakPurged"
 
-/// Service to cut power
+// Service to cut power
 stCutPower = "cutPower"

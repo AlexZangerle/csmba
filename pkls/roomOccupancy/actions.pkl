@@ -1,9 +1,9 @@
 amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-/// This module contains actions for the room occupancy SM
+// This module contains actions for the room occupancy SM
 
-/// Raise action to start detecting occupancy
+// Raise action to start detecting occupancy
 aRaiseStartDetectingOccupancy: CSM.RaiseActionDescription = new {
     event {
         name = Events.eStartDetectingOccupancy
@@ -11,7 +11,7 @@ aRaiseStartDetectingOccupancy: CSM.RaiseActionDescription = new {
     }
 }
 
-/// Raise action when occupancy detection results in occupied
+// Raise action when occupancy detection results in occupied
 aRaiseOccupancyDetected: CSM.RaiseActionDescription = new {
     event {
         name = Events.eOccupancyDetected
@@ -19,7 +19,7 @@ aRaiseOccupancyDetected: CSM.RaiseActionDescription = new {
     }
 }
 
-/// Raise action when occupancy detection results in vacant
+// Raise action when occupancy detection results in vacant
 aRaiseOccupancyVacant: CSM.RaiseActionDescription = new {
     event {
         name = Events.eOccupancyVacant
@@ -27,7 +27,7 @@ aRaiseOccupancyVacant: CSM.RaiseActionDescription = new {
     }
 }
 
-/// Raise action when occupancy detection results in transient
+// Raise action when occupancy detection results in transient
 aRaiseOccupancyTransient: CSM.RaiseActionDescription = new {
     event {
         name = Events.eOccupancyTransient
@@ -35,7 +35,7 @@ aRaiseOccupancyTransient: CSM.RaiseActionDescription = new {
     }
 }
 
-/// Raise action when occupancy detection took unusually long
+// Raise action when occupancy detection took unusually long
 aRaiseMaintenance: CSM.RaiseActionDescription = new {
     event {
         name = Events.eMaintenanceRequired

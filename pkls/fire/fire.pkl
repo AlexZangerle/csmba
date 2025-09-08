@@ -7,10 +7,10 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/guar
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/context.pkl" as Context
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/actions.pkl" as Actions
 
-/// This module contains the definition for the fireDetection SM
+// This module contains the definition for the fireDetection SM
 
-///The fireDetectionSM invokes a service on a timeout to detect fire/smoke.
-/// If fire/smoke is detected, transitions to fireAlarm/smokeAlert state and triggers the corresponding action.
+//The fireDetectionSM invokes a service on a timeout to detect fire/smoke.
+// If fire/smoke is detected, transitions to fireAlarm/smokeAlert state and triggers the corresponding action.
 fireDetectionSM: CSM.StateMachineDescription = new{
     name = "fireDetection"
     stateMachines {
@@ -25,8 +25,8 @@ fireDetectionSM: CSM.StateMachineDescription = new{
     }
 }
 
-/// The fireDoor SM closes based on fireAlarm events received
-/// After the alarm has beend disarmed it opens
+// The fireDoor SM closes based on fireAlarm events received
+// After the alarm has beend disarmed it opens
 fireDoorSM: CSM.StateMachineDescription = new {
     name = "fireDoor"
     states{
@@ -36,7 +36,7 @@ fireDoorSM: CSM.StateMachineDescription = new {
     }
 }
 
-/// Always transitions to detecting state
+// Always transitions to detecting state
 fInit: CSM.StateDescription = new {
     name = "init"
     initial = true
@@ -47,7 +47,7 @@ fInit: CSM.StateDescription = new {
     }
 }
 
-/// This state invokes the service for fire/smoke detection every 20 seconds
+// This state invokes the service for fire/smoke detection every 20 seconds
 fDetecting: CSM.StateDescription = new {
     name = "detecting"
     after {
@@ -77,8 +77,8 @@ fDetecting: CSM.StateDescription = new {
                 }
             }
         }
-        /// Transitions to fireAlarm/smokeAlert state if service has detected either
-        /// If both fire&smoke are detected fire takes priority
+        // Transitions to fireAlarm/smokeAlert state if service has detected either
+        // If both fire&smoke are detected fire takes priority
         new{
             event = Events.eFireDetectionComplete
             guards {
@@ -96,7 +96,7 @@ fDetecting: CSM.StateDescription = new {
     }
 }
 
-///FireAlarm state sets the VFireAlarm variable to true and raises a global fireAlarm event
+//FireAlarm state sets the VFireAlarm variable to true and raises a global fireAlarm event
 fFireAlarm: CSM.StateDescription = new {
     name = "fireAlarm"
     entry {
@@ -124,7 +124,7 @@ fFireAlarm: CSM.StateDescription = new {
     }
 }
 
-///SmokeAlert state sets the vSmokeAlert variable to true and raises a global smokeAlert event
+//SmokeAlert state sets the vSmokeAlert variable to true and raises a global smokeAlert event
 fSmokeAlert: CSM.StateDescription = new {
     name = "smokeAlert"
     entry {
@@ -152,7 +152,7 @@ fSmokeAlert: CSM.StateDescription = new {
     }
 }
 
-/// Fire door always starts open
+// Fire door always starts open
 fdInit: CSM.StateDescription = new {
     name = "init"
     initial = true
@@ -171,7 +171,7 @@ fdOpen: CSM.StateDescription = new {
             }
         }
     on {
-        /// After a fire alarm has been triggered, closes the fireDoor
+        // After a fire alarm has been triggered, closes the fireDoor
         new{
             event = Events.eFireAlarm
             target = fdClose.name
@@ -187,7 +187,7 @@ fdClose: CSM.StateDescription = new {
             }
         }
     on {
-        /// After alarm has been manually disarmed, opens fireDoor
+        // After alarm has been manually disarmed, opens fireDoor
         new{
             event = Events.eDisarmFireAlarm
             target = fdOpen.name

@@ -2,9 +2,9 @@ amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/dev
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 
-/// This module contains all guards for lighting SM
+// This module contains all guards for lighting SM
 
-/// Guards to verify if energySavingMode is either on or off
+// Guards to verify if energySavingMode is either on or off
 energySavingActive: CSM.GuardDescription = new {
     expression = "\(Vars.vEnergySaving)"
 }
@@ -13,17 +13,17 @@ energySavingInactive: CSM.GuardDescription = new {
     expression = "!\(Vars.vEnergySaving)"
 }
 
-/// Guard to verify if current occupancy is vacant
+// Guard to verify if current occupancy is vacant
 occupancyVacantGuard: CSM.GuardDescription = new {
     expression = "\(Vars.vCurrentOccupancy) == 'vacant'"
 }
 
-/// Guard to verify if current occupancy is occupied
+// Guard to verify if current occupancy is occupied
 occupancyOccupiedGuard: CSM.GuardDescription = new {
     expression = "\(Vars.vCurrentOccupancy) == 'occupied'"
 }
 
-/// Guard to verify if current occupancy is transient
+// Guard to verify if current occupancy is transient
 occupancyTransientGuard: CSM.GuardDescription = new {
     expression = "\(Vars.vCurrentOccupancy) == 'transient'"
 }

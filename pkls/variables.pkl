@@ -1,57 +1,57 @@
 amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
-/// This module contains all variable definitions for the CSM BMS
+// This module contains all variable definitions for the CSM BMS
 
-/// Variable containing if occupancy has been detected (Boolean)
+// Variable containing if occupancy has been detected (Boolean)
 vOccupancyDetected = "occupancyDetected"
 
-/// Variable containing blinds lock status (Boolean)
+// Variable containing blinds lock status (Boolean)
 vIsLocked = "isLocked"
 
-/// Variable containing the current outside temperature
+// Variable containing the current outside temperature
 vTemperature = "temperature"
 
-/// Variable containing the current building energy mode (Boolean)
+// Variable containing the current building energy mode (Boolean)
 vEnergySaving = "energySaving"
 
-/// Variable containing the current occupancy (String - occupied/vacant/transient)
+// Variable containing the current occupancy (String - occupied/vacant/transient)
 vCurrentOccupancy = "currentOccupancy"
 
-/// Variable containing the light level set by user (int - 0-100)
+// Variable containing the light level set by user (int - 0-100)
 vUserLightLevel: CSM.ContextVariableDescription = new {
             name = "lightLevel"
             value = "'0'"
 }
 
-/// Variable containing the blind level set by user (int - 0-100)
+// Variable containing the blind level set by user (int - 0-100)
 vUserBlindLevel: CSM.ContextVariableDescription = new {
                 name = "blindLevel"
                 value = "'0'"
             }
 
-/// Variable containg the result from fire detection (String - none/fire/smoke)
+// Variable containg the result from fire detection (String - none/fire/smoke)
 vFireDetectionResult = "fireDetectionResult"    
 
-/// Variable to show if fire alarm is currently active (Boolean)
+// Variable to show if fire alarm is currently active (Boolean)
 vFireAlarm = "fireAlarm"
 
-/// Variable to show if smoke alert is currently active (Boolean)
+// Variable to show if smoke alert is currently active (Boolean)
 vSmokeAlert = "smokeAlert"
 
-/// Variable containg the temperature threshold for critical equipment (int)
+// Variable containg the temperature threshold for critical equipment (int)
 vTempThreshold = "tempThreshold"
 
-/// Variable containg the current roomID (int)
+// Variable containg the current roomID (int)
 vRoomId: CSM.ContextVariableDescription = new {
                 name = "roomId"
                 value = "'0'"
             }
 
-/// Variable containg the temperature of critical equipment in vRoomId (int)
+// Variable containg the temperature of critical equipment in vRoomId (int)
 vRoomTemp = "roomTemp"
 
-/// Variable containg the location where arc fault occured (String)
+// Variable containg the location where arc fault occured (String)
 vArcFaultLocation = "arcFaultLocation"
 
-/// Variable containg the location where gas leak occured (String)
+// Variable containg the location where gas leak occured (String)
 vGasLeakLocation = "gasLeakLocation"

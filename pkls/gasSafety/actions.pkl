@@ -1,9 +1,9 @@
 amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-/// This module contains actions for the gasSafety SM
+// This module contains actions for the gasSafety SM
 
-/// Raise to start gas leak detection
+// Raise to start gas leak detection
 aRaiseStartGasLeakDetection: CSM.RaiseActionDescription = new {
     event {
         name = Events.eStartGasLeakDetection
@@ -11,8 +11,8 @@ aRaiseStartGasLeakDetection: CSM.RaiseActionDescription = new {
     }
 }
 
-/// Raise once a gas leak has been detected
-/// includes location of gas leak as payload
+// Raise once a gas leak has been detected
+// includes location of gas leak as payload
 aRaiseGasLeakDetected: CSM.RaiseActionDescription = new {
     event {
         name = Events.eGasLeakDetected
