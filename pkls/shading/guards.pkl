@@ -21,3 +21,11 @@ isMediumGuard: CSM.GuardDescription = new {
 isColdGuard: CSM.GuardDescription = new {
   expression = "\(Vars.vTemperature) < 15"
 }
+/// Guards to determine if there currently is a fire alarm / smoke alert
+noFireAlarm: CSM.GuardDescription = new {
+    expression  = "!\(Vars.vFireAlarm)"
+}
+
+noSmokeAlert: CSM.GuardDescription = new {
+    expression = "!\(Vars.vSmokeAlert)"
+}
