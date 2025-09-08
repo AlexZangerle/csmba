@@ -9,7 +9,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electrica
 // This module contains the definition for the eletricalSafety SM
 
 //eletricalSafety is the second part for the fire prevention system
-//eletricalSafety detects arc faults across multiple rooms
+//eletricalSafety detects arc faults across multiple rooms.
 //If an arc fault is detected, the location of that arc fault and a warning is published
 electricalSafetySM = new CSM.StateMachineDescription {
     name = "electricalSafety"
