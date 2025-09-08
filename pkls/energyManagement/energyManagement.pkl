@@ -59,7 +59,18 @@ local emNormal: CSM.StateDescription = new {
                             reference = Vars.vEnergyPrice
                         }
                     }
+                    done {
+                        new {
+                            name = Events.eStartGridCheck
+                            channel = "internal"
+                        }
+                    }
                 }
+            }
+        }
+        new {
+            event = Events.eStartGridCheck
+            actions {
                 new CSM.InvokeActionDescription {
                     serviceType = ServiceTypes.stCheckGridStatus
                     output {
@@ -121,7 +132,18 @@ local emPeak: CSM.StateDescription = new {
                             reference = Vars.vEnergyPrice
                         }
                     }
+                    done {
+                        new {
+                            name = Events.eStartGridCheck
+                            channel = "internal"
+                        }
+                    }
                 }
+            }
+        }
+        new {
+            event = Events.eStartGridCheck
+            actions {
                 new CSM.InvokeActionDescription {
                     serviceType = ServiceTypes.stCheckGridStatus
                     output {
@@ -183,7 +205,18 @@ local emGridRequestResponse: CSM.StateDescription = new {
                             reference = Vars.vEnergyPrice
                         }
                     }
+                    done {
+                        new {
+                            name = Events.eStartGridCheck
+                            channel = "internal"
+                        }
+                    }
                 }
+            }
+        }
+        new {
+            event = Events.eStartGridCheck
+            actions {
                 new CSM.InvokeActionDescription {
                     serviceType = ServiceTypes.stCheckGridStatus
                     output {
@@ -199,7 +232,7 @@ local emGridRequestResponse: CSM.StateDescription = new {
                     }
                 }
             }
-        }
+        }     
         new {
             event = Events.eEnergyCheckComplete
             guards {

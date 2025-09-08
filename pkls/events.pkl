@@ -128,3 +128,5 @@ eReturnToNormal = "returnToNormal"
 
 // Raised to initiate more drastic energySaving
 eDrasticEnergySaving = "drasticEnergySaving"
+
+eStartGridCheck = "startGridCheck"
