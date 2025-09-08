@@ -1,4 +1,3 @@
-amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
@@ -10,7 +9,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/
 // The lighting SM contains five states:
 // On, Off, Dim, UserLevel + an initialization state
 // The state transitions are controlled by occupancy detection, except for userLevel, which is determined by the user
-lightingSM = new {
+lightingSM: CSM.StateMachineescription = new {
     name = "lighting"
     states {
         lInit
