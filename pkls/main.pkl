@@ -8,7 +8,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/tempSafety.pkl" as tempSafety
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/shading.pkl" as shading
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/lighting.pkl" as lighting
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/roomPccupancy.pkl" as roomOccupancy
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/roomOccupancy.pkl" as roomOccupancy
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/fire.pkl" as fire
 
 name = "Building System"
