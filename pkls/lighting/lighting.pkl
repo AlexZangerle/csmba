@@ -9,7 +9,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/
 // The lighting SM contains five states:
 // On, Off, Dim, UserLevel + an initialization state
 // The state transitions are controlled by occupancy detection, except for userLevel, which is determined by the user
-local lightingSM: CSM.StateMachineDescription = new {
+lightingSM = new CSM.StateMachineDescription {
     name = "lighting"
     states {
         lInit
