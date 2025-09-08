@@ -1,0 +1,113 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/actions.pkl" as Actions
+
+/// This module contains the definition for the gasSafety SM
+
+///gasSafety is the third part of the fire prevention system
+///gasSafety detects gas leak across multiple rooms
+///If a gas leak is detected, the location of that gas leak and a warning is published
+local gasSafetySM: CSM.StateMachineDescription = new {
+    name = "gasSafety"
+    localContext = Context.gasSafetyContext
+    states {
+        gsInit
+        gsMonitoring
+        gsGasLeak
+        gsAcknowledged
+    }
+}
+
+local gsInit: CSM.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = gsMonitoring.name
+        }
+    }
+}
+
+/// Always starts in monitoring state
+/// Invokes gas detection service every 30 seconds
+local gsMonitoring: CSM.StateDescription = new {
+    name = "monitoring"
+    after {
+        new CSM.TimeoutActionDescription {
+            name = "checkGasLeak"
+            delay = "30000"
+            action = Actions.aRaiseStartGasLeakDetection
+        }
+    }
+    on {
+        new {
+            event = Events.eStartGasLeakDetection
+            actions {
+                new CSM.InvokeActionDescription {
+                serviceType = ServiceTypes.stCheckGasLeak
+                output {
+                    new {
+                        reference = Vars.vGasLeakLocation
+                    }
+                }
+                done {
+                    new {
+                        name = Events.eGasLeakDetectionComplete
+                        channel = "internal"
+                    }
+                }
+            }   
+            }
+        }
+        /// Once gas leak has been detected, transition to gasLeak state
+        new {
+            event = Events.eGasLeakDetectionComplete
+            guards {
+                Guards.foundGasLeak
+            }
+            target = gsGasLeak.name
+        }
+    }
+}
+
+/// Invokes close valve service and raises global gas leak event
+local gsGasLeak: CSM.StateDescription = new {
+    name = "gasLeak"
+    entry {
+        new CSM.InvokeActionDescription {
+            serviceType = ServiceTypes.stCloseGasValve
+            input {
+                new {
+                    name = "gasLeakLocation"
+                    value = Vars.vGasLeakLocation
+                }
+            }
+        }
+        Actions.aRaiseGasLeakDetected
+    }
+    on {
+        new {
+            event = Events.eGasPurged
+            target = gsAcknowledged.name
+        }
+    }
+}
+
+local gsAcknowledged: CSM.StateDescription = new {
+    name = "acknowledged"
+    entry {
+        new CSM.InvokeActionDescription {
+            serviceType = ServiceTypes.stGasLeakPurged
+        }
+    }
+    always {
+        new {
+            target = gsMonitoring.name
+        }
+    }
+}

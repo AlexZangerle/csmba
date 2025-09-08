@@ -1,0 +1,136 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/eletricalSafety/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/eletricalSafety/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/eletricalSafety/actions.pkl" as Actions
+
+/// This module contains the definition for the eletricalSafety SM
+
+///eletricalSafety is the second pillar for the fire prevention system
+///eletricalSafety detects arc faults across multiple rooms
+///If an arc fault is detected, the location of that arc fault and a warning is published
+electricalSafetySM: CSM.StateMachineDescription = new {
+    name = "electricalSafety"
+    localContext = electricalSafetyContext
+    states{
+        esInit
+        esMonitoring
+        esArcFault
+        esAcknowledged
+        esGas
+    }
+}
+
+esInit: CSM.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = esMonitoring.name
+        }
+    }
+}
+///Always starts in monitoring state
+///Invokes service to check for arc faults every 30 seconds
+esMonitoring: CSM.StateDescription = new {
+    name = "monitoring"
+    after {
+        new CSM.TimeoutActionDescription {
+            name = "checkArcFault"
+            delay = "30000"
+            action = aRaiseStartArcFaultDetection
+        }
+    }
+    on {
+        new {
+            event = eStartArcFaultDetection
+            actions {
+                new CSM.InvokeActionDescription {
+                serviceType = stCheckArcFault
+                output {
+                    new {
+                        reference = vArcFaultLocation
+                    }
+                }
+                done {
+                    new {
+                        name = eArcFaultDetectionComplete
+                        channel = "internal"
+                    }
+                }
+            }
+            }
+        }
+        /// If an arc fault is found, transition to corresponding state
+        new {
+            event = eArcFaultDetectionComplete
+            guards {
+                foundArcFault
+            }
+            target = esArcFault.name
+        }
+    }
+}
+
+/// If an arc fault is detected, invoke service to trip the corresponding circuit breaker
+esArcFault: CSM.StateDescription = new {
+    name = "arcFault"
+    entry {
+        new CSM.InvokeActionDescription {
+            serviceType = stTripCircuitBreaker
+            input {
+                new{
+                    name = "arcFaultLocation"
+                    value = vArcFaultLocation
+                }
+            }
+        }
+        aRaiseArcFaultDetected
+    }
+    on {
+        ///Transitions to ack state if eletrical fault has been manually reset
+        ///Currently gas state for testing purposes until eletrical subsystem is fully operational 
+        new {
+            event = eResetElectricalFault
+            target = esAcknowledged.name
+        }
+        new {
+            event = eGasLeakDetected
+            target = esGas.name
+        }
+    }
+}
+
+/// Invokes Ack Service and transitions back to monitoring state
+esAcknowledged: CSM.StateDescription = new {
+    name = "acknowledged"
+    entry {
+        new CSM.InvokeActionDescription {
+            serviceType = stAcknowledgedEletrical
+        }
+    }
+    always {
+        new {
+            target = esMonitoring.name
+        }
+    }
+}
+///Testing purposes
+esGas: CSM.StateDescription = new {
+    name = "gas"
+    terminal = true
+    entry {
+        new CSM.InvokeActionDescription{
+            serviceType = stCutPower
+            input {
+                new {
+                    name = "gasLeakLocation"
+                    value = "$gasLeakLocation"
+                }
+            }
+        }
+    }
+}
