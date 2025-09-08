@@ -71,3 +71,7 @@ stGetEnergyPrice = "getEnergyPrices"
 
 // Service to check current grid status
 stCheckGridStatus = "checkGridStatus"
+
+stGridNormal = "gridNormal"
+stGridResponse = "gridReponse"
+stPeak = "peak"

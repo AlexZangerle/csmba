@@ -37,6 +37,9 @@ local emNormal: CSM.StateDescription = new {
     name = "normal"
     entry{
         Actions.aRaiseDeactiveEnergySaving
+        new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stGridNormal
+                }
     }
     after{
         new CSM.TimeoutActionDescription {
@@ -96,6 +99,9 @@ local emPeak: CSM.StateDescription = new {
     name = "peakDemand"
     entry {
         Actions.aRaiseEnergySaving
+        new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stPeak
+                }
     }
     after{
         new CSM.TimeoutActionDescription {
@@ -155,6 +161,16 @@ local emGridRequestResponse: CSM.StateDescription = new {
     name = "requestReponse"
     entry {
         Actions.aRaiseDrasticEnergySaving
+        new CSM.InvokeActionDescription {
+                    serviceType = ServiceTypes.stGridResponse
+                }
+    }
+    after{
+        new CSM.TimeoutActionDescription {
+            name = "energyCheck"
+            delay = "30000"
+            action = Actions.aRaiseStartDetectingEnergy
+        }
     }
     on {
         new {
