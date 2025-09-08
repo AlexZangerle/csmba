@@ -10,7 +10,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccup
 
 // The room occupancy SM contains four states: vacant, occupied transient + and initialization state
 // It also contains a nested state machine to monitor the detection process time
-local roomOccupancySM: CSM.StateMachineDescription = new {
+roomOccupancySM = new CSM.StateMachineDescription {
     name = "roomOccupancy"
     localContext = Context.occupancyontext
     stateMachines {

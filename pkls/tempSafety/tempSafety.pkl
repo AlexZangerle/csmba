@@ -12,7 +12,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafet
 //temperatureSafety is one of three SMs that act as fire prevention system
 //temperatureSafety detects temperature of critical equipment in a room
 //If that temperature exceeds a predefined threshold a warning is published.
-local temperatureSafetySM: CSM.StateMachineDescription = new {
+temperatureSafetySM = new CSM.StateMachineDescription {
     name = "temperatureSafety"
     localContext = Context.fireSafetyContext
     states{

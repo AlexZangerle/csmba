@@ -12,7 +12,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/c
 // The shading SM contains six states:
 // half, open, close, userLevel, emergency + an initialization state
 // The state transitions are controlled by outside temperature detection, except for userLevel, which is determined by the user
-local shadingSM: CSM.StateMachineDescription = new {
+shadingSM = new CSM.StateMachineDescription {
     name = "shading"
     localContext = Context.blindLockContext
     states {

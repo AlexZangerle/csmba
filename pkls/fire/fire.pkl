@@ -11,7 +11,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/acti
 
 //The fireDetectionSM invokes a service on a timeout to detect fire/smoke.
 // If fire/smoke is detected, transitions to fireAlarm/smokeAlert state and triggers the corresponding action.
-local fireDetectionSM: CSM.StateMachineDescription = new{
+fireDetectionSM = new CSM.StateMachineDescription {
     name = "fireDetection"
     stateMachines {
     fireDoorSM
