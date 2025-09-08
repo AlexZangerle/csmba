@@ -2,9 +2,9 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/dev
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/eletricalSafety/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/eletricalSafety/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/eletricalSafety/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electricalSafety/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electricalSafety/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electricalSafety/actions.pkl" as Actions
 
 // This module contains the definition for the eletricalSafety SM
 
