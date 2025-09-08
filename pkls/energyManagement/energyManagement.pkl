@@ -81,7 +81,7 @@ local emNormal: CSM.StateDescription = new {
             target = emGridRequestResponse.name
         }
         new {
-            event = Events.energyCheckComplete
+            event = Events.eEnergyCheckComplete
             guards {
                 Guards.priceAboveMax
             }
@@ -139,7 +139,7 @@ local emPeak: CSM.StateDescription = new {
             target = emGridRequestResponse.name
         }
         new {
-            event = Events.energyCheckComplete
+            event = Events.eEnergyCheckComplete
             guards {
                 Guards.priceUnderMax
             }
@@ -183,7 +183,7 @@ local emGridRequestResponse: CSM.StateDescription = new {
             }
         }
         new {
-            event = Events.energyCheckComplete
+            event = Events.eEnergyCheckComplete
             guards {
                 Guards.gridNormal
                 Guards.priceAboveMax
