@@ -1,4 +1,4 @@
-///This module contains all events for the CSM BMS
+/// This module contains all events for the CSM BMS
 
 /// Raised when occupancy is detected
 eOccupancyDetected = "occupancyDetectedEvent"
@@ -109,4 +109,5 @@ eGasLeakDetectionComplete = "gasLeakDetectionComplete"
 eGasLeakDetected = "gasLeakDetected"
 
 /// Raised manually when gas leak has been handled
+
 eGasPurged = "gasPurged"
