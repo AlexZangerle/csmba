@@ -1,11 +1,12 @@
 amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 /// This module contains actions for the room occupancy SM
 
 /// Raise action to start detecting occupancy
 local aRaiseStartDetectingOccupancy: CSM.RaiseActionDescription = new {
     event {
-        name = eStartDetectingOccupancy
+        name = Events.eStartDetectingOccupancy
         channel = "internal"
     }
 }
@@ -13,7 +14,7 @@ local aRaiseStartDetectingOccupancy: CSM.RaiseActionDescription = new {
 /// Raise action when occupancy detection results in occupied
 local aRaiseOccupancyDetected: CSM.RaiseActionDescription = new {
     event {
-        name = eOccupancyDetected
+        name = Events.eOccupancyDetected
         channel = "global"
     }
 }
@@ -21,7 +22,7 @@ local aRaiseOccupancyDetected: CSM.RaiseActionDescription = new {
 /// Raise action when occupancy detection results in vacant
 local aRaiseOccupancyVacant: CSM.RaiseActionDescription = new {
     event {
-        name = eOccupancyVacant
+        name = Events.eOccupancyVacant
         channel = "global"
     }
 }
@@ -29,7 +30,7 @@ local aRaiseOccupancyVacant: CSM.RaiseActionDescription = new {
 /// Raise action when occupancy detection results in transient
 local aRaiseOccupancyTransient: CSM.RaiseActionDescription = new {
     event {
-        name = eOccupancyTransient
+        name = Events.eOccupancyTransient
         channel = "global"
     }
 }
@@ -37,7 +38,8 @@ local aRaiseOccupancyTransient: CSM.RaiseActionDescription = new {
 /// Raise action when occupancy detection took unusually long
 local aRaiseMaintenance: CSM.RaiseActionDescription = new {
     event {
-        name = eMaintenanceRequired
+        name = Events.eMaintenanceRequired
         channel = "global"
     }
+
 }
