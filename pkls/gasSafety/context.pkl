@@ -3,7 +3,7 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/dev
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 // This module contains all contexts for the gasSafety SM
 
-gasSafetyContext: CSM.ContextDescription = new {
+gasSafetyContext = new CSM.ContextDescription {
     variables {
         new {
             name = Vars.vGasLeakLocation

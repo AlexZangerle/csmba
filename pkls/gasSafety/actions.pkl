@@ -4,7 +4,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pk
 // This module contains actions for the gasSafety SM
 
 // Raise to start gas leak detection
-aRaiseStartGasLeakDetection: CSM.RaiseActionDescription = new {
+aRaiseStartGasLeakDetection = new CSM.RaiseActionDescription {
     event {
         name = Events.eStartGasLeakDetection
         channel = "internal"
@@ -13,7 +13,7 @@ aRaiseStartGasLeakDetection: CSM.RaiseActionDescription = new {
 
 // Raise once a gas leak has been detected
 // includes location of gas leak as payload
-aRaiseGasLeakDetected: CSM.RaiseActionDescription = new {
+aRaiseGasLeakDetected = new CSM.RaiseActionDescription {
     event {
         name = Events.eGasLeakDetected
         data {

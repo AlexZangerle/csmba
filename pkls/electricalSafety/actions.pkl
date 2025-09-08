@@ -5,7 +5,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pk
 
 
 // Raise to start arc fault detection
-aRaiseStartArcFaultDetection: CSM.RaiseActionDescription = new {
+aRaiseStartArcFaultDetection = new CSM.RaiseActionDescription {
     event {
         name = Events.eStartArcFaultDetection
         channel = "internal"
@@ -14,7 +14,7 @@ aRaiseStartArcFaultDetection: CSM.RaiseActionDescription = new {
 
 // Raise if an arc fault has been detected 
 // Includes location of arcFault as payload
-aRaiseArcFaultDetected: CSM.RaiseActionDescription = new {
+aRaiseArcFaultDetected = new CSM.RaiseActionDescription {
     event {
         name = Events.eArcFaultDetected
         data {

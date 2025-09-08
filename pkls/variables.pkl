@@ -18,13 +18,13 @@ vEnergySaving = "energySaving"
 vCurrentOccupancy = "currentOccupancy"
 
 // Variable containing the light level set by user (int - 0-100)
-vUserLightLevel: CSM.ContextVariableDescription = new {
+vUserLightLevel = new CSM.ContextVariableDescription {
             name = "lightLevel"
             value = "'0'"
 }
 
 // Variable containing the blind level set by user (int - 0-100)
-vUserBlindLevel: CSM.ContextVariableDescription = new {
+vUserBlindLevel = new CSM.ContextVariableDescription {
                 name = "blindLevel"
                 value = "'0'"
             }
@@ -42,7 +42,7 @@ vSmokeAlert = "smokeAlert"
 vTempThreshold = "tempThreshold"
 
 // Variable containg the current roomID (int)
-vRoomId: CSM.ContextVariableDescription = new {
+vRoomId = new CSM.ContextVariableDescription {
                 name = "roomId"
                 value = "'0'"
             }

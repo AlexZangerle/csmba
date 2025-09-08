@@ -5,7 +5,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pk
 
 
 // Raise to start detecting fire
-aRaiseStartDetectingFire: CSM.RaiseActionDescription = new {
+aRaiseStartDetectingFire = new CSM.RaiseActionDescription{
     event {
         name = Events.eStartDetectingFire
         channel = "internal"
@@ -13,14 +13,14 @@ aRaiseStartDetectingFire: CSM.RaiseActionDescription = new {
 }
 
 // Raised to trigger fire alarm or smoke alert
-aRaiseFireAlarm: CSM.RaiseActionDescription = new {
+aRaiseFireAlarm = new CSM.RaiseActionDescription{
     event {
         name = Events.eFireAlarm
         channel = "global"
     }
 }
 
-aRaiseSmokeAlert: CSM.RaiseActionDescription = new {
+aRaiseSmokeAlert = new CSM.RaiseActionDescription {
     event {
         name = Events.eSmokeAlert
         channel = "global"

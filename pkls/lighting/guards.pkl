@@ -5,25 +5,25 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables
 // This module contains all guards for lighting SM
 
 // Guards to verify if energySavingMode is either on or off
-energySavingActive: CSM.GuardDescription = new {
+energySavingActive = new CSM.GuardDescription {
     expression = "\(Vars.vEnergySaving)"
 }
 
-energySavingInactive: CSM.GuardDescription = new {
+energySavingInactive = new CSM.GuardDescription {
     expression = "!\(Vars.vEnergySaving)"
 }
 
 // Guard to verify if current occupancy is vacant
-occupancyVacantGuard: CSM.GuardDescription = new {
+occupancyVacantGuard = new CSM.GuardDescription {
     expression = "\(Vars.vCurrentOccupancy) == 'vacant'"
 }
 
 // Guard to verify if current occupancy is occupied
-occupancyOccupiedGuard: CSM.GuardDescription = new {
+occupancyOccupiedGuard = new CSM.GuardDescription {
     expression = "\(Vars.vCurrentOccupancy) == 'occupied'"
 }
 
 // Guard to verify if current occupancy is transient
-occupancyTransientGuard: CSM.GuardDescription = new {
+occupancyTransientGuard = new CSM.GuardDescription {
     expression = "\(Vars.vCurrentOccupancy) == 'transient'"
 }
