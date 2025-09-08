@@ -1,0 +1,214 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/guards.pkl" as Guards
+
+/// This module contains the definition for the lighting SM
+
+/// The lighting SM contains five states:
+/// On, Off, Dim, UserLevel + an initialization state
+/// The state transitions are controlled by occupancy detection, except for userLevel, which is determined by the user
+local lightingSM: CSM.StateMachineDescription = new {
+    name = "lighting"
+    states {
+        lInit
+        lOff
+        lOn
+        lDim
+        lUserLevel
+    }
+}
+
+/// Initially always transitions to off
+local lInit: CSM.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = lOff.name
+        }
+    }
+}
+
+/// Lights off - no occupancy detected
+local lOff: CSM.StateDescription = new {
+    name = "off"
+    entry {
+        new CSM.InvokeActionDescription {
+            serviceType = ServiceTypes.stTurnOff
+        }
+    }
+    on {
+        /// Only transitions to on if energy saving mode is not active
+        new {
+            event = Events.eOccupancyDetected
+            guards {
+                Guards.energySavingInactive
+            }
+            target = lOn.name
+        }
+        new {
+            event = Events.eActivateLightUserLevel
+            target = lUserLevel.name
+        }
+        new {
+            event = Events.eOccupancyDetected
+            guards {
+                Guards.energySavingActive
+            }
+            target = lDim.name
+        }
+        new {
+            event = Events.eActivateEnergySaving
+            actions{
+                new CSM.AssignActionDescription {
+                    variable {
+                        name = Vars.vEnergySaving
+                        value = "true"
+                    }
+                }
+            }
+        }
+        new {
+            event = Events.eDeactivateEnergySaving
+            actions{
+                new CSM.AssignActionDescription {
+                    variable {
+                        name = Vars.vEnergySaving
+                        value = "false"
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Lights on - occupancy detected
+local lOn: CSM.StateDescription = new {
+    name = "on"
+    entry {
+        new CSM.InvokeActionDescription {
+            serviceType = ServiceTypes.stTurnOn
+        }
+    }
+    on {
+        new {
+            event = Events.eOccupancyTransient
+            target = lDim.name
+        }
+        new {
+            event = Events.eActivateLightUserLevel
+            target = lUserLevel.name
+        }
+    }
+}
+
+/// Lights dim - vacancy grace period
+local lDim: CSM.StateDescription = new {
+    name = "dim"
+    entry {
+        new CSM.InvokeActionDescription {
+            serviceType = ServiceTypes.stDim
+        }
+    }
+    on {
+        new {
+            event = Events.eOccupancyDetected
+            guards {
+                Guards.energySavingInactive
+            }
+            target = lOn.name
+        }
+        new {
+            event = Events.eOccupancyVacant
+            target = lOff.name
+        }
+        new{
+            event = Events.eActivateLightUserLevel
+            target = lUserLevel.name
+        }
+        new {
+            event = Events.eActivateEnergySaving
+            actions{
+                new CSM.AssignActionDescription {
+                    variable {
+                        name = Vars.vEnergySaving
+                        value = "true"
+                    }
+                }
+            }
+        }
+        new {
+            event = Events.eDeactivateEnergySaving
+            actions{
+                new CSM.AssignActionDescription {
+                    variable {
+                        name = Vars.vEnergySaving
+                        value = "false"
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Lights at manual level - lights are set to manual level, and dont change depending on occupancy anymore
+local lUserLevel: CSM.StateDescription = new {
+    name = "userLevel"
+    staticContext {
+        variables{
+            Vars.vUserLightLevel
+        }
+    }
+    entry {
+        new CSM.AssignActionDescription {
+            variable {
+                name = Vars.vUserLightLevel.name
+                value = "if ($lightLevel != -1) $lightLevel else lightLevel"
+            } 
+        }
+        new CSM.InvokeActionDescription {
+            serviceType = ServiceTypes.stTurnUserLevel
+            input {
+                new {
+                    name = "lightLevel"
+                    value = "lightLevel"
+                }
+            }
+        }
+    }
+    on {
+        new {
+            event = Events.eDeactivateLightUserLevel
+            guards{
+                Guards.occupancyTransientGuard
+            }
+            target = lDim.name
+        }
+        new {
+            event = Events.eDeactivateLightUserLevel
+            guards{
+                Guards.energySavingInactive
+                Guards.occupancyOccupiedGuard
+            }
+            target = lOn.name
+        }
+        new {
+            event = Events.eDeactivateLightUserLevel
+            guards{
+                Guards.energySavingActive
+                Guards.occupancyOccupiedGuard
+            }
+            target = lDim.name
+        }
+        new {
+            event = Events.eDeactivateLightUserLevel
+            guards{
+                Guards.occupancyVacantGuard
+            }
+            target = lOff.name
+        }
+    }
+}
