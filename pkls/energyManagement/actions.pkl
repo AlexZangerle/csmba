@@ -31,7 +31,7 @@ aRaiseEnergySaving = new CSM.RaiseActionDescription {
 
 aRaiseDrasticEnergySaving = new CSM.RaiseActionDescription {
     event {
-        name = Event.eDrasticEnergySaving
+        name = Events.eDrasticEnergySaving
         channel = "global"
     }
 }
