@@ -1,4 +1,3 @@
-amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
