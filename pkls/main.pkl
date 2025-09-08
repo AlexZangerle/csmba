@@ -9,6 +9,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafet
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/shading.pkl?v=1" as shading
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/lighting.pkl" as lighting
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/roomOccupancy.pkl?v=1" as roomOccupancy
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/energyManagement.pkl?v=1" as energyManagement
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/fire.pkl" as fire
 
 name = "Building System"
@@ -22,6 +23,7 @@ stateMachines {
     tempSafety.temperatureSafetySM
     electricalSafety.electricalSafetySM
     gasSafety.gasSafetySM
+    energyManagement.energyManagementSM
 }
 persistentContext {
   variables {
