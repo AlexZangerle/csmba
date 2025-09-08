@@ -13,7 +13,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electrica
 //If an arc fault is detected, the location of that arc fault and a warning is published
 electricalSafetySM = new CSM.StateMachineDescription {
     name = "electricalSafety"
-    localContext = electricalSafetyContext
+    localContext = Guards.electricalSafetyContext
     states{
         esInit
         esMonitoring
