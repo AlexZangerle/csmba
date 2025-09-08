@@ -4,7 +4,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pk
 /// This module contains actions for the room occupancy SM
 
 /// Raise action to start detecting occupancy
-local aRaiseStartDetectingOccupancy: CSM.RaiseActionDescription = new {
+aRaiseStartDetectingOccupancy: CSM.RaiseActionDescription = new {
     event {
         name = Events.eStartDetectingOccupancy
         channel = "internal"
@@ -12,7 +12,7 @@ local aRaiseStartDetectingOccupancy: CSM.RaiseActionDescription = new {
 }
 
 /// Raise action when occupancy detection results in occupied
-local aRaiseOccupancyDetected: CSM.RaiseActionDescription = new {
+aRaiseOccupancyDetected: CSM.RaiseActionDescription = new {
     event {
         name = Events.eOccupancyDetected
         channel = "global"
@@ -20,7 +20,7 @@ local aRaiseOccupancyDetected: CSM.RaiseActionDescription = new {
 }
 
 /// Raise action when occupancy detection results in vacant
-local aRaiseOccupancyVacant: CSM.RaiseActionDescription = new {
+aRaiseOccupancyVacant: CSM.RaiseActionDescription = new {
     event {
         name = Events.eOccupancyVacant
         channel = "global"
@@ -28,7 +28,7 @@ local aRaiseOccupancyVacant: CSM.RaiseActionDescription = new {
 }
 
 /// Raise action when occupancy detection results in transient
-local aRaiseOccupancyTransient: CSM.RaiseActionDescription = new {
+aRaiseOccupancyTransient: CSM.RaiseActionDescription = new {
     event {
         name = Events.eOccupancyTransient
         channel = "global"
@@ -36,7 +36,7 @@ local aRaiseOccupancyTransient: CSM.RaiseActionDescription = new {
 }
 
 /// Raise action when occupancy detection took unusually long
-local aRaiseMaintenance: CSM.RaiseActionDescription = new {
+aRaiseMaintenance: CSM.RaiseActionDescription = new {
     event {
         name = Events.eMaintenanceRequired
         channel = "global"

@@ -1,12 +1,12 @@
 amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
-
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 /// This module contains all contexts for the room occupancy SM
 
-local occupancyLocalContext: CSM.ContextDescription = new {
+occupancyLocalContext: CSM.ContextDescription = new {
   variables {
     new {
-      name = vOccupancyDetected
+      name = Vars.vOccupancyDetected
       value = "false"
     }
   }

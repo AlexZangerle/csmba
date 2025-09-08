@@ -1,19 +1,20 @@
 amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
 import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 
 /// This module contains all guards for the room occupancy SM
 
 /// Guard to verify if current occupancy is vacant
-local occupancyVacantGuard: CSM.GuardDescription = new {
-    expression = "\(vCurrentOccupancy) == 'vacant'"
+occupancyVacantGuard: CSM.GuardDescription = new {
+    expression = "\(Vars.vCurrentOccupancy) == 'vacant'"
 }
 
 /// Guard to verify if current occupancy is occupied
-local occupancyOccupiedGuard: CSM.GuardDescription = new {
-    expression = "\(vCurrentOccupancy) == 'occupied'"
+occupancyOccupiedGuard: CSM.GuardDescription = new {
+    expression = "\(Vars.vCurrentOccupancy) == 'occupied'"
 }
 
 /// Guard to verify if current occupancy is transient
-local occupancyTransientGuard: CSM.GuardDescription = new {
-    expression = "\(vCurrentOccupancy) == 'transient'"
+occupancyTransientGuard: CSM.GuardDescription = new {
+    expression = "\(Vars.vCurrentOccupancy) == 'transient'"
 }
