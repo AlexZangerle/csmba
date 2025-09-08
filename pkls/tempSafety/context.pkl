@@ -1,0 +1,14 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+/// This module contains all contexts for the fireSafety SM
+
+fireSafetyContext: CSM.ContextDescription = new {
+    variables {
+        Vars.vRoomId
+        new {
+            name = Vars.vRoomTemp
+            value = "'0'"
+        }
+    }
+}

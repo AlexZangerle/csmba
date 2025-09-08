@@ -1,0 +1,102 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/actions.pkl" as Actions
+
+/// This module contains the definition for the fireSafety SM
+
+///temperatureSafety is one of three SMs that act as fire prevention system
+///temperatureSafety detects temperature of critical equipment in a room
+///If that temperature exceeds a predefined threshold a warning is published.
+temperatureSafetySM: CSM.StateMachineDescription = new {
+    name = "temperatureSafety"
+    localContext = Context.fireSafetyContext
+    states{
+        tsInit
+        tsNormal
+        tsHighRisk
+    }
+}
+
+tsInit: CSM.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = tsNormal.name
+        }
+    }
+}
+/// Always starts in normal state
+/// Gets current room temperature every 30 seconds
+/// Checks temperature against threshold and transitions to highRisk if necessary
+tsNormal: CSM.StateDescription = new {
+    name = "normal"
+    after {
+        new CSM.TimeoutActionDescription {
+            name = "pullRoomTemp"
+            delay = "30000"
+            action = Actions.aRaiseGetRoomTemp
+        }
+    }
+    on {
+        new{
+            event = Events.eTempReadingComplete
+            guards {
+                Guards.exceedTempThreshold
+            }
+            target = tsHighRisk.name
+        }
+        new {
+            event = Events.eStartTempReading
+            actions {
+                new CSM.InvokeActionDescription {
+                serviceType = ServiceTypes.stTempSafety
+                input {
+                    new {
+                        name = "roomId"
+                        value = "roomId"
+                    }
+                }
+                output {
+                    new {
+                        reference = Vars.vRoomTemp
+                    }
+                }
+                done {
+                    new {
+                        name = Events.eTempReadingComplete
+                        channel = "internal"
+                    }
+                }
+            }
+            }
+        }
+    }
+}
+
+/// High risk state invokes the high risk service to publish a warning with the corresponding roomID.
+tsHighRisk: CSM.StateDescription = new {
+    name = "highRisk"
+    entry {
+        new CSM.InvokeActionDescription {
+                serviceType = ServiceTypes.stTempHighRisk
+                input {
+                    new {
+                        name = "roomId"
+                        value = "roomId"
+                    }
+                }
+            }    
+    }
+    on {
+        new {
+            event = Events.eTempRiskCleared
+            target = tsNormal.name
+        }
+    }
+}
