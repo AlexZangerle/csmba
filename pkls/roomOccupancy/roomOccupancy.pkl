@@ -1,0 +1,239 @@
+amends "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl"
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+
+local roomOccupancySM: CSM.StateMachineDescription = new {
+    name = "roomOccupancy"
+    localContext = occupancyLocalContext
+    stateMachines {
+        occupancyMonitor
+    }
+    states {
+        rInit
+        rVacant
+        rOccupied
+        rTransient        
+    }
+}
+
+local occupancyMonitor: CSM.StateMachineDescription = new {
+    name = "OccupancyMonitoring"
+    states {
+        omInit
+        omIdle
+        omMonitoring
+        omMaintenance
+    }
+}
+
+local rInit: CSM.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = rVacant.name
+        }
+    }
+}
+
+local rVacant: CSM.StateDescription = new {
+    name = "vacant"
+    entry {
+        new CSM.AssignActionDescription{
+            variable {
+                name = vCurrentOccupancy
+                value = "'vacant'"
+                }
+            }
+    }
+    after {
+        new CSM.TimeoutActionDescription {
+            name = "detectOccupancy"
+            delay = "30000"
+            action = aRaiseStartDetectingOccupancy
+        }
+    }
+    on {
+        new {
+            event = eStartDetectingOccupancy
+            actions {
+                new CSM.InvokeActionDescription {
+                    serviceType = stDetectOccupancy
+                    output {
+                        new {
+                            reference = vOccupancyDetected
+                        }
+                    }
+                    done {
+                        new {
+                            name = eDetectionComplete
+                            channel = "internal"
+                        }
+                    }
+                }
+            }
+        }
+        new {
+            event = eDetectionComplete
+            guards {
+                new CSM.GuardDescription {
+                    expression = vOccupancyDetected
+                }
+            }
+            actions {
+                aRaiseOccupancyDetected
+            }
+            target = rOccupied.name
+        }
+        new {
+            event = eDetectionComplete
+            guards {
+                new CSM.GuardDescription {
+                    expression = "!\(vOccupancyDetected)"
+                }
+            }
+            actions {
+                aRaiseOccupancyVacant
+            }
+        }
+    }
+}
+
+local rOccupied: CSM.StateDescription = new {
+    name = "occupied"
+    entry {
+        new CSM.AssignActionDescription{
+            variable {
+                name = vCurrentOccupancy
+                value = "'occupied'"
+                }
+            }
+    }
+    after {
+        new CSM.TimeoutActionDescription {
+            name = "detectOccupancy"
+            delay = "30000"
+            action = aRaiseStartDetectingOccupancy
+        }
+    }
+    on {
+        new {
+            event = eStartDetectingOccupancy
+            actions {
+                new CSM.InvokeActionDescription {
+                    serviceType = stDetectOccupancy
+                    output {
+                        new {
+                            reference = vOccupancyDetected
+                        }
+                    }
+                    done {
+                        new {
+                            name = eDetectionComplete
+                            channel = "internal"
+                        }
+                    }
+                }
+            }
+        }
+        new {
+            event = eDetectionComplete
+            guards {
+                new CSM.GuardDescription {
+                    expression = vOccupancyDetected
+                }
+            }
+            actions {
+                aRaiseOccupancyDetected
+            }
+        }
+        new {
+            event = eDetectionComplete
+            guards {
+                new CSM.GuardDescription {
+                    expression = "!\(vOccupancyDetected)"
+                }
+            }
+            actions {
+                aRaiseOccupancyTransient
+            }
+            target = rTransient.name
+        }
+        new {
+            event = eActivateEnergySaving
+            target = rTransient.name
+            actions{
+                new CSM.AssignActionDescription {
+                    variable {
+                        name = vEnergySaving
+                        value = "true"
+                    }
+                }
+                aRaiseOccupancyTransient
+            }
+        }
+    }
+}
+
+local rTransient: CSM.StateDescription = new {
+    name = "transient"
+    entry {
+        new CSM.AssignActionDescription{
+            variable {
+                name = vCurrentOccupancy
+                value = "'transient'"
+                }
+            }
+    }
+    after {
+        new CSM.TimeoutActionDescription {
+            name = "detectOccupancy"
+            delay = "30000"
+            action = aRaiseStartDetectingOccupancy
+        }
+    }
+    on {
+        new {
+            event = eStartDetectingOccupancy
+            actions {
+                new CSM.InvokeActionDescription {
+                    serviceType = stDetectOccupancy
+                    output {
+                        new {
+                            reference = vOccupancyDetected
+                        }
+                    }
+                    done {
+                        new {
+                            name = eDetectionComplete
+                            channel = "internal"
+                        }
+                    }
+                }
+            }
+        }
+        new {
+            event = eDetectionComplete
+            guards {
+                new CSM.GuardDescription {
+                    expression = vOccupancyDetected
+                }
+            }
+            actions {
+                aRaiseOccupancyDetected
+            }
+            target = rOccupied.name
+        }
+        new {
+            event = eDetectionComplete
+            guards {
+                new CSM.GuardDescription {
+                    expression = "!\(vOccupancyDetected)"
+                }
+            }
+            actions {
+                aRaiseOccupancyVacant
+            }
+            target = rVacant.name
+        }
+    }
+}
