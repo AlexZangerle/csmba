@@ -12,7 +12,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/eletrical
 //eletricalSafety is the second pillar for the fire prevention system
 //eletricalSafety detects arc faults across multiple rooms
 //If an arc fault is detected, the location of that arc fault and a warning is published
-electricalSafetySM: CSM.StateMachineDescription = new {
+local electricalSafetySM: CSM.StateMachineDescription = new {
     name = "electricalSafety"
     localContext = electricalSafetyContext
     states{
@@ -24,7 +24,7 @@ electricalSafetySM: CSM.StateMachineDescription = new {
     }
 }
 
-esInit: CSM.StateDescription = new {
+local esInit: CSM.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -35,7 +35,7 @@ esInit: CSM.StateDescription = new {
 }
 //Always starts in monitoring state
 //Invokes service to check for arc faults every 30 seconds
-esMonitoring: CSM.StateDescription = new {
+local esMonitoring: CSM.StateDescription = new {
     name = "monitoring"
     after {
         new CSM.TimeoutActionDescription {
@@ -76,7 +76,7 @@ esMonitoring: CSM.StateDescription = new {
 }
 
 // If an arc fault is detected, invoke service to trip the corresponding circuit breaker
-esArcFault: CSM.StateDescription = new {
+local esArcFault: CSM.StateDescription = new {
     name = "arcFault"
     entry {
         new CSM.InvokeActionDescription {
@@ -105,7 +105,7 @@ esArcFault: CSM.StateDescription = new {
 }
 
 // Invokes Ack Service and transitions back to monitoring state
-esAcknowledged: CSM.StateDescription = new {
+local esAcknowledged: CSM.StateDescription = new {
     name = "acknowledged"
     entry {
         new CSM.InvokeActionDescription {
@@ -119,7 +119,7 @@ esAcknowledged: CSM.StateDescription = new {
     }
 }
 //Testing purposes
-esGas: CSM.StateDescription = new {
+local esGas: CSM.StateDescription = new {
     name = "gas"
     terminal = true
     entry {

@@ -10,7 +10,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccup
 
 // The room occupancy SM contains four states: vacant, occupied transient + and initialization state
 // It also contains a nested state machine to monitor the detection process time
-roomOccupancySM: CSM.StateMachineDescription = new {
+local roomOccupancySM: CSM.StateMachineDescription = new {
     name = "roomOccupancy"
     localContext = Context.occupancyontext
     stateMachines {
@@ -27,7 +27,7 @@ roomOccupancySM: CSM.StateMachineDescription = new {
 // The occupancyMonitor sm monitors the room occupancy SM.
 // It starts a timer when the detection process begins.
 // Should the detection process not finish before the timer runs out, maintenance is required.
-occupancyMonitor: CSM.StateMachineDescription = new {
+local occupancyMonitor: CSM.StateMachineDescription = new {
     name = "OccupancyMonitoring"
     states {
         omInit
@@ -38,7 +38,7 @@ occupancyMonitor: CSM.StateMachineDescription = new {
 }
 
 // Initially the SM will always transition to vacant
-rInit: CSM.StateDescription = new {
+local rInit: CSM.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -49,7 +49,7 @@ rInit: CSM.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-rVacant: CSM.StateDescription = new {
+local rVacant: CSM.StateDescription = new {
     name = "vacant"
     entry {
         new CSM.AssignActionDescription{
@@ -114,7 +114,7 @@ rVacant: CSM.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-rOccupied: CSM.StateDescription = new {
+local rOccupied: CSM.StateDescription = new {
     name = "occupied"
     entry {
         new CSM.AssignActionDescription{
@@ -195,7 +195,7 @@ rOccupied: CSM.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-rTransient: CSM.StateDescription = new {
+local rTransient: CSM.StateDescription = new {
     name = "transient"
     entry {
         new CSM.AssignActionDescription{
@@ -257,6 +257,62 @@ rTransient: CSM.StateDescription = new {
                 Actions.aRaiseOccupancyVacant
             }
             target = rVacant.name
+        }
+    }
+}
+
+local omInit: CSM.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = omIdle.name
+        }
+    }
+}
+
+local omIdle: CSM.StateDescription = new{
+    name = "idle"
+    on {
+        new {
+            event = Events.eStartDetectingOccupancy
+            target = omMonitoring.name
+        }
+    }
+}
+
+local omMonitoring: CSM.StateDescription = new {
+    name = "monitoring"
+    after {
+        new CSM.TimeoutActionDescription {
+            name = "serviceTimeout"
+            delay = "5000"
+            action = Actions.aRaiseMaintenance
+        }
+    }
+    on {
+        new {
+            event = Events.eMaintenanceRequired
+            target = omMaintenance.name
+        }
+        new {
+            event = Events.eDetectionComplete
+            target = omIdle.name
+        }
+    }
+}
+
+local omMaintenance: CSM.StateDescription = new {
+    name = "maintenance"
+    entry {
+        new CSM.InvokeActionDescription {
+            serviceType = ServiceTypes.stMaintenance
+            }
+    }
+    on{
+        new{
+            event = Events.eMaintenanceDone
+            target = omIdle.name
         }
     }
 }

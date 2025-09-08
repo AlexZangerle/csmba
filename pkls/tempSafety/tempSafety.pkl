@@ -12,7 +12,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafet
 //temperatureSafety is one of three SMs that act as fire prevention system
 //temperatureSafety detects temperature of critical equipment in a room
 //If that temperature exceeds a predefined threshold a warning is published.
-temperatureSafetySM: CSM.StateMachineDescription = new {
+local temperatureSafetySM: CSM.StateMachineDescription = new {
     name = "temperatureSafety"
     localContext = Context.fireSafetyContext
     states{
@@ -22,7 +22,7 @@ temperatureSafetySM: CSM.StateMachineDescription = new {
     }
 }
 
-tsInit: CSM.StateDescription = new {
+local tsInit: CSM.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -34,7 +34,7 @@ tsInit: CSM.StateDescription = new {
 // Always starts in normal state
 // Gets current room temperature every 30 seconds
 // Checks temperature against threshold and transitions to highRisk if necessary
-tsNormal: CSM.StateDescription = new {
+local tsNormal: CSM.StateDescription = new {
     name = "normal"
     after {
         new CSM.TimeoutActionDescription {
@@ -80,7 +80,7 @@ tsNormal: CSM.StateDescription = new {
 }
 
 // High risk state invokes the high risk service to publish a warning with the corresponding roomID.
-tsHighRisk: CSM.StateDescription = new {
+local tsHighRisk: CSM.StateDescription = new {
     name = "highRisk"
     entry {
         new CSM.InvokeActionDescription {

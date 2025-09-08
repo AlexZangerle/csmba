@@ -11,7 +11,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/acti
 
 //The fireDetectionSM invokes a service on a timeout to detect fire/smoke.
 // If fire/smoke is detected, transitions to fireAlarm/smokeAlert state and triggers the corresponding action.
-fireDetectionSM: CSM.StateMachineDescription = new{
+local fireDetectionSM: CSM.StateMachineDescription = new{
     name = "fireDetection"
     stateMachines {
     fireDoorSM
@@ -27,7 +27,7 @@ fireDetectionSM: CSM.StateMachineDescription = new{
 
 // The fireDoor SM closes based on fireAlarm events received
 // After the alarm has beend disarmed it opens
-fireDoorSM: CSM.StateMachineDescription = new {
+local fireDoorSM: CSM.StateMachineDescription = new {
     name = "fireDoor"
     states{
         fdInit
@@ -37,7 +37,7 @@ fireDoorSM: CSM.StateMachineDescription = new {
 }
 
 // Always transitions to detecting state
-fInit: CSM.StateDescription = new {
+local fInit: CSM.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -48,7 +48,7 @@ fInit: CSM.StateDescription = new {
 }
 
 // This state invokes the service for fire/smoke detection every 20 seconds
-fDetecting: CSM.StateDescription = new {
+local fDetecting: CSM.StateDescription = new {
     name = "detecting"
     after {
         new CSM.TimeoutActionDescription {
@@ -97,7 +97,7 @@ fDetecting: CSM.StateDescription = new {
 }
 
 //FireAlarm state sets the VFireAlarm variable to true and raises a global fireAlarm event
-fFireAlarm: CSM.StateDescription = new {
+local fFireAlarm: CSM.StateDescription = new {
     name = "fireAlarm"
     entry {
         new CSM.AssignActionDescription {
@@ -125,7 +125,7 @@ fFireAlarm: CSM.StateDescription = new {
 }
 
 //SmokeAlert state sets the vSmokeAlert variable to true and raises a global smokeAlert event
-fSmokeAlert: CSM.StateDescription = new {
+local fSmokeAlert: CSM.StateDescription = new {
     name = "smokeAlert"
     entry {
         new CSM.AssignActionDescription {
@@ -153,7 +153,7 @@ fSmokeAlert: CSM.StateDescription = new {
 }
 
 // Fire door always starts open
-fdInit: CSM.StateDescription = new {
+local fdInit: CSM.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -163,7 +163,7 @@ fdInit: CSM.StateDescription = new {
     }
 }
 
-fdOpen: CSM.StateDescription = new {
+local fdOpen: CSM.StateDescription = new {
     name = "open"
     entry {
         new CSM.InvokeActionDescription {
@@ -179,7 +179,7 @@ fdOpen: CSM.StateDescription = new {
     }
 }
 
-fdClose: CSM.StateDescription = new {
+local fdClose: CSM.StateDescription = new {
     name = "close"
     entry {
         new CSM.InvokeActionDescription {
