@@ -15,7 +15,7 @@ isHotGuard = new CSM.GuardDescription {
 }
 
 isMediumGuard = new CSM.GuardDescription {
-  expression = "\(Vars.vTemperature) >= 15 && \(vTemperature) < 22"
+  expression = "\(Vars.vTemperature) >= 15 && \(Vars.vTemperature) < 22"
 }
 
 isColdGuard = new CSM.GuardDescription {
