@@ -40,23 +40,23 @@ local esMonitoring: CSM.StateDescription = new {
         new CSM.TimeoutActionDescription {
             name = "checkArcFault"
             delay = "30000"
-            action = aRaiseStartArcFaultDetection
+            action = Actions.aRaiseStartArcFaultDetection
         }
     }
     on {
         new {
-            event = eStartArcFaultDetection
+            event = Events.eStartArcFaultDetection
             actions {
                 new CSM.InvokeActionDescription {
-                serviceType = stCheckArcFault
+                serviceType = ServiceTypes.stCheckArcFault
                 output {
                     new {
-                        reference = vArcFaultLocation
+                        reference = Vars.vArcFaultLocation
                     }
                 }
                 done {
                     new {
-                        name = eArcFaultDetectionComplete
+                        name = Events.eArcFaultDetectionComplete
                         channel = "internal"
                     }
                 }
@@ -65,9 +65,9 @@ local esMonitoring: CSM.StateDescription = new {
         }
         // If an arc fault is found, transition to corresponding state
         new {
-            event = eArcFaultDetectionComplete
+            event = Events.eArcFaultDetectionComplete
             guards {
-                foundArcFault
+                Guards.foundArcFault
             }
             target = esArcFault.name
         }
@@ -79,25 +79,25 @@ local esArcFault: CSM.StateDescription = new {
     name = "arcFault"
     entry {
         new CSM.InvokeActionDescription {
-            serviceType = stTripCircuitBreaker
+            serviceType = ServiceTypes.stTripCircuitBreaker
             input {
                 new{
                     name = "arcFaultLocation"
-                    value = vArcFaultLocation
+                    value = Vars.vArcFaultLocation
                 }
             }
         }
-        aRaiseArcFaultDetected
+        Actions.aRaiseArcFaultDetected
     }
     on {
         //Transitions to ack state if eletrical fault has been manually reset
         //Currently gas state for testing purposes until eletrical subsystem is fully operational 
         new {
-            event = eResetElectricalFault
+            event = Events.eResetElectricalFault
             target = esAcknowledged.name
         }
         new {
-            event = eGasLeakDetected
+            event = Events.eGasLeakDetected
             target = esGas.name
         }
     }
@@ -108,7 +108,7 @@ local esAcknowledged: CSM.StateDescription = new {
     name = "acknowledged"
     entry {
         new CSM.InvokeActionDescription {
-            serviceType = stAcknowledgedEletrical
+            serviceType = ServiceTypes.stAcknowledgedEletrical
         }
     }
     always {
@@ -123,7 +123,7 @@ local esGas: CSM.StateDescription = new {
     terminal = true
     entry {
         new CSM.InvokeActionDescription{
-            serviceType = stCutPower
+            serviceType = ServiceTypes.stCutPower
             input {
                 new {
                     name = "gasLeakLocation"
