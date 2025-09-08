@@ -9,13 +9,13 @@ eOccupancyVacant = "eOccupancyVacant"
 /// Raised the first time no occupancy is detected in a previously occupied room
 eOccupancyTransient = "occupancyTransient"
 
-/// Raised the sensor when outside temperature is low 
+/// Raised by the sensor when outside temperature is low 
 eTempLow = "tempLow"
 
-/// Raised the sensor when outside temperature is medium 
+/// Raised by the sensor when outside temperature is medium 
 eTempMedium = "tempMedium"
 
-/// Raised the sensor when outside temperature is high
+/// Raised by the sensor when outside temperature is high
 eTempHigh = "tempHigh"
 
 /// Raised internally to signify the start of occupancy detection
@@ -111,3 +111,4 @@ eGasLeakDetected = "gasLeakDetected"
 /// Raised manually when gas leak has been handled
 
 eGasPurged = "gasPurged"
+
