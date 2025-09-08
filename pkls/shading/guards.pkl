@@ -9,7 +9,7 @@ isLockedGuard = new CSM.GuardDescription {
   expression = "\(Vars.vIsLocked) == false"
 }
 
-// Guards to determine if the current temperature is hot/cold/medium
+// Guards to determine if the current temperature is hot/medium/cold
 isHotGuard = new CSM.GuardDescription {
   expression = "\(Vars.vTemperature) >= 22"
 }
