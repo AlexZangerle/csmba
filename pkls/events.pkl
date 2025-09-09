@@ -129,4 +129,5 @@ eReturnToNormal = "returnToNormal"
 // Raised to initiate more drastic energySaving
 eDrasticEnergySaving = "drasticEnergySaving"
 
+// Raised to check current grid status
 eStartGridCheck = "startGridCheck"

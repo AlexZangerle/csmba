@@ -8,9 +8,11 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyMan
 
 // This module contains the definition for the energyManagement SM
 
-//eletricalSafety is the second part for the fire prevention system
-//eletricalSafety detects arc faults across multiple rooms.
-//If an arc fault is detected, the location of that arc fault and a warning is published
+//This SM contains the states for energyManagement
+//It consists of four states
+// Normal - Grid status is normal and energy cost below threshold
+// Peak - Grid status is normal and energy cost above threshold
+// GridRequestResponse - Grid status is demand responde
 energyManagementSM = new CSM.StateMachineDescription {
     name = "energyManagement"
     localContext = Context.energyManagementContext
@@ -31,8 +33,8 @@ local emInit: CSM.StateDescription = new {
         }
     }
 }
-//Always starts in monitoring state
-//Invokes service to check for arc faults every 30 seconds
+//Always start in normal mode
+//Energy saving deactivated when entering this mode
 local emNormal: CSM.StateDescription = new {
     name = "normal"
     entry{
@@ -49,6 +51,7 @@ local emNormal: CSM.StateDescription = new {
         }
     }
     on {
+        //Invoke energy price server, upon completion invoke gridStatus service
         new {
             event = Events.eStartEnergyCheck
             actions {
@@ -105,7 +108,7 @@ local emNormal: CSM.StateDescription = new {
     }
 }
 
-// If an arc fault is detected, invoke service to trip the corresponding circuit breaker
+// If current energy price is above threshold, throttle consumption
 local emPeak: CSM.StateDescription = new {
     name = "peakDemand"
     entry {
@@ -178,7 +181,7 @@ local emPeak: CSM.StateDescription = new {
     }
 }
 
-// Invokes Ack Service and transitions back to monitoring state
+// When demand response is received, throttle demand more aggressively
 local emGridRequestResponse: CSM.StateDescription = new {
     name = "requestReponse"
     entry {

@@ -3,6 +3,7 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/dev
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 // This module contains all contexts for the energyManagement SM
 
+// Context contains variables for energy price and grid status
 energyManagementContext = new CSM.ContextDescription {
     variables {
         new {

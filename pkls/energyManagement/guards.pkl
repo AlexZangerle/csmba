@@ -4,19 +4,22 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables
 
 // This module contains all guards for energyManagement SM
 
-// Guard to check if arc fault has been detected
+// Guard to check if gridStatus is demandResponse
 gridDemandResponse = new CSM.GuardDescription {
     expression = "\(Vars.vGridStatus) == 'demandResponse'"
 }
 
+// Guard to check if gridStatus is normal
 gridNormal = new CSM.GuardDescription {
     expression = "\(Vars.vGridStatus) == 'normal'"
 }
 
+// Guard to check if current energy price is above maximum
 priceAboveMax = new CSM.GuardDescription {
     expression = "\(Vars.vEnergyPrice) > \(Vars.vMaxEnergyPrice)"
 }
 
+// Guard to check if current energy price is under maximum
 priceUnderMax = new CSM.GuardDescription {
     expression = "\(Vars.vEnergyPrice) <= \(Vars.vMaxEnergyPrice)"
 }

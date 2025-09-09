@@ -2,10 +2,10 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-// This module contains actions for the eletricalSafety SM
+// This module contains actions for the energyManagement SM
 
 
-// Raise to start arc fault detection
+// Raise to deactivate energy saving
 aRaiseDeactiveEnergySaving = new CSM.RaiseActionDescription {
     event {
         name = Events.eDeactivateEnergySaving
@@ -13,8 +13,7 @@ aRaiseDeactiveEnergySaving = new CSM.RaiseActionDescription {
     }
 }
 
-// Raise if an arc fault has been detected 
-// Includes location of arcFault as payload
+// Raise to start detecting energy prices
 aRaiseStartDetectingEnergy = new CSM.RaiseActionDescription {
     event {
         name = Events.eStartEnergyCheck
@@ -22,6 +21,7 @@ aRaiseStartDetectingEnergy = new CSM.RaiseActionDescription {
     }
 }
 
+// Raise to activate energy saving
 aRaiseEnergySaving = new CSM.RaiseActionDescription {
     event {
         name = Events.eActivateEnergySaving
@@ -29,6 +29,7 @@ aRaiseEnergySaving = new CSM.RaiseActionDescription {
     }
 }
 
+// Raise to activate drastic energy saving
 aRaiseDrasticEnergySaving = new CSM.RaiseActionDescription {
     event {
         name = Events.eDrasticEnergySaving
