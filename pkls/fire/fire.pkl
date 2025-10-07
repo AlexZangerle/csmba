@@ -1,4 +1,4 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
@@ -10,7 +10,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/acti
 
 //The fireDetectionSM invokes a service on a timeout to detect fire/smoke.
 // If fire/smoke is detected, transitions to fireAlarm/smokeAlert state and triggers the corresponding action.
-fireDetectionSM = new CSM.StateMachineDescription {
+class fireDetectionSM extends Csml.StateMachineDescription {
     name = "fireDetection"
     stateMachines {
     fireDoorSM
@@ -26,7 +26,7 @@ fireDetectionSM = new CSM.StateMachineDescription {
 
 // The fireDoor SM closes based on fireAlarm events received
 // After the alarm has beend disarmed it opens
-local fireDoorSM: CSM.StateMachineDescription = new {
+local fireDoorSM: Csml.StateMachineDescription = new {
     name = "fireDoor"
     states{
         fdInit
@@ -36,7 +36,7 @@ local fireDoorSM: CSM.StateMachineDescription = new {
 }
 
 // Always transitions to detecting state
-local fInit: CSM.StateDescription = new {
+local fInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -47,10 +47,10 @@ local fInit: CSM.StateDescription = new {
 }
 
 // This state invokes the service for fire/smoke detection every 20 seconds
-local fDetecting: CSM.StateDescription = new {
+local fDetecting: Csml.StateDescription = new {
     name = "detecting"
     after {
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "detectFire"
             delay = "20000"
             action = Actions.aRaiseStartDetectingFire
@@ -60,7 +60,7 @@ local fDetecting: CSM.StateDescription = new {
         new {
             event = Events.eStartDetectingFire
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stDetectFire
                     output {
                         new {
@@ -96,10 +96,10 @@ local fDetecting: CSM.StateDescription = new {
 }
 
 //FireAlarm state sets the VFireAlarm variable to true and raises a global fireAlarm event
-local fFireAlarm: CSM.StateDescription = new {
+local fFireAlarm: Csml.StateDescription = new {
     name = "fireAlarm"
     entry {
-        new CSM.AssignActionDescription {
+        new Csml.AssignActionDescription {
         variable {
             name = Vars.vFireAlarm
             value = "true"
@@ -111,7 +111,7 @@ local fFireAlarm: CSM.StateDescription = new {
         new {
             event = Events.eDisarmFireAlarm
             actions {
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vFireAlarm
                         value = "false"
@@ -124,10 +124,10 @@ local fFireAlarm: CSM.StateDescription = new {
 }
 
 //SmokeAlert state sets the vSmokeAlert variable to true and raises a global smokeAlert event
-local fSmokeAlert: CSM.StateDescription = new {
+local fSmokeAlert: Csml.StateDescription = new {
     name = "smokeAlert"
     entry {
-        new CSM.AssignActionDescription {
+        new Csml.AssignActionDescription {
         variable {
             name = Vars.vSmokeAlert
             value = "true"
@@ -139,7 +139,7 @@ local fSmokeAlert: CSM.StateDescription = new {
         new {
             event = Events.eDisarmSmokeAlert
             actions {
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vSmokeAlert
                         value = "false"
@@ -152,7 +152,7 @@ local fSmokeAlert: CSM.StateDescription = new {
 }
 
 // Fire door always starts open
-local fdInit: CSM.StateDescription = new {
+local fdInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -162,10 +162,10 @@ local fdInit: CSM.StateDescription = new {
     }
 }
 
-local fdOpen: CSM.StateDescription = new {
+local fdOpen: Csml.StateDescription = new {
     name = "open"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
                 serviceType = ServiceTypes.stOpenFireDoor
             }
         }
@@ -178,10 +178,10 @@ local fdOpen: CSM.StateDescription = new {
     }
 }
 
-local fdClose: CSM.StateDescription = new {
+local fdClose: Csml.StateDescription = new {
     name = "close"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
                 serviceType = ServiceTypes.stCloseFireDoor
             }
         }

@@ -1,0 +1,274 @@
+amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/ServiceImplementationBindings.pkl"
+
+bindings {
+    new HttpServiceImplementationDescription {
+    name = "checkArcFault"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/checkArcFault"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "tripCircuitBreaker"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/tripCircuitBreaker"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "electricalFaultAcknowledged"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/ackEletrical"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "cutPower"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/cutPower"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "checkGasLeak"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/checkGasFault"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "closeGasValve"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/closeGasValve"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "gasLeakPurged"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/gasLeakPurged"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "getEnergyPrices"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/getEnergyPrice"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "checkGridStatus"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/checkGridStatus"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "gridNormal"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/normal"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "gridReponse"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/response"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "peak"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/peak"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "detectOccupancyService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/detectOccupancy"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "maintenance"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/maintenance"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "blindsHalfService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/blindsHalf"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "blindsOpenService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/blindsOpen"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "blindCloseService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/blindsClose"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "blindsUserLevelService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/userLevelBlinds"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "turnOnService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/turnOn"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "turnOffService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/turnOff"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "dimService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/dim"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "turnUserLevelService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/userLevelLight"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "detectFireService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/detectFire"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "closeFireDoorService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/closeFireDoor"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "openFireDoorService"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/openFireDoor"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "roomTemp"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/getRoomTemp"
+    method = "POST"
+  }
+  new HttpServiceImplementationDescription {
+    name = "highRisk"
+    cost = 1.0
+    `local` = false
+    scheme = "http"
+    host = "building-service" 
+    port = 8005
+    endPoint = "/highRiskTemp"
+    method = "POST"
+  }
+}

@@ -1,11 +1,11 @@
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 // This module contains actions for the fireDetection SM
 
 
 // Raise to start detecting fire
-aRaiseStartDetectingFire = new CSM.RaiseActionDescription{
+aRaiseStartDetectingFire = new Csml.RaiseActionDescription{
     event {
         name = Events.eStartDetectingFire
         channel = "internal"
@@ -13,14 +13,14 @@ aRaiseStartDetectingFire = new CSM.RaiseActionDescription{
 }
 
 // Raised to trigger fire alarm or smoke alert
-aRaiseFireAlarm = new CSM.RaiseActionDescription{
+aRaiseFireAlarm = new Csml.RaiseActionDescription{
     event {
         name = Events.eFireAlarm
         channel = "global"
     }
 }
 
-aRaiseSmokeAlert = new CSM.RaiseActionDescription {
+aRaiseSmokeAlert = new Csml.RaiseActionDescription {
     event {
         name = Events.eSmokeAlert
         channel = "global"

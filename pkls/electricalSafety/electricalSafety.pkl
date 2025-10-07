@@ -1,4 +1,4 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
@@ -11,7 +11,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electrica
 //eletricalSafety is the second part for the fire prevention system
 //eletricalSafety detects arc faults across multiple rooms.
 //If an arc fault is detected, the location of that arc fault and a warning is published
-electricalSafetySM = new CSM.StateMachineDescription {
+class electricalSafetySM extends Csml.StateMachineDescription {
     name = "electricalSafety"
     localContext = Context.electricalSafetyContext
     states{
@@ -23,7 +23,7 @@ electricalSafetySM = new CSM.StateMachineDescription {
     }
 }
 
-local esInit: CSM.StateDescription = new {
+local esInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -34,10 +34,10 @@ local esInit: CSM.StateDescription = new {
 }
 //Always starts in monitoring state
 //Invokes service to check for arc faults every 30 seconds
-local esMonitoring: CSM.StateDescription = new {
+local esMonitoring: Csml.StateDescription = new {
     name = "monitoring"
     after {
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "checkArcFault"
             delay = "30000"
             action = Actions.aRaiseStartArcFaultDetection
@@ -47,7 +47,7 @@ local esMonitoring: CSM.StateDescription = new {
         new {
             event = Events.eStartArcFaultDetection
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                 serviceType = ServiceTypes.stCheckArcFault
                 output {
                     new {
@@ -75,10 +75,10 @@ local esMonitoring: CSM.StateDescription = new {
 }
 
 // If an arc fault is detected, invoke service to trip the corresponding circuit breaker
-local esArcFault: CSM.StateDescription = new {
+local esArcFault: Csml.StateDescription = new {
     name = "arcFault"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stTripCircuitBreaker
             input {
                 new{
@@ -104,10 +104,10 @@ local esArcFault: CSM.StateDescription = new {
 }
 
 // Invokes Ack Service and transitions back to monitoring state
-local esAcknowledged: CSM.StateDescription = new {
+local esAcknowledged: Csml.StateDescription = new {
     name = "acknowledged"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stAcknowledgedEletrical
         }
     }
@@ -118,11 +118,11 @@ local esAcknowledged: CSM.StateDescription = new {
     }
 }
 //Testing purposes
-local esGas: CSM.StateDescription = new {
+local esGas: Csml.StateDescription = new {
     name = "gas"
     terminal = true
     entry {
-        new CSM.InvokeActionDescription{
+        new Csml.InvokeActionDescription{
             serviceType = ServiceTypes.stCutPower
             input {
                 new {

@@ -1,4 +1,4 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
@@ -11,7 +11,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/c
 // The shading SM contains six states:
 // half, open, close, userLevel, emergency + an initialization state
 // The state transitions are controlled by outside temperature detection, except for userLevel, which is determined by the user
-shadingSM = new CSM.StateMachineDescription {
+class shadingSM extends Csml.StateMachineDescription {
     name = "shading"
     localContext = Context.blindLockContext
     states {
@@ -24,7 +24,7 @@ shadingSM = new CSM.StateMachineDescription {
     }
 }
 
-local sInit: CSM.StateDescription = new {
+local sInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -34,10 +34,10 @@ local sInit: CSM.StateDescription = new {
     }
 }
 // Initially the SM always transitions to half
-local sHalf: CSM.StateDescription = new {
+local sHalf: Csml.StateDescription = new {
     name = "half"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stBlindsHalf
         }
     }
@@ -51,7 +51,7 @@ local sHalf: CSM.StateDescription = new {
             }
             target = sOpen.name
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -66,7 +66,7 @@ local sHalf: CSM.StateDescription = new {
             }
             target = sClose.name
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -104,10 +104,10 @@ local sHalf: CSM.StateDescription = new {
 }
 
 // Blinds open when temperature is low
-local sOpen: CSM.StateDescription = new {
+local sOpen: Csml.StateDescription = new {
     name = "open"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stBlindsOpen
         }
     }
@@ -121,7 +121,7 @@ local sOpen: CSM.StateDescription = new {
             }
             target = sHalf.name
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -136,7 +136,7 @@ local sOpen: CSM.StateDescription = new {
             }
             target = sClose.name
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -172,10 +172,10 @@ local sOpen: CSM.StateDescription = new {
 }
 
 // Blinds close when temperature is high
-local sClose: CSM.StateDescription = new {
+local sClose: Csml.StateDescription = new {
     name = "close"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stBlindsClose
         }
     }
@@ -189,7 +189,7 @@ local sClose: CSM.StateDescription = new {
             }
             target = sHalf.name
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -204,7 +204,7 @@ local sClose: CSM.StateDescription = new {
             }
             target = sOpen.name
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -244,7 +244,7 @@ local sClose: CSM.StateDescription = new {
 // Blinds open to manual user level
 // Manual level can be saved between outwards transitions and eventual re-entry.
 // If user level event with level -1 is received, previous manual level will be used. 
-local sUserLevel: CSM.StateDescription = new {
+local sUserLevel: Csml.StateDescription = new {
     name = "userLevel"
     staticContext {
         variables{
@@ -252,13 +252,13 @@ local sUserLevel: CSM.StateDescription = new {
         }
     }
     entry {
-        new CSM.AssignActionDescription {
+        new Csml.AssignActionDescription {
         variable {
             name = Vars.vUserBlindLevel.name
             value = "if ($blindLevel != -1) $blindLevel else blindLevel"
         }
     }
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stBlindsUserLevel
             input {
                 new {
@@ -273,7 +273,7 @@ local sUserLevel: CSM.StateDescription = new {
         new {
             event = Events.eTempLow
             actions{
-                new CSM.AssignActionDescription{
+                new Csml.AssignActionDescription{
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -284,7 +284,7 @@ local sUserLevel: CSM.StateDescription = new {
         new {
             event = Events.eTempMedium
             actions {
-                new CSM.AssignActionDescription{
+                new Csml.AssignActionDescription{
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -295,7 +295,7 @@ local sUserLevel: CSM.StateDescription = new {
         new {
             event = Events.eTempHigh
             actions{
-                new CSM.AssignActionDescription{
+                new Csml.AssignActionDescription{
                     variable {
                         name = Vars.vTemperature
                         value = "$temp"
@@ -351,10 +351,10 @@ local sUserLevel: CSM.StateDescription = new {
 
 // Emergency state is entered once smoke or fire alarm is triggered
 // Blinds completely open until manual disarming of the alarm
-local sEmergency: CSM.StateDescription = new {
+local sEmergency: Csml.StateDescription = new {
     name = "emergency"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stBlindsUserLevel
             input {
                 new {

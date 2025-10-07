@@ -1,31 +1,31 @@
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 
 // This module contains all guards for shading SM
 
 // Guard to check if blinds are locked
-isLockedGuard = new CSM.GuardDescription {
+isLockedGuard = new Csml.GuardDescription {
   expression = "\(Vars.vIsLocked) == false"
 }
 
 // Guards to determine if the current temperature is hot/medium/cold
-isHotGuard = new CSM.GuardDescription {
+isHotGuard = new Csml.GuardDescription {
   expression = "\(Vars.vTemperature) >= 22"
 }
 
-isMediumGuard = new CSM.GuardDescription {
+isMediumGuard = new Csml.GuardDescription {
   expression = "\(Vars.vTemperature) >= 15 && \(Vars.vTemperature) < 22"
 }
 
-isColdGuard = new CSM.GuardDescription {
+isColdGuard = new Csml.GuardDescription {
   expression = "\(Vars.vTemperature) < 15"
 }
 // Guards to determine if there currently is a fire alarm / smoke alert
-noFireAlarm = new CSM.GuardDescription {
+noFireAlarm = new Csml.GuardDescription {
     expression  = "!\(Vars.vFireAlarm)"
 }
 
-noSmokeAlert = new CSM.GuardDescription {
+noSmokeAlert = new Csml.GuardDescription {
     expression = "!\(Vars.vSmokeAlert)"
 }

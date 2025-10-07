@@ -1,4 +1,4 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
@@ -13,7 +13,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyMan
 // Normal - Grid status is normal and energy cost below threshold
 // Peak - Grid status is normal and energy cost above threshold
 // GridRequestResponse - Grid status is demand responde
-energyManagementSM = new CSM.StateMachineDescription {
+class energyManagementSM extends Csml.StateMachineDescription {
     name = "energyManagement"
     localContext = Context.energyManagementContext
     states{
@@ -24,7 +24,7 @@ energyManagementSM = new CSM.StateMachineDescription {
     }
 }
 
-local emInit: CSM.StateDescription = new {
+local emInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -35,16 +35,16 @@ local emInit: CSM.StateDescription = new {
 }
 //Always start in normal mode
 //Energy saving deactivated when entering this mode
-local emNormal: CSM.StateDescription = new {
+local emNormal: Csml.StateDescription = new {
     name = "normal"
     entry{
         Actions.aRaiseDeactiveEnergySaving
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stGridNormal
                 }
     }
     after{
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "energyCheck"
             delay = "30000"
             action = Actions.aRaiseStartDetectingEnergy
@@ -55,7 +55,7 @@ local emNormal: CSM.StateDescription = new {
         new {
             event = Events.eStartEnergyCheck
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stGetEnergyPrice
                     output {
                         new {
@@ -74,7 +74,7 @@ local emNormal: CSM.StateDescription = new {
         new {
             event = Events.eStartGridCheck
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stCheckGridStatus
                     output {
                         new {
@@ -109,16 +109,16 @@ local emNormal: CSM.StateDescription = new {
 }
 
 // If current energy price is above threshold, throttle consumption
-local emPeak: CSM.StateDescription = new {
+local emPeak: Csml.StateDescription = new {
     name = "peakDemand"
     entry {
         Actions.aRaiseEnergySaving
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stPeak
                 }
     }
     after{
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "energyCheck"
             delay = "30000"
             action = Actions.aRaiseStartDetectingEnergy
@@ -128,7 +128,7 @@ local emPeak: CSM.StateDescription = new {
         new {
             event = Events.eStartEnergyCheck
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stGetEnergyPrice
                     output {
                         new {
@@ -147,7 +147,7 @@ local emPeak: CSM.StateDescription = new {
         new {
             event = Events.eStartGridCheck
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stCheckGridStatus
                     output {
                         new {
@@ -182,16 +182,16 @@ local emPeak: CSM.StateDescription = new {
 }
 
 // When demand response is received, throttle demand more aggressively
-local emGridRequestResponse: CSM.StateDescription = new {
+local emGridRequestResponse: Csml.StateDescription = new {
     name = "requestReponse"
     entry {
         Actions.aRaiseDrasticEnergySaving
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stGridResponse
                 }
     }
     after{
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "energyCheck"
             delay = "30000"
             action = Actions.aRaiseStartDetectingEnergy
@@ -201,7 +201,7 @@ local emGridRequestResponse: CSM.StateDescription = new {
         new {
             event = Events.eStartEnergyCheck
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stGetEnergyPrice
                     output {
                         new {
@@ -220,7 +220,7 @@ local emGridRequestResponse: CSM.StateDescription = new {
         new {
             event = Events.eStartGridCheck
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stCheckGridStatus
                     output {
                         new {

@@ -1,6 +1,6 @@
-amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl"
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/*.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl?v=1" as Vars
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electricalSafety/electricalSafety.pkl" as electricalSafety
@@ -54,6 +54,10 @@ persistentContext {
     new {
       name = Vars.vMaxEnergyPrice
       value = "'45.0'"
+    }
+    new {
+      name = Vars.desiredTemp
+      value = "'21.0'"
     }
   }
 }

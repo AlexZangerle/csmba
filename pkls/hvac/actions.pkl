@@ -6,9 +6,9 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables
 
 
 // Raise to start arc fault detection
-aRaiseStartArcFaultDetection = new Csml.RaiseActionDescription {
+aRaiseIndoorTempCheck = new Csml.RaiseActionDescription {
     event {
-        name = Events.eStartArcFaultDetection
+        name = Events.eStartIndoorTempCheck
         channel = "internal"
     }
 }

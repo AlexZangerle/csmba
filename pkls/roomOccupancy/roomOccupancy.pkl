@@ -1,4 +1,4 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
@@ -9,7 +9,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccup
 
 // The room occupancy SM contains four states: vacant, occupied transient + and initialization state
 // It also contains a nested state machine to monitor the detection process time
-roomOccupancySM = new CSM.StateMachineDescription {
+class roomOccupancySM extends Csml.StateMachineDescription {
     name = "roomOccupancy"
     localContext = Context.occupancyLocalContext
     stateMachines {
@@ -26,7 +26,7 @@ roomOccupancySM = new CSM.StateMachineDescription {
 // The occupancyMonitor sm monitors the room occupancy SM.
 // It starts a timer when the detection process begins.
 // Should the detection process not finish before the timer runs out, maintenance is required.
-local occupancyMonitor: CSM.StateMachineDescription = new {
+class occupancyMonitor extends Csml.StateMachineDescription {
     name = "OccupancyMonitoring"
     states {
         omInit
@@ -37,7 +37,7 @@ local occupancyMonitor: CSM.StateMachineDescription = new {
 }
 
 // Initially the SM will always transition to vacant
-local rInit: CSM.StateDescription = new {
+local rInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -48,10 +48,10 @@ local rInit: CSM.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-local rVacant: CSM.StateDescription = new {
+local rVacant: Csml.StateDescription = new {
     name = "vacant"
     entry {
-        new CSM.AssignActionDescription{
+        new Csml.AssignActionDescription{
             variable {
                 name = Vars.vCurrentOccupancy
                 value = "'vacant'"
@@ -59,7 +59,7 @@ local rVacant: CSM.StateDescription = new {
             }
     }
     after {
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "detectOccupancy"
             delay = "30000"
             action = Actions.aRaiseStartDetectingOccupancy
@@ -69,7 +69,7 @@ local rVacant: CSM.StateDescription = new {
         new {
             event = Events.eStartDetectingOccupancy
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stDetectOccupancy
                     output {
                         new {
@@ -89,7 +89,7 @@ local rVacant: CSM.StateDescription = new {
         new {
             event = Events.eDetectionComplete
             guards {
-                new CSM.GuardDescription {
+                new Csml.GuardDescription {
                     expression = Vars.vOccupancyDetected
                 }
             }
@@ -101,7 +101,7 @@ local rVacant: CSM.StateDescription = new {
         new {
             event = Events.eDetectionComplete
             guards {
-                new CSM.GuardDescription {
+                new Csml.GuardDescription {
                     expression = "!\(Vars.vOccupancyDetected)"
                 }
             }
@@ -113,10 +113,10 @@ local rVacant: CSM.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-local rOccupied: CSM.StateDescription = new {
+local rOccupied: Csml.StateDescription = new {
     name = "occupied"
     entry {
-        new CSM.AssignActionDescription{
+        new Csml.AssignActionDescription{
             variable {
                 name = Vars.vCurrentOccupancy
                 value = "'occupied'"
@@ -124,7 +124,7 @@ local rOccupied: CSM.StateDescription = new {
             }
     }
     after {
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "detectOccupancy"
             delay = "30000"
             action = Actions.aRaiseStartDetectingOccupancy
@@ -134,7 +134,7 @@ local rOccupied: CSM.StateDescription = new {
         new {
             event = Events.eStartDetectingOccupancy
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stDetectOccupancy
                     output {
                         new {
@@ -153,7 +153,7 @@ local rOccupied: CSM.StateDescription = new {
         new {
             event = Events.eDetectionComplete
             guards {
-                new CSM.GuardDescription {
+                new Csml.GuardDescription {
                     expression = Vars.vOccupancyDetected
                 }
             }
@@ -166,7 +166,7 @@ local rOccupied: CSM.StateDescription = new {
         new {
             event = Events.eDetectionComplete
             guards {
-                new CSM.GuardDescription {
+                new Csml.GuardDescription {
                     expression = "!\(Vars.vOccupancyDetected)"
                 }
             }
@@ -181,7 +181,7 @@ local rOccupied: CSM.StateDescription = new {
             event = Events.eActivateEnergySaving
             target = rTransient.name
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vEnergySaving
                         value = "true"
@@ -194,10 +194,10 @@ local rOccupied: CSM.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-local rTransient: CSM.StateDescription = new {
+local rTransient: Csml.StateDescription = new {
     name = "transient"
     entry {
-        new CSM.AssignActionDescription{
+        new Csml.AssignActionDescription{
             variable {
                 name = Vars.vCurrentOccupancy
                 value = "'transient'"
@@ -205,7 +205,7 @@ local rTransient: CSM.StateDescription = new {
             }
     }
     after {
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "detectOccupancy"
             delay = "30000"
             action = Actions.aRaiseStartDetectingOccupancy
@@ -215,7 +215,7 @@ local rTransient: CSM.StateDescription = new {
         new {
             event = Events.eStartDetectingOccupancy
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                     serviceType = ServiceTypes.stDetectOccupancy
                     output {
                         new {
@@ -236,7 +236,7 @@ local rTransient: CSM.StateDescription = new {
         new {
             event = Events.eDetectionComplete
             guards {
-                new CSM.GuardDescription {
+                new Csml.GuardDescription {
                     expression = Vars.vOccupancyDetected
                 }
             }
@@ -248,7 +248,7 @@ local rTransient: CSM.StateDescription = new {
         new {
             event = Events.eDetectionComplete
             guards {
-                new CSM.GuardDescription {
+                new Csml.GuardDescription {
                     expression = "!\(Vars.vOccupancyDetected)"
                 }
             }
@@ -260,7 +260,7 @@ local rTransient: CSM.StateDescription = new {
     }
 }
 
-local omInit: CSM.StateDescription = new {
+local omInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -270,7 +270,7 @@ local omInit: CSM.StateDescription = new {
     }
 }
 
-local omIdle: CSM.StateDescription = new{
+local omIdle: Csml.StateDescription = new{
     name = "idle"
     on {
         new {
@@ -280,10 +280,10 @@ local omIdle: CSM.StateDescription = new{
     }
 }
 
-local omMonitoring: CSM.StateDescription = new {
+local omMonitoring: Csml.StateDescription = new {
     name = "monitoring"
     after {
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "serviceTimeout"
             delay = "5000"
             action = Actions.aRaiseMaintenance
@@ -301,10 +301,10 @@ local omMonitoring: CSM.StateDescription = new {
     }
 }
 
-local omMaintenance: CSM.StateDescription = new {
+local omMaintenance: Csml.StateDescription = new {
     name = "maintenance"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stMaintenance
             }
     }

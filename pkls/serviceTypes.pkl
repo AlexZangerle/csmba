@@ -73,5 +73,13 @@ stGetEnergyPrice = "getEnergyPrices"
 stCheckGridStatus = "checkGridStatus"
 
 stGridNormal = "gridNormal"
+
 stGridResponse = "gridReponse"
+
 stPeak = "peak"
+
+// Service to get the current indoor temperature for room
+stGetIndoorTemp = "getIndoorTemp"
+
+// Service to set HVAC services 
+stSetHVAC = "setHVAC"

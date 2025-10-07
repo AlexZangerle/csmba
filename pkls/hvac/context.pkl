@@ -1,13 +1,13 @@
 
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-// This module contains all contexts for the eletricalSafety SM
+// This module contains all contexts for the hvac SM
 
-electricalSafetyContext = new Csml.ContextDescription {
+hvacContext = new Csml.ContextDescription {
     variables {
         new {
-            name = Vars.vArcFaultLocation
-            value = "'none'"
+            name = Vars.vIndoorTemp
+            value = "'21.0'"
         }
     }
 }

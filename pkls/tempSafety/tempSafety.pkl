@@ -1,4 +1,4 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
@@ -11,7 +11,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafet
 //temperatureSafety is one of three SMs that act as fire prevention system
 //temperatureSafety detects temperature of critical equipment in a room
 //If that temperature exceeds a predefined threshold a warning is published.
-temperatureSafetySM = new CSM.StateMachineDescription {
+class temperatureSafetySM extends Csml.StateMachineDescription {
     name = "temperatureSafety"
     localContext = Context.fireSafetyContext
     states{
@@ -21,7 +21,7 @@ temperatureSafetySM = new CSM.StateMachineDescription {
     }
 }
 
-local tsInit: CSM.StateDescription = new {
+local tsInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -33,10 +33,10 @@ local tsInit: CSM.StateDescription = new {
 // Always starts in normal state
 // Gets current room temperature every 30 seconds
 // Checks temperature against threshold and transitions to highRisk if necessary
-local tsNormal: CSM.StateDescription = new {
+local tsNormal: Csml.StateDescription = new {
     name = "normal"
     after {
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "pullRoomTemp"
             delay = "30000"
             action = Actions.aRaiseGetRoomTemp
@@ -53,7 +53,7 @@ local tsNormal: CSM.StateDescription = new {
         new {
             event = Events.eStartTempReading
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                 serviceType = ServiceTypes.stTempSafety
                 input {
                     new {
@@ -79,10 +79,10 @@ local tsNormal: CSM.StateDescription = new {
 }
 
 // High risk state invokes the high risk service to publish a warning with the corresponding roomID.
-local tsHighRisk: CSM.StateDescription = new {
+local tsHighRisk: Csml.StateDescription = new {
     name = "highRisk"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
                 serviceType = ServiceTypes.stTempHighRisk
                 input {
                     new {

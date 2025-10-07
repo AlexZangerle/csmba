@@ -1,9 +1,9 @@
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 // This module contains all contexts for the fireSafety SM
 
-fireSafetyContext = new CSM.ContextDescription {
+fireSafetyContext = new Csml.ContextDescription {
     variables {
         Vars.vRoomId
         new {

@@ -1,4 +1,4 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
@@ -9,7 +9,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/
 // The lighting SM contains five states:
 // On, Off, Dim, UserLevel + an initialization state
 // The state transitions are controlled by occupancy detection, except for userLevel, which is determined by the user
-lightingSM = new CSM.StateMachineDescription {
+class lightingSM extends Csml.StateMachineDescription {
     name = "lighting"
     states {
         lInit
@@ -21,7 +21,7 @@ lightingSM = new CSM.StateMachineDescription {
 }
 
 // Initially always transitions to off
-local lInit: CSM.StateDescription = new {
+local lInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -32,10 +32,10 @@ local lInit: CSM.StateDescription = new {
 }
 
 // Lights off - no occupancy detected
-local lOff: CSM.StateDescription = new {
+local lOff: Csml.StateDescription = new {
     name = "off"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stTurnOff
         }
     }
@@ -62,7 +62,7 @@ local lOff: CSM.StateDescription = new {
         new {
             event = Events.eActivateEnergySaving
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vEnergySaving
                         value = "true"
@@ -73,7 +73,7 @@ local lOff: CSM.StateDescription = new {
         new {
             event = Events.eDeactivateEnergySaving
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vEnergySaving
                         value = "false"
@@ -85,10 +85,10 @@ local lOff: CSM.StateDescription = new {
 }
 
 // Lights on - occupancy detected
-local lOn: CSM.StateDescription = new {
+local lOn: Csml.StateDescription = new {
     name = "on"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stTurnOn
         }
     }
@@ -105,10 +105,10 @@ local lOn: CSM.StateDescription = new {
 }
 
 // Lights dim - vacancy grace period
-local lDim: CSM.StateDescription = new {
+local lDim: Csml.StateDescription = new {
     name = "dim"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stDim
         }
     }
@@ -131,7 +131,7 @@ local lDim: CSM.StateDescription = new {
         new {
             event = Events.eActivateEnergySaving
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vEnergySaving
                         value = "true"
@@ -142,7 +142,7 @@ local lDim: CSM.StateDescription = new {
         new {
             event = Events.eDeactivateEnergySaving
             actions{
-                new CSM.AssignActionDescription {
+                new Csml.AssignActionDescription {
                     variable {
                         name = Vars.vEnergySaving
                         value = "false"
@@ -154,7 +154,7 @@ local lDim: CSM.StateDescription = new {
 }
 
 // Lights at manual level - lights are set to manual level, and dont change depending on occupancy anymore
-local lUserLevel: CSM.StateDescription = new {
+local lUserLevel: Csml.StateDescription = new {
     name = "userLevel"
     staticContext {
         variables{
@@ -162,13 +162,13 @@ local lUserLevel: CSM.StateDescription = new {
         }
     }
     entry {
-        new CSM.AssignActionDescription {
+        new Csml.AssignActionDescription {
             variable {
                 name = Vars.vUserLightLevel.name
                 value = "if ($lightLevel != -1) $lightLevel else lightLevel"
             } 
         }
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stTurnUserLevel
             input {
                 new {

@@ -1,10 +1,10 @@
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 // This module contains actions for the room occupancy SM
 
 // Raise action to start detecting occupancy
-aRaiseStartDetectingOccupancy = new CSM.RaiseActionDescription {
+aRaiseStartDetectingOccupancy = new Csml.RaiseActionDescription {
     event {
         name = Events.eStartDetectingOccupancy
         channel = "internal"
@@ -12,7 +12,7 @@ aRaiseStartDetectingOccupancy = new CSM.RaiseActionDescription {
 }
 
 // Raise action when occupancy detection results in occupied
-aRaiseOccupancyDetected = new CSM.RaiseActionDescription {
+aRaiseOccupancyDetected = new Csml.RaiseActionDescription {
     event {
         name = Events.eOccupancyDetected
         channel = "global"
@@ -20,7 +20,7 @@ aRaiseOccupancyDetected = new CSM.RaiseActionDescription {
 }
 
 // Raise action when occupancy detection results in vacant
-aRaiseOccupancyVacant = new CSM.RaiseActionDescription {
+aRaiseOccupancyVacant = new Csml.RaiseActionDescription {
     event {
         name = Events.eOccupancyVacant
         channel = "global"
@@ -28,7 +28,7 @@ aRaiseOccupancyVacant = new CSM.RaiseActionDescription {
 }
 
 // Raise action when occupancy detection results in transient
-aRaiseOccupancyTransient = new CSM.RaiseActionDescription {
+aRaiseOccupancyTransient = new Csml.RaiseActionDescription {
     event {
         name = Events.eOccupancyTransient
         channel = "global"
@@ -36,7 +36,7 @@ aRaiseOccupancyTransient = new CSM.RaiseActionDescription {
 }
 
 // Raise action when occupancy detection took unusually long
-aRaiseMaintenance = new CSM.RaiseActionDescription {
+aRaiseMaintenance = new Csml.RaiseActionDescription {
     event {
         name = Events.eMaintenanceRequired
         channel = "global"

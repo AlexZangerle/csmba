@@ -1,4 +1,4 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
@@ -11,7 +11,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety
 //gasSafety is the third part of the fire prevention system
 //gasSafety detects gas leak across multiple rooms
 //If a gas leak is detected, the location of that gas leak and a warning is published
-gasSafetySM = new CSM.StateMachineDescription {
+class gasSafetySM extends Csml.StateMachineDescription {
     name = "gasSafety"
     localContext = Context.gasSafetyContext
     states {
@@ -22,7 +22,7 @@ gasSafetySM = new CSM.StateMachineDescription {
     }
 }
 
-local gsInit: CSM.StateDescription = new {
+local gsInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -34,10 +34,10 @@ local gsInit: CSM.StateDescription = new {
 
 // Always starts in monitoring state
 // Invokes gas detection service every 30 seconds
-local gsMonitoring: CSM.StateDescription = new {
+local gsMonitoring: Csml.StateDescription = new {
     name = "monitoring"
     after {
-        new CSM.TimeoutActionDescription {
+        new Csml.TimeoutActionDescription {
             name = "checkGasLeak"
             delay = "30000"
             action = Actions.aRaiseStartGasLeakDetection
@@ -47,7 +47,7 @@ local gsMonitoring: CSM.StateDescription = new {
         new {
             event = Events.eStartGasLeakDetection
             actions {
-                new CSM.InvokeActionDescription {
+                new Csml.InvokeActionDescription {
                 serviceType = ServiceTypes.stCheckGasLeak
                 output {
                     new {
@@ -75,10 +75,10 @@ local gsMonitoring: CSM.StateDescription = new {
 }
 
 // Invokes close valve service and raises global gas leak event
-local gsGasLeak: CSM.StateDescription = new {
+local gsGasLeak: Csml.StateDescription = new {
     name = "gasLeak"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stCloseGasValve
             input {
                 new {
@@ -97,10 +97,10 @@ local gsGasLeak: CSM.StateDescription = new {
     }
 }
 
-local gsAcknowledged: CSM.StateDescription = new {
+local gsAcknowledged: Csml.StateDescription = new {
     name = "acknowledged"
     entry {
-        new CSM.InvokeActionDescription {
+        new Csml.InvokeActionDescription {
             serviceType = ServiceTypes.stGasLeakPurged
         }
     }

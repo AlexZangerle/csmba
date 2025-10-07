@@ -1,5 +1,5 @@
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/develop/src/main/resources/pkl/CollaborativeStateMachineDescription.pkl" as CSM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 // This module contains all variable definitions for the CSM BMS
 
 // Variable containing if occupancy has been detected (Boolean)
@@ -18,13 +18,13 @@ vEnergySaving = "energySaving"
 vCurrentOccupancy = "currentOccupancy"
 
 // Variable containing the light level set by user (int - 0-100)
-vUserLightLevel = new CSM.ContextVariableDescription {
+vUserLightLevel = new Csml.ContextVariableDescription {
             name = "lightLevel"
             value = "'0'"
 }
 
 // Variable containing the blind level set by user (int - 0-100)
-vUserBlindLevel = new CSM.ContextVariableDescription {
+vUserBlindLevel = new Csml.ContextVariableDescription {
                 name = "blindLevel"
                 value = "'0'"
             }
@@ -42,7 +42,7 @@ vSmokeAlert = "smokeAlert"
 vTempThreshold = "tempThreshold"
 
 // Variable containing the current roomID (int)
-vRoomId = new CSM.ContextVariableDescription {
+vRoomId = new Csml.ContextVariableDescription {
                 name = "roomId"
                 value = "'0'"
             }
@@ -64,3 +64,7 @@ vMaxEnergyPrice = "maxEnergyPrice"
 
 // Variable containing the current status of the grid
 vGridStatus = "gridStatus"
+
+vIndoorTemp = "indoorTemp"
+
+vDesiredTemp = "desiredTemp"

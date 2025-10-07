@@ -1,0 +1,238 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/actions.pkl" as Actions
+
+// This module contains the definition for the hvac SM
+
+
+class hvacSM extends Csml.StateMachineDescription {
+    name = "hvac"
+    localContext = Context.hvacContext
+    states{
+        hInit
+        hOff
+        hFanOnly
+        hHeating
+        hCooling
+    }
+}
+
+local hInit: Csml.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = hOff.name
+        }
+    }
+}
+//Always starts in monitoring state
+//Invokes service to check for arc faults every 30 seconds
+local hOff: Csml.StateDescription = new {
+    name = "off"
+    on {
+        new {
+            event = Events.eOccupancyDetected
+            target = hFanOnly.name
+        }
+    }
+    
+}
+
+// If an arc fault is detected, invoke service to trip the corresponding circuit breaker
+local hFanOnly: Csml.StateDescription = new {
+    name = "fanOnly"
+    entry {
+        new Csml.InvokeActionDescription {
+            serviceType = ServiceTypes.stSetHVAC
+            input {
+                new{
+                    name = "mode"
+                    value = "'fan'"
+                }
+            }
+        }
+        Actions.aRaiseIndoorTempCheck
+    }
+    after {
+        new Csml.TimeoutActionDescription {
+            name = "periodicTempCheck"
+            delay = "20000"
+            action = aRaiseIndoorTempCheck
+        }
+    }
+    on {
+        //Transitions to ack state if eletrical fault has been manually reset
+        //Currently gas state for testing purposes until eletrical subsystem is fully operational 
+        new {
+            event = Events.eStartIndoorTempCheck
+            actions {
+                new Csml.InvokeActionDescription {
+                serviceType = ServiceTypes.stSetHVAC
+                output {
+                    new{
+                        reference = Vars.vIndoorTemp
+                    }
+                    }
+                }
+            }
+            done {
+                new {
+                    name = Events.eIndoorTempCheckComplete
+                    channel = "internal"
+                }
+            }
+        }
+        new {
+            event = Events.eIndoorTempCheckComplete
+            guards{
+                Guards.roomToCold
+            }
+            target = hHeating.name
+        }
+        new {
+            event = Events.eIndoorTempCheckComplete
+            guards{
+                Guards.roomToHot
+            }
+            target = hCooling.name
+        }
+        new {
+            event = Events.eOccupancyVacant
+            target = hOff.name
+        }
+    }
+}
+
+// Invokes Ack Service and transitions back to monitoring state
+local hHeating: Csml.StateDescription = new {
+    name = "heating"
+    entry {
+        new Csml.InvokeActionDescription {
+            serviceType = ServiceTypes.stSetHVAC
+            input {
+                new{
+                    name = "mode"
+                    value = "'heat'"
+                }
+            }
+        }
+        Actions.aRaiseIndoorTempCheck
+    }
+    after {
+        new Csml.TimeoutActionDescription {
+            name = "periodicTempCheck"
+            delay = "20000"
+            action = aRaiseIndoorTempCheck
+        }
+    }
+    on {
+        //Transitions to ack state if eletrical fault has been manually reset
+        //Currently gas state for testing purposes until eletrical subsystem is fully operational 
+        new {
+            event = Events.eStartIndoorTempCheck
+            actions {
+                new Csml.InvokeActionDescription {
+                serviceType = ServiceTypes.stSetHVAC
+                output {
+                    new{
+                        reference = Vars.vIndoorTemp
+                    }
+                    }
+                }
+            }
+            done {
+                new {
+                    name = Events.eIndoorTempCheckComplete
+                    channel = "internal"
+                }
+            }
+        }
+        new {
+            event = Events.eIndoorTempCheckComplete
+            guards{
+                Guards.roomComfortable
+            }
+            target = hFanOnly.name
+        }
+        new {
+            event = Events.eIndoorTempCheckComplete
+            guards{
+                Guards.roomToHot
+            }
+            target = hCooling.name
+        }
+        new {
+            event = Events.eOccupancyVacant
+            target = hOff.name
+        }
+    }
+}
+//Testing purposes
+local hCooling: Csml.StateDescription = new {
+    name = "cooling"
+    entry {
+        new Csml.InvokeActionDescription {
+            serviceType = ServiceTypes.stSetHVAC
+            input {
+                new{
+                    name = "mode"
+                    value = "'cool'"
+                }
+            }
+        }
+        Actions.aRaiseIndoorTempCheck
+    }
+    after {
+        new Csml.TimeoutActionDescription {
+            name = "periodicTempCheck"
+            delay = "20000"
+            action = aRaiseIndoorTempCheck
+        }
+    }
+    on {
+        //Transitions to ack state if eletrical fault has been manually reset
+        //Currently gas state for testing purposes until eletrical subsystem is fully operational 
+        new {
+            event = Events.eStartIndoorTempCheck
+            actions {
+                new Csml.InvokeActionDescription {
+                serviceType = ServiceTypes.stSetHVAC
+                output {
+                    new{
+                        reference = Vars.vIndoorTemp
+                    }
+                    }
+                }
+            }
+            done {
+                new {
+                    name = Events.eIndoorTempCheckComplete
+                    channel = "internal"
+                }
+            }
+        }
+        new {
+            event = Events.eIndoorTempCheckComplete
+            guards{
+                Guards.roomComfortable
+            }
+            target = hFanOnly.name
+        }
+        new {
+            event = Events.eIndoorTempCheckComplete
+            guards{
+                Guards.roomToCold
+            }
+            target = hHeating.name
+        }
+        new {
+            event = Events.eOccupancyVacant
+            target = hOff.name
+        }
+    }
+}
