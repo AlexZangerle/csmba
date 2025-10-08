@@ -1,9 +1,8 @@
 amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/ServiceImplementationBindings.pkl"
 
 bindings {
-    new HttpServiceImplementationDescription {
+    new HttpServiceImplementationBinding {
     name = "checkArcFault"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -11,9 +10,8 @@ bindings {
     endPoint = "/checkArcFault"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "tripCircuitBreaker"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -21,9 +19,8 @@ bindings {
     endPoint = "/tripCircuitBreaker"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "electricalFaultAcknowledged"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -31,9 +28,8 @@ bindings {
     endPoint = "/ackEletrical"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "cutPower"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -41,9 +37,8 @@ bindings {
     endPoint = "/cutPower"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "checkGasLeak"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -51,9 +46,8 @@ bindings {
     endPoint = "/checkGasFault"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "closeGasValve"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -61,9 +55,8 @@ bindings {
     endPoint = "/closeGasValve"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "gasLeakPurged"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -71,9 +64,8 @@ bindings {
     endPoint = "/gasLeakPurged"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "getEnergyPrices"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -81,9 +73,8 @@ bindings {
     endPoint = "/getEnergyPrice"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "checkGridStatus"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -91,9 +82,8 @@ bindings {
     endPoint = "/checkGridStatus"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "gridNormal"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -101,9 +91,8 @@ bindings {
     endPoint = "/normal"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "gridReponse"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -111,9 +100,8 @@ bindings {
     endPoint = "/response"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "peak"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -121,9 +109,8 @@ bindings {
     endPoint = "/peak"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "detectOccupancyService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -131,9 +118,8 @@ bindings {
     endPoint = "/detectOccupancy"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "maintenance"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -141,9 +127,8 @@ bindings {
     endPoint = "/maintenance"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "blindsHalfService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -151,9 +136,8 @@ bindings {
     endPoint = "/blindsHalf"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "blindsOpenService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -161,9 +145,8 @@ bindings {
     endPoint = "/blindsOpen"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "blindCloseService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -171,9 +154,8 @@ bindings {
     endPoint = "/blindsClose"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "blindsUserLevelService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -181,9 +163,8 @@ bindings {
     endPoint = "/userLevelBlinds"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "turnOnService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -191,9 +172,8 @@ bindings {
     endPoint = "/turnOn"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "turnOffService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -201,9 +181,8 @@ bindings {
     endPoint = "/turnOff"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "dimService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -211,9 +190,8 @@ bindings {
     endPoint = "/dim"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "turnUserLevelService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -221,9 +199,8 @@ bindings {
     endPoint = "/userLevelLight"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "detectFireService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -231,9 +208,8 @@ bindings {
     endPoint = "/detectFire"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "closeFireDoorService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -241,9 +217,8 @@ bindings {
     endPoint = "/closeFireDoor"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "openFireDoorService"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -251,9 +226,8 @@ bindings {
     endPoint = "/openFireDoor"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "roomTemp"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 
@@ -261,9 +235,8 @@ bindings {
     endPoint = "/getRoomTemp"
     method = "POST"
   }
-  new HttpServiceImplementationDescription {
+  new HttpServiceImplementationBinding {
     name = "highRisk"
-    cost = 1.0
     `local` = false
     scheme = "http"
     host = "building-service" 

@@ -77,13 +77,13 @@ local const hFanOnly: Csml.StateDescription = new {
                     new{
                         reference = Vars.vIndoorTemp
                     }
-                    }
                 }
-            }
-            done {
-                new {
-                    name = Events.eIndoorTempCheckComplete
-                    channel = "internal"
+                  done {
+                    new {
+                      name = Events.eIndoorTempCheckComplete
+                      channel = "internal"
+                    }
+                  }
                 }
             }
         }
@@ -142,15 +142,16 @@ local const hHeating: Csml.StateDescription = new {
                     new{
                         reference = Vars.vIndoorTemp
                     }
+                }
+                  done {
+                    new {
+                      name = Events.eIndoorTempCheckComplete
+                      channel = "internal"
                     }
+                  }
                 }
             }
-            done {
-                new {
-                    name = Events.eIndoorTempCheckComplete
-                    channel = "internal"
-                }
-            }
+
         }
         new {
             event = Events.eIndoorTempCheckComplete
@@ -206,15 +207,16 @@ local const hCooling: Csml.StateDescription = new {
                     new{
                         reference = Vars.vIndoorTemp
                     }
+                }
+                  done {
+                    new {
+                      name = Events.eIndoorTempCheckComplete
+                      channel = "internal"
                     }
+                  }
                 }
             }
-            done {
-                new {
-                    name = Events.eIndoorTempCheckComplete
-                    channel = "internal"
-                }
-            }
+
         }
         new {
             event = Events.eIndoorTempCheckComplete

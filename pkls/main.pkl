@@ -56,7 +56,7 @@ persistentContext {
       value = "'45.0'"
     }
     new {
-      name = Vars.desiredTemp
+      name = Vars.vDesiredTemp
       value = "'21.0'"
     }
   }
