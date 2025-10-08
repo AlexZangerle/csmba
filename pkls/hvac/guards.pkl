@@ -6,11 +6,11 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables
 
 // Guard to check if arc fault has been detected
 roomToCold = new Csml.GuardDescription {
-    expression = "\(Vars.vIndoorTemp) < \(vDesiredTemp)"
+    expression = "\(Vars.vIndoorTemp) < \(Vars.vDesiredTemp)"
 }
 roomToHot = new Csml.GuardDescription {
-    expression = "\(Vars.vIndoorTemp) > \(vDesiredTemp)"
+    expression = "\(Vars.vIndoorTemp) > \(Vars.vDesiredTemp)"
 }
 roomComfortable = new Csml.GuardDescription {
-    expression = "\(Vars.vIndoorTemp) == \(vDesiredTemp)"
+    expression = "\(Vars.vIndoorTemp) == \(Vars.vDesiredTemp)"
 }
