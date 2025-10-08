@@ -24,7 +24,7 @@ class shadingSM extends Csml.StateMachineDescription {
     }
 }
 
-local sInit: Csml.StateDescription = new {
+local const sInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -34,7 +34,7 @@ local sInit: Csml.StateDescription = new {
     }
 }
 // Initially the SM always transitions to half
-local sHalf: Csml.StateDescription = new {
+local const sHalf: Csml.StateDescription = new {
     name = "half"
     entry {
         new Csml.InvokeActionDescription {
@@ -104,7 +104,7 @@ local sHalf: Csml.StateDescription = new {
 }
 
 // Blinds open when temperature is low
-local sOpen: Csml.StateDescription = new {
+local const sOpen: Csml.StateDescription = new {
     name = "open"
     entry {
         new Csml.InvokeActionDescription {
@@ -172,7 +172,7 @@ local sOpen: Csml.StateDescription = new {
 }
 
 // Blinds close when temperature is high
-local sClose: Csml.StateDescription = new {
+local const sClose: Csml.StateDescription = new {
     name = "close"
     entry {
         new Csml.InvokeActionDescription {
@@ -244,7 +244,7 @@ local sClose: Csml.StateDescription = new {
 // Blinds open to manual user level
 // Manual level can be saved between outwards transitions and eventual re-entry.
 // If user level event with level -1 is received, previous manual level will be used. 
-local sUserLevel: Csml.StateDescription = new {
+local const sUserLevel: Csml.StateDescription = new {
     name = "userLevel"
     staticContext {
         variables{
@@ -351,7 +351,7 @@ local sUserLevel: Csml.StateDescription = new {
 
 // Emergency state is entered once smoke or fire alarm is triggered
 // Blinds completely open until manual disarming of the alarm
-local sEmergency: Csml.StateDescription = new {
+local const sEmergency: Csml.StateDescription = new {
     name = "emergency"
     entry {
         new Csml.InvokeActionDescription {

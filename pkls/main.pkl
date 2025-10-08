@@ -13,17 +13,17 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyMan
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/fire.pkl" as fire
 
 name = "Building System"
-version = "2.0"
+version = "3.0.0"
 
 stateMachines {
-    lighting.lightingSM
-    shading.shadingSM
-    roomOccupancy.roomOccupancySM
-    fire.fireDetectionSM
-    tempSafety.temperatureSafetySM
-    electricalSafety.electricalSafetySM
-    gasSafety.gasSafetySM
-    energyManagement.energyManagementSM
+    new lighting.lightingSM {}
+    new shading.shadingSM {}
+    new roomOccupancy.roomOccupancySM {}
+    new fire.fireDetectionSM {}
+    new tempSafety.temperatureSafetySM {}
+    new electricalSafety.electricalSafetySM {}
+    new gasSafety.gasSafetySM {}
+    new energyManagement.energyManagementSM {}
 }
 persistentContext {
   variables {

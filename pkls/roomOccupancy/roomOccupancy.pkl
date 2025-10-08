@@ -13,7 +13,7 @@ class roomOccupancySM extends Csml.StateMachineDescription {
     name = "roomOccupancy"
     localContext = Context.occupancyLocalContext
     stateMachines {
-        occupancyMonitor
+        new occupancyMonitor {}
     }
     states {
         rInit
@@ -37,7 +37,7 @@ class occupancyMonitor extends Csml.StateMachineDescription {
 }
 
 // Initially the SM will always transition to vacant
-local rInit: Csml.StateDescription = new {
+local const rInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -48,7 +48,7 @@ local rInit: Csml.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-local rVacant: Csml.StateDescription = new {
+local const rVacant: Csml.StateDescription = new {
     name = "vacant"
     entry {
         new Csml.AssignActionDescription{
@@ -113,7 +113,7 @@ local rVacant: Csml.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-local rOccupied: Csml.StateDescription = new {
+local const rOccupied: Csml.StateDescription = new {
     name = "occupied"
     entry {
         new Csml.AssignActionDescription{
@@ -194,7 +194,7 @@ local rOccupied: Csml.StateDescription = new {
 }
 
 // The detection process is initiated every 30 seconds
-local rTransient: Csml.StateDescription = new {
+local const rTransient: Csml.StateDescription = new {
     name = "transient"
     entry {
         new Csml.AssignActionDescription{
@@ -260,7 +260,7 @@ local rTransient: Csml.StateDescription = new {
     }
 }
 
-local omInit: Csml.StateDescription = new {
+local const omInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -270,7 +270,7 @@ local omInit: Csml.StateDescription = new {
     }
 }
 
-local omIdle: Csml.StateDescription = new{
+local const omIdle: Csml.StateDescription = new{
     name = "idle"
     on {
         new {
@@ -280,7 +280,7 @@ local omIdle: Csml.StateDescription = new{
     }
 }
 
-local omMonitoring: Csml.StateDescription = new {
+local const omMonitoring: Csml.StateDescription = new {
     name = "monitoring"
     after {
         new Csml.TimeoutActionDescription {
@@ -301,7 +301,7 @@ local omMonitoring: Csml.StateDescription = new {
     }
 }
 
-local omMaintenance: Csml.StateDescription = new {
+local const omMaintenance: Csml.StateDescription = new {
     name = "maintenance"
     entry {
         new Csml.InvokeActionDescription {
