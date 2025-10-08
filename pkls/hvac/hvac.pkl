@@ -62,7 +62,7 @@ local const hFanOnly: Csml.StateDescription = new {
         new Csml.TimeoutActionDescription {
             name = "periodicTempCheck"
             delay = "20000"
-            action = aRaiseIndoorTempCheck
+            action = Actions.aRaiseIndoorTempCheck
         }
     }
     on {
@@ -127,7 +127,7 @@ local const hHeating: Csml.StateDescription = new {
         new Csml.TimeoutActionDescription {
             name = "periodicTempCheck"
             delay = "20000"
-            action = aRaiseIndoorTempCheck
+            action = Actions.aRaiseIndoorTempCheck
         }
     }
     on {
@@ -192,7 +192,7 @@ local const hCooling: Csml.StateDescription = new {
         new Csml.TimeoutActionDescription {
             name = "periodicTempCheck"
             delay = "20000"
-            action = aRaiseIndoorTempCheck
+            action = Actions.aRaiseIndoorTempCheck
         }
     }
     on {
