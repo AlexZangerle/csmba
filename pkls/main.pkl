@@ -25,7 +25,6 @@ stateMachines {
     new electricalSafety.electricalSafetySM {}
     new gasSafety.gasSafetySM {}
     new energyManagement.energyManagementSM {}
-    new hvac.hvacSM {}
 }
 persistentContext {
   variables {

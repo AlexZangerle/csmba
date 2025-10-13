@@ -36,6 +36,15 @@ class occupancyMonitor extends Csml.StateMachineDescription {
     }
 }
 
+class occupancyChildTest extends Csml.StateMachineDescription {
+  name = "testChild"
+  states {
+    tcInit
+    tcRun
+    tcFinal
+  }
+}
+
 // Initially the SM will always transition to vacant
 local const rInit: Csml.StateDescription = new {
     name = "init"
@@ -314,4 +323,28 @@ local const omMaintenance: Csml.StateDescription = new {
             target = omIdle.name
         }
     }
+}
+
+local const tcInit: Csml.StateDescription = new {
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = tcRun.name
+    }
+  }
+}
+
+local const tcRun: Csml.StateDescription = new {
+  name = "run"
+  always {
+    new {
+      target = tcFinal.name
+    }
+  }
+}
+
+local const tcFinal: Csml.StateDescription = new {
+  name = "final"
+  terminal = true
 }
