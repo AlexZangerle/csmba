@@ -41,6 +41,7 @@ class occupancyChildTest extends Csml.StateMachineDescription {
   name = "testChild"
   states {
     tcInit
+    tcRun
     tcRun1
     tcRun2
     tcRun3
