@@ -217,7 +217,7 @@ local const dnInit: Csml.StateDescription = new {
 }
 
 local const dnRun: Csml.StateDescription = new {
-    name = "init"
+    name = "run"
     always {
         new {
             target = dnFinal.name
@@ -226,6 +226,6 @@ local const dnRun: Csml.StateDescription = new {
 }
 
 local const dnFinal: Csml.StateDescription = new {
-    name = "init"
+    name = "final"
     terminal = true
 }
