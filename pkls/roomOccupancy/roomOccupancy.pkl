@@ -361,34 +361,39 @@ local const tcInit: Csml.StateDescription = new {
 
 local const tcRun: Csml.StateDescription = new {
   name = "run"
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "checkGasLeak"
-      delay = "30000"
-      action = Actions.aRaiseStartGasLeakDetection
-    }
-  }
-  on {
+  always {
     new {
-      event = Events.eStartGasLeakDetection
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stCheckGasLeak
-          output {
-            new {
-              reference = Vars.vGasLeakLocation
-            }
-          }
-          done {
-            new {
-              name = Events.eGasLeakDetectionComplete
-              channel = "internal"
-            }
-          }
-        }
-      }
+      target = tcRun1.name
     }
   }
+//   after {
+//     new Csml.TimeoutActionDescription {
+//       name = "checkGasLeak"
+//       delay = "30000"
+//       action = Actions.aRaiseStartGasLeakDetection
+//     }
+//   }
+//   on {
+//     new {
+//       event = Events.eStartGasLeakDetection
+//       actions {
+//         new Csml.InvokeActionDescription {
+//           serviceType = ServiceTypes.stCheckGasLeak
+//           output {
+//             new {
+//               reference = Vars.vGasLeakLocation
+//             }
+//           }
+//           done {
+//             new {
+//               name = Events.eGasLeakDetectionComplete
+//               channel = "internal"
+//             }
+//           }
+//         }
+//       }
+//     }
+//   }
 }
 local const tcRun1: Csml.StateDescription = new {
   name = "run1"
