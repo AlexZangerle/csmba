@@ -28,10 +28,22 @@ class fireDetectionSM extends Csml.StateMachineDescription {
 // After the alarm has beend disarmed it opens
 class fireDoorSM extends Csml.StateMachineDescription  {
     name = "fireDoor"
+    stateMachines {
+        new doubleNestedTest {}
+    }
     states{
         fdInit
         fdOpen
         fdClose
+    }
+}
+
+class doubleNestedTest extends Csml.StateMachineDescription  {
+    name = "doubleNestedTest"
+    states{
+        dnInit
+        dnRun
+        dnFinal
     }
 }
 
@@ -192,4 +204,28 @@ local const fdClose: Csml.StateDescription = new {
             target = fdOpen.name
         }
     }
+}
+
+local const dnInit: Csml.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = dnRun.name
+        }
+    }
+}
+
+local const dnRun: Csml.StateDescription = new {
+    name = "init"
+    always {
+        new {
+            target = dnFinal.name
+        }
+    }
+}
+
+local const dnFinal: Csml.StateDescription = new {
+    name = "init"
+    terminal = true
 }
