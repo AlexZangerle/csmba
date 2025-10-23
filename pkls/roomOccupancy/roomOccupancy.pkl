@@ -97,6 +97,13 @@ local const rVacant: Csml.StateDescription = new {
       delay = "30000"
       action = Actions.aRaiseStartDetectingOccupancy
     }
+    new Csml.RaiseActionDescription {
+      event {
+        name = "eventToStop"
+        channel = "internal"
+      }
+
+    }
   }
   on {
     new {
@@ -118,10 +125,10 @@ local const rVacant: Csml.StateDescription = new {
         }
       }
     }
-    new {
-      event = Events.eStartDetectingOccupancy
-      target = rTransient.name
-    }
+//     new {
+//       event = Events.eStartDetectingOccupancy
+//       target = rTransient.name
+//     }
     // Transition to occupied once occupancy is detected
     new {
       event = Events.eDetectionComplete
