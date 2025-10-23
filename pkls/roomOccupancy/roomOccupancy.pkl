@@ -118,6 +118,10 @@ local const rVacant: Csml.StateDescription = new {
         }
       }
     }
+    new {
+      event = Events.eStartDetectingOccupancy
+      target = rTransient.name
+    }
     // Transition to occupied once occupancy is detected
     new {
       event = Events.eDetectionComplete
