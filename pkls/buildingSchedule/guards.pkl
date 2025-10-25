@@ -4,15 +4,15 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables
 
 // Guard to check if arc fault has been detected
 isBusinessHours = new Csml.GuardDescription {
-  expression = "(Vars.vCurrentScheduleMode) == 'businessHours'"
+  expression = "\(Vars.vCurrentScheduleMode) == 'businessHours'"
 }
 
 isAfterHours = new Csml.GuardDescription {
-  expression = "(Vars.vCurrentScheduleMode) == 'afterHours'"
+  expression = "\(Vars.vCurrentScheduleMode) == 'afterHours'"
 }
 
 isWeekend = new Csml.GuardDescription {
-  expression = "(Vars.vCurrentScheduleMode) == 'weekendClosed'"
+  expression = "\(Vars.vCurrentScheduleMode) == 'weekendClosed'"
 }
 
 requestedStay = new Csml.GuardDescription {
