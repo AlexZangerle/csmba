@@ -1,4 +1,5 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 // This module contains actions for the eletricalSafety SM
 
@@ -18,7 +19,7 @@ aRaiseZoneActive = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneActive
     channel = "global"
-    data { new { name = "zone"; value = "zoneId" } }
+    data { new { name = "zoneId"; value = Vars.vZoneId } }
   }
 }
 
@@ -26,7 +27,7 @@ aRaiseZoneInactive = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneInactive
     channel = "global"
-    data { new { name = "zone"; value = "zoneId" } }
+    data { new { name = "zoneId"; value = Vars.vZoneId } }
   }
 }
 
@@ -34,7 +35,7 @@ aRaiseZoneWarning = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneWarning
     channel = "global"
-    data { new { name = "zone"; value = "zoneId" } }
+    data { new { name = "zoneId"; value = Vars.vZoneId } }
   }
 }
 
