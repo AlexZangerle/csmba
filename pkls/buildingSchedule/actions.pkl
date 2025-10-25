@@ -18,7 +18,7 @@ aRaiseZoneActive = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneActive
     channel = "global"
-    data { new { name = "zone"; value = "vZoneId" } }
+    data { new { name = "zone"; value = "zoneId" } }
   }
 }
 
@@ -26,7 +26,7 @@ aRaiseZoneInactive = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneInactive
     channel = "global"
-    data { new { name = "zone"; value = "vZoneId" } }
+    data { new { name = "zone"; value = "zoneId" } }
   }
 }
 
@@ -34,7 +34,7 @@ aRaiseZoneWarning = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneWarning
     channel = "global"
-    data { new { name = "zone"; value = "vZoneId" } }
+    data { new { name = "zone"; value = "zoneId" } }
   }
 }
 
