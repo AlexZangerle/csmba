@@ -81,5 +81,7 @@ stPeak = "peak"
 // Service to get the current indoor temperature for room
 stGetIndoorTemp = "getIndoorTemp"
 
+stGetScheduleMode = "getScheduleMode"
+
 // Service to set HVAC services 
 stSetHVAC = "setHVAC"

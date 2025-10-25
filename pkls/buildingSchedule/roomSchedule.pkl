@@ -1,0 +1,159 @@
+import "https://raw.githubusercontent.com/AlexZangerle/Csmlba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as Csml
+
+/// This module defines the LOCAL room scheduler.
+/// It listens to the global schedule and manages local user overrides.
+/// One instance of this SM will run for each room/zone.
+class roomScheduleSM extends Csml.StateMachineDescription {
+  name = "roomSchedule"
+  localcontext = Context.roomContext
+  states {
+    rsInit
+    rsActive
+    rsInactive
+    rsWarning
+    rsAuthorizedStay
+    rsEmergency
+  }
+}
+
+local rsInit: Csml.StateDescription = new {
+  name = "init"
+  initial = true
+  always { new { target = rsInactive.name } }
+}
+
+/// The room is active
+local rsActive: Csml.StateDescription = new {
+  name = "active"
+  entry {
+    Actions.aRaiseZoneActive
+  }
+  on {
+    // The global scheduler says the building is closing.
+    // Start the graceful shutdown warning.
+    new {
+      event = Events.eEnterAfterHoursMode
+      target = rsWarning.name
+    }
+    new {
+      event = Events.eEnterWeekendClosedMode
+      target = rsWarning.name
+    }
+    new {
+      event = Events.eFireAlarm
+      target = rsEmergency.name
+    }
+  }
+}
+
+/// The room is "closed." It tells devices to shut down and ignore occupancy.
+local rsInactive: Csml.StateDescription = new {
+  name = "inactive"
+  entry {
+    Actions.aRaiseZoneInactive
+  }
+  on {
+    // The global scheduler says the building is now open.
+    new {
+      event = Events.eEnterBusinessHoursMode
+      target = rsActive.name
+    }
+    new {
+      event = Events.eFireAlarm
+      target = rsEmergency.name
+    }
+  }
+}
+
+/// The "grace period" state. The building is closing, but this room is
+/// giving its occupant a chance to respond.
+local rsWarning: Csml.StateDescription = new {
+  name = "warning"
+  entry {
+    // 1. Tell the lighting SM to dim the lights
+    Actions.aRaiseZoneWarning
+  }
+  // 2. Start a 5-minute timer.
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "gracePeriodTimer"
+      delay = "300000" // 5 minutes
+      action = Actions.aRaiseShutdownRoom
+    }
+  }
+  on {
+    // The occupant responded to the warning.
+    new {
+      event = Events.eRequestStay
+      guards { Guards.requestedStay } // Only react if it's for this room
+      target = rsAuthorizedStay.name
+    }
+    // The timer expired. No one responded. Shut the room down.
+    new {
+      event = Events.eShutdownRoom
+      target = rsInactive.name
+    }
+    // The schedule changed back to open before the timer finished.
+    new {
+      event = Events.eEnterBusinessHoursMode
+      target = rsActive.name
+    }
+    new {
+      event = Events.eFireAlarm
+      target = rsEmergency.name
+    }
+  }
+}
+
+/// The "person working late" state. This room has a temporary
+/// exception to the 'AfterHours' policy.
+rsAuthorizedStay: Csml.StateDescription = new {
+  name = "authorizedStay"
+  entry {
+    // 1. Tell the lighting SM to go from dim back to full brightness.
+    Actions.aRaiseZoneActive
+  }
+  // 2. Give the user a 2-hour "lease" on the override.
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "overrideLeaseTimer"
+      delay = "7200000"
+      action = Actions.aRaiseRecheckOverride
+    }
+  }
+  on {
+    new {
+      event = Events.eRecheckOverride
+      target = rsWarning.name
+    }
+    // The user has left (e.g., badged out of the building).
+    new {
+      event = Events.eUserLeftZone
+      guards { Guards.userLeftZone }
+      target = rsInactive.name
+    }
+    // The building is officially open now, so the override is no longer needed.
+    new {
+      event = Events.eEnterBusinessHoursMode
+      target = rsActive.name
+    }
+    new {
+      event = Events.eFireAlarm
+      target = rsEmergency.name
+    }
+  }
+}
+
+/// Safety protocols override all schedules.
+local rsEmergency: Csml.StateDescription = new {
+  name = "emergency"
+  on {
+    // When the alarm is disarmed, go to 'Inactive' and wait for the
+    // global scheduler to re-broadcast the correct policy.
+    new {
+      event = Events.eDisarmFireAlarm
+      target = rsInactive.name
+    }
+  }
+}

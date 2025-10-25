@@ -112,19 +112,19 @@ eGasLeakDetected = "gasLeakDetected"
 eGasPurged = "gasPurged"
 
 // Raised internally to start energy check
-eStartEnergyCheck = "startEnergyCheck"          
+eStartEnergyCheck = "startEnergyCheck"
 
 // Raised internally to signify completion of energy check
-eEnergyCheckComplete = "energyCheckComplete"     
+eEnergyCheckComplete = "energyCheckComplete"
 
 // Raised to signify high current energy price
-eHighPriceDetected = "highPriceDetected"    
+eHighPriceDetected = "highPriceDetected"
 
 // Raised to get grid demand response
 eGridDemandResponse = "gridDemandResponse"
 
 // Raised to return energy to normal
-eReturnToNormal = "returnToNormal" 
+eReturnToNormal = "returnToNormal"
 
 // Raised to initiate more drastic energySaving
 eDrasticEnergySaving = "drasticEnergySaving"
@@ -135,3 +135,17 @@ eStartGridCheck = "startGridCheck"
 eStartIndoorTempCheck = "startGridCheck"
 
 eIndoorTempCheckComplete = "indoorTempCheckComplete"
+
+eScheduleCheckComplete = "scheduleCheckComplete"
+
+eEnterBusinessHours = "enterBusinessHours"
+eEnterAfterHoursMode = "enterAfterHours"
+eEnterWeekend = "enterWeekend"
+eStartScheduleCheck = "startScheduleCheck"
+eRequestStay = "requestStay"
+eUserLeftZone = "userLeftZone"
+eZoneActive = "zoneActive"     // Output to local devices (data: { zone: "Room101" })
+eZoneInactive = "zoneInactive"   // Output to local devices (data: { zone: "Room101" })
+eZoneWarning = "zoneWarning"
+eShutdownRoom = "shutdownRoomNow"
+eRecheckOverride = "recheckOverride"

@@ -1,4 +1,3 @@
-
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 // This module contains all variable definitions for the CSM BMS
 
@@ -19,18 +18,18 @@ vCurrentOccupancy = "currentOccupancy"
 
 // Variable containing the light level set by user (int - 0-100)
 vUserLightLevel = new Csml.ContextVariableDescription {
-            name = "lightLevel"
-            value = "'0'"
+  name = "lightLevel"
+  value = "'0'"
 }
 
 // Variable containing the blind level set by user (int - 0-100)
 vUserBlindLevel = new Csml.ContextVariableDescription {
-                name = "blindLevel"
-                value = "'0'"
-            }
+  name = "blindLevel"
+  value = "'0'"
+}
 
 // Variable containing the result from fire detection (String - none/fire/smoke)
-vFireDetectionResult = "fireDetectionResult"    
+vFireDetectionResult = "fireDetectionResult"
 
 // Variable to show if fire alarm is currently active (Boolean)
 vFireAlarm = "fireAlarm"
@@ -43,9 +42,9 @@ vTempThreshold = "tempThreshold"
 
 // Variable containing the current roomID (int)
 vRoomId = new Csml.ContextVariableDescription {
-                name = "roomId"
-                value = "'0'"
-            }
+  name = "roomId"
+  value = "'0'"
+}
 
 // Variable containing the temperature of critical equipment in vRoomId (int)
 vRoomTemp = "roomTemp"
@@ -68,3 +67,7 @@ vGridStatus = "gridStatus"
 vIndoorTemp = "indoorTemp"
 
 vDesiredTemp = "desiredTemp"
+
+vCurrentScheduleMode = "currentSchedule"
+
+vZoneId = "zoneId"
