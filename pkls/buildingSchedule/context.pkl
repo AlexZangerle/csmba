@@ -11,7 +11,7 @@ scheduleContext = new Csml.ContextDescription {
   }
 }
 
-roomContext = new Csml.ContextDescription{
+roomContext = new Csml.ContextDescription {
   variables {
     new {
       name = Vars.vZoneId
