@@ -1,5 +1,5 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 // This module contains all guards for energyManagement SM
 
 // Guard to check if arc fault has been detected
@@ -16,9 +16,9 @@ isWeekend = new Csml.GuardDescription {
 }
 
 requestedStay = new Csml.GuardDescription {
-  expression = "$zone == Vars.vZoneId"
+  expression = "$zone == \(Vars.vZoneId)"
 }
 
 userLeftZone = new Csml.GuardDescription {
-  expression = "$zone == Vars.vZoneId"
+  expression = "$zone == \(Vars.vZoneId)"
 }
