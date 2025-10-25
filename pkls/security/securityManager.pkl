@@ -76,7 +76,7 @@ local const smSecure: Csml.StateDescription = new {
         }
       }
       // Transition if count reaches threshold (e.g., 3)
-      guards { Guards.failedAttemptLimitReached }
+      guards { Guards.failedAttemptSoftlimitReached }
       target = smElevatedRisk.name
     }
 
