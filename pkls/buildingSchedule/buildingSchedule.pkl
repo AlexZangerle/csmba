@@ -99,7 +99,7 @@ local const bsAfterHours: Csml.StateDescription = new {
 local const bsWeekendClosed: Csml.StateDescription = new {
   name = "weekendClosed"
   entry {
-    aRaiseEnterWeekend
+    Actions.aRaiseEnterWeekend
   }
   // This state would have the same polling logic as bsAfterHours.
   on {
