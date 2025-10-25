@@ -11,19 +11,20 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/roomOccupancy.pkl?v=1" as roomOccupancy
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/energyManagement.pkl?v=1" as energyManagement
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/fire.pkl" as fire
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/hvac.pkl" as hvac
 
 name = "Building System"
-version = "2.0"
+version = "3.0.0"
 
 stateMachines {
-    lighting.lightingSM
-    shading.shadingSM
-    roomOccupancy.roomOccupancySM
-    fire.fireDetectionSM
-    tempSafety.temperatureSafetySM
-    electricalSafety.electricalSafetySM
-    gasSafety.gasSafetySM
-    energyManagement.energyManagementSM
+    new lighting.lightingSM {}
+    new shading.shadingSM {}
+    new roomOccupancy.roomOccupancySM {}
+    new fire.fireDetectionSM {}
+    new tempSafety.temperatureSafetySM {}
+    new electricalSafety.electricalSafetySM {}
+    new gasSafety.gasSafetySM {}
+    new energyManagement.energyManagementSM {}
 }
 persistentContext {
   variables {
@@ -56,7 +57,7 @@ persistentContext {
       value = "'45.0'"
     }
     new {
-      name = Vars.desiredTemp
+      name = Vars.vDesiredTemp
       value = "'21.0'"
     }
   }

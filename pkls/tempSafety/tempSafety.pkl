@@ -21,7 +21,7 @@ class temperatureSafetySM extends Csml.StateMachineDescription {
     }
 }
 
-local tsInit: Csml.StateDescription = new {
+local const tsInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -33,7 +33,7 @@ local tsInit: Csml.StateDescription = new {
 // Always starts in normal state
 // Gets current room temperature every 30 seconds
 // Checks temperature against threshold and transitions to highRisk if necessary
-local tsNormal: Csml.StateDescription = new {
+local const tsNormal: Csml.StateDescription = new {
     name = "normal"
     after {
         new Csml.TimeoutActionDescription {
@@ -79,7 +79,7 @@ local tsNormal: Csml.StateDescription = new {
 }
 
 // High risk state invokes the high risk service to publish a warning with the corresponding roomID.
-local tsHighRisk: Csml.StateDescription = new {
+local const tsHighRisk: Csml.StateDescription = new {
     name = "highRisk"
     entry {
         new Csml.InvokeActionDescription {

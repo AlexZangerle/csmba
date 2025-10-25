@@ -21,7 +21,7 @@ class lightingSM extends Csml.StateMachineDescription {
 }
 
 // Initially always transitions to off
-local lInit: Csml.StateDescription = new {
+local const lInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -32,7 +32,7 @@ local lInit: Csml.StateDescription = new {
 }
 
 // Lights off - no occupancy detected
-local lOff: Csml.StateDescription = new {
+local const lOff: Csml.StateDescription = new {
     name = "off"
     entry {
         new Csml.InvokeActionDescription {
@@ -85,7 +85,7 @@ local lOff: Csml.StateDescription = new {
 }
 
 // Lights on - occupancy detected
-local lOn: Csml.StateDescription = new {
+local const lOn: Csml.StateDescription = new {
     name = "on"
     entry {
         new Csml.InvokeActionDescription {
@@ -105,7 +105,7 @@ local lOn: Csml.StateDescription = new {
 }
 
 // Lights dim - vacancy grace period
-local lDim: Csml.StateDescription = new {
+local const lDim: Csml.StateDescription = new {
     name = "dim"
     entry {
         new Csml.InvokeActionDescription {
@@ -154,7 +154,7 @@ local lDim: Csml.StateDescription = new {
 }
 
 // Lights at manual level - lights are set to manual level, and dont change depending on occupancy anymore
-local lUserLevel: Csml.StateDescription = new {
+local const lUserLevel: Csml.StateDescription = new {
     name = "userLevel"
     staticContext {
         variables{

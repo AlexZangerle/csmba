@@ -24,7 +24,7 @@ class energyManagementSM extends Csml.StateMachineDescription {
     }
 }
 
-local emInit: Csml.StateDescription = new {
+local const emInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -35,7 +35,7 @@ local emInit: Csml.StateDescription = new {
 }
 //Always start in normal mode
 //Energy saving deactivated when entering this mode
-local emNormal: Csml.StateDescription = new {
+local const emNormal: Csml.StateDescription = new {
     name = "normal"
     entry{
         Actions.aRaiseDeactiveEnergySaving
@@ -109,7 +109,7 @@ local emNormal: Csml.StateDescription = new {
 }
 
 // If current energy price is above threshold, throttle consumption
-local emPeak: Csml.StateDescription = new {
+local const emPeak: Csml.StateDescription = new {
     name = "peakDemand"
     entry {
         Actions.aRaiseEnergySaving
@@ -182,7 +182,7 @@ local emPeak: Csml.StateDescription = new {
 }
 
 // When demand response is received, throttle demand more aggressively
-local emGridRequestResponse: Csml.StateDescription = new {
+local const emGridRequestResponse: Csml.StateDescription = new {
     name = "requestReponse"
     entry {
         Actions.aRaiseDrasticEnergySaving

@@ -43,3 +43,10 @@ aRaiseMaintenance = new Csml.RaiseActionDescription {
     }
 
 }
+
+aRaiseStartGasLeakDetection = new Csml.RaiseActionDescription {
+    event {
+        name = Events.eStartGasLeakDetection
+        channel = "internal"
+    }
+}

@@ -22,7 +22,7 @@ class gasSafetySM extends Csml.StateMachineDescription {
     }
 }
 
-local gsInit: Csml.StateDescription = new {
+local const gsInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -34,7 +34,7 @@ local gsInit: Csml.StateDescription = new {
 
 // Always starts in monitoring state
 // Invokes gas detection service every 30 seconds
-local gsMonitoring: Csml.StateDescription = new {
+local const gsMonitoring: Csml.StateDescription = new {
     name = "monitoring"
     after {
         new Csml.TimeoutActionDescription {
@@ -75,7 +75,7 @@ local gsMonitoring: Csml.StateDescription = new {
 }
 
 // Invokes close valve service and raises global gas leak event
-local gsGasLeak: Csml.StateDescription = new {
+local const gsGasLeak: Csml.StateDescription = new {
     name = "gasLeak"
     entry {
         new Csml.InvokeActionDescription {
@@ -97,7 +97,7 @@ local gsGasLeak: Csml.StateDescription = new {
     }
 }
 
-local gsAcknowledged: Csml.StateDescription = new {
+local const gsAcknowledged: Csml.StateDescription = new {
     name = "acknowledged"
     entry {
         new Csml.InvokeActionDescription {

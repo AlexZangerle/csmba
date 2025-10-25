@@ -23,7 +23,7 @@ class electricalSafetySM extends Csml.StateMachineDescription {
     }
 }
 
-local esInit: Csml.StateDescription = new {
+local const esInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -34,7 +34,7 @@ local esInit: Csml.StateDescription = new {
 }
 //Always starts in monitoring state
 //Invokes service to check for arc faults every 30 seconds
-local esMonitoring: Csml.StateDescription = new {
+local const esMonitoring: Csml.StateDescription = new {
     name = "monitoring"
     after {
         new Csml.TimeoutActionDescription {
@@ -75,7 +75,7 @@ local esMonitoring: Csml.StateDescription = new {
 }
 
 // If an arc fault is detected, invoke service to trip the corresponding circuit breaker
-local esArcFault: Csml.StateDescription = new {
+local const esArcFault: Csml.StateDescription = new {
     name = "arcFault"
     entry {
         new Csml.InvokeActionDescription {
@@ -104,7 +104,7 @@ local esArcFault: Csml.StateDescription = new {
 }
 
 // Invokes Ack Service and transitions back to monitoring state
-local esAcknowledged: Csml.StateDescription = new {
+local const esAcknowledged: Csml.StateDescription = new {
     name = "acknowledged"
     entry {
         new Csml.InvokeActionDescription {
@@ -118,7 +118,7 @@ local esAcknowledged: Csml.StateDescription = new {
     }
 }
 //Testing purposes
-local esGas: Csml.StateDescription = new {
+local const esGas: Csml.StateDescription = new {
     name = "gas"
     terminal = true
     entry {

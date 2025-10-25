@@ -11,9 +11,9 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/acti
 //The fireDetectionSM invokes a service on a timeout to detect fire/smoke.
 // If fire/smoke is detected, transitions to fireAlarm/smokeAlert state and triggers the corresponding action.
 class fireDetectionSM extends Csml.StateMachineDescription {
-    name = "fireDetection"
+    name = "fire"
     stateMachines {
-    fireDoorSM
+    new fireDoorSM {}
     }
     localContext = Context.fireDetectionContext
     states {
@@ -26,8 +26,11 @@ class fireDetectionSM extends Csml.StateMachineDescription {
 
 // The fireDoor SM closes based on fireAlarm events received
 // After the alarm has beend disarmed it opens
-local fireDoorSM: Csml.StateMachineDescription = new {
+class fireDoorSM extends Csml.StateMachineDescription  {
     name = "fireDoor"
+    stateMachines {
+        new doubleNestedTest {}
+    }
     states{
         fdInit
         fdOpen
@@ -35,8 +38,17 @@ local fireDoorSM: Csml.StateMachineDescription = new {
     }
 }
 
+class doubleNestedTest extends Csml.StateMachineDescription  {
+    name = "doubleNestedTest"
+    states{
+        dnInit
+        dnRun
+        dnFinal
+    }
+}
+
 // Always transitions to detecting state
-local fInit: Csml.StateDescription = new {
+local const fInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -47,7 +59,7 @@ local fInit: Csml.StateDescription = new {
 }
 
 // This state invokes the service for fire/smoke detection every 20 seconds
-local fDetecting: Csml.StateDescription = new {
+local const fDetecting: Csml.StateDescription = new {
     name = "detecting"
     after {
         new Csml.TimeoutActionDescription {
@@ -96,7 +108,7 @@ local fDetecting: Csml.StateDescription = new {
 }
 
 //FireAlarm state sets the VFireAlarm variable to true and raises a global fireAlarm event
-local fFireAlarm: Csml.StateDescription = new {
+local const fFireAlarm: Csml.StateDescription = new {
     name = "fireAlarm"
     entry {
         new Csml.AssignActionDescription {
@@ -124,7 +136,7 @@ local fFireAlarm: Csml.StateDescription = new {
 }
 
 //SmokeAlert state sets the vSmokeAlert variable to true and raises a global smokeAlert event
-local fSmokeAlert: Csml.StateDescription = new {
+local const fSmokeAlert: Csml.StateDescription = new {
     name = "smokeAlert"
     entry {
         new Csml.AssignActionDescription {
@@ -152,7 +164,7 @@ local fSmokeAlert: Csml.StateDescription = new {
 }
 
 // Fire door always starts open
-local fdInit: Csml.StateDescription = new {
+local const fdInit: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
@@ -162,7 +174,7 @@ local fdInit: Csml.StateDescription = new {
     }
 }
 
-local fdOpen: Csml.StateDescription = new {
+local const fdOpen: Csml.StateDescription = new {
     name = "open"
     entry {
         new Csml.InvokeActionDescription {
@@ -178,7 +190,7 @@ local fdOpen: Csml.StateDescription = new {
     }
 }
 
-local fdClose: Csml.StateDescription = new {
+local const fdClose: Csml.StateDescription = new {
     name = "close"
     entry {
         new Csml.InvokeActionDescription {
@@ -192,4 +204,28 @@ local fdClose: Csml.StateDescription = new {
             target = fdOpen.name
         }
     }
+}
+
+local const dnInit: Csml.StateDescription = new {
+    name = "init"
+    initial = true
+    always {
+        new {
+            target = dnRun.name
+        }
+    }
+}
+
+local const dnRun: Csml.StateDescription = new {
+    name = "run"
+    always {
+        new {
+            target = dnFinal.name
+        }
+    }
+}
+
+local const dnFinal: Csml.StateDescription = new {
+    name = "final"
+    terminal = true
 }
