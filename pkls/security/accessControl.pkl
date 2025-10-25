@@ -226,7 +226,7 @@ local const acForcedOpenAlarm: Csml.StateDescription = new {
     // Raise critical alert to the Security Manager
     Actions.aRaiseForcedEntry
     // Try to re-lock the door, though it might fail if physically broken
-    new CSM.InvokeActionDescription {
+    new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stControlDoorLock
       input {
         new { name = "doorId"; value = Vars.vDoorId }
