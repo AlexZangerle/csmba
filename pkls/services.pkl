@@ -244,7 +244,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "getScheduleModeService" // Service called by buildingScheduleSM
+    name = "getScheduleMode" // Service called by buildingScheduleSM
     `local` = false
     scheme = "http"
     host = "localhost" // Or your building-service container name
