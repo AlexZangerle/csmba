@@ -3,7 +3,7 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/ref
 // This module contains all guards for energyManagement SM
 
 // Guard to check if arc fault has been detected
-isBussinesHours = new Csml.GuardDescription {
+isBusinessHours = new Csml.GuardDescription {
   expression = "(Vars.vCurrentScheduleMode) == 'businessHours'"
 }
 
