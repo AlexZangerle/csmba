@@ -15,7 +15,7 @@ roomContext {
   variables {
     new {
       name = Vars.vZoneId
-      value = "''"
+      value = "'none'"
     }
   }
 }
