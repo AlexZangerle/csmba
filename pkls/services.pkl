@@ -292,6 +292,15 @@ bindings {
     endPoint = "/notifySecurity"
     method = "POST"
   }
+  new HttpServiceImplementationBinding {
+    name = "initializeZoneService" // Service called by securityManagerSM
+    `local` = false
+    scheme = "http"
+    host = "localhost"
+    port = 8005
+    endPoint = "/initializeZone"
+    method = "POST"
+  }
   // Optional: Police notification service binding
   // new HttpServiceImplementationBinding {
   //   name = "notifyPoliceService"

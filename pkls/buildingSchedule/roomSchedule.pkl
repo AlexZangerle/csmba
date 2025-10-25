@@ -1,5 +1,6 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/context.pkl" as Context
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/actions.pkl" as Actions
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/guards.pkl" as Guards
@@ -23,7 +24,22 @@ class roomScheduleSM extends Csml.StateMachineDescription {
 local const rsInit: Csml.StateDescription = new {
   name = "init"
   initial = true
-  always { new { target = rsInactive.name } }
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stInitializeZone
+      // The service returns the chosen zone ID into our local variable
+      output { new { reference = Vars.vZoneId } }
+      // When the service is done, raise an internal event
+      done { new { name = "zoneInitialized"; channel = "internal" } }
+    }
+  }
+
+  on {
+    new {
+      event = "zoneInitialized"
+      target = rsInactive.name
+    }
+  }
 }
 
 /// The room is active
