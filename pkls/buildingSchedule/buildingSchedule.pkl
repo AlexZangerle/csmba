@@ -1,0 +1,114 @@
+import "https: //raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https: //raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https: //raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+
+/// This module defines the building's global scheduler.
+/// Its only job is to publish the building's official operational mode.
+class buildingScheduleSM extends Csml.StateMachineDescription {
+  name = "buildingSchedule"
+  localContext = Context.scheduleContext
+  states {
+    bsInit
+    bsEvaluating
+    bsBusinessHours
+    bsAfterHours
+    bsWeekendClosed
+    bsEmergencyOverride
+  }
+}
+
+local bsInit: Csml.StateDescription = new {
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = bsEvaluating.name
+    }
+  }
+}
+
+/// A central state to call the time service and route to the correct operational mode.
+local bsEvaluating: Csml.StateDescription = new {
+  name = "evaluating"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stGetScheduleMode
+      output { new { reference = Vars.vCurrentScheduleMode } }
+      done { new { name = Events.eScheduleCheckComplete; channel = "internal" } }
+    }
+  }
+  on {
+    new {
+      event = Events.eScheduleCheckComplete
+      guards { Guards.isBusinessHours }
+      target = bsBusinessHours.name
+    }
+    new {
+      event = Events.eScheduleCheckComplete
+      guards { Guards.isAfterHours }
+      target = bsAfterHours.name
+    }
+    new {
+      event = Events.eScheduleCheckComplete
+      guards { Guards.isWeekend }
+      target = bsWeekendClosed.name
+    }
+  }
+}
+
+local bsBusinessHours: Csml.StateDescription = new {
+  name = "businessHours"
+  entry {
+    Actions.aRaiseEnterBusinessHours
+  }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "scheduleCheck"
+      delay = "900000" // 15 minutes
+      action = Actions.aRaiseStartScheduleCheck
+    }
+  }
+  on {
+    new { event = Events.eStartScheduleCheck; target = bsEvaluating.name }
+    new { event = Events.eFireAlarm; target = bsEmergencyOverride.name }
+  }
+}
+
+local bsAfterHours: Csml.StateDescription = new {
+  name = "afterHours"
+  entry {
+    Actions.aRaiseEnterAfterHours
+  }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "scheduleCheck"
+      delay = "900000"
+      action = Actions.aRaiseStartScheduleCheck
+    }
+  }
+  on {
+    new { event = Events.eStartScheduleCheck; target = bsEvaluating.name }
+    new { event = Events.eFireAlarm; target = bsEmergencyOverride.name }
+  }
+}
+
+local bsWeekendClosed: Csml.StateDescription = new {
+  name = "weekendClosed"
+  entry {
+    aRaiseEnterWeekend
+  }
+  // This state would have the same polling logic as bsAfterHours.
+  on {
+    new { event = Events.eStartScheduleCheck; target = bsEvaluating.name }
+    new { event = Events.eFireAlarm; target = bsEmergencyOverride.name }
+  }
+}
+
+local bsEmergencyOverride: Csml.StateDescription = new {
+  name = "emergencyOverride"
+  on {
+    // When the alarm is disarmed, re-evaluate to return to the correct state.
+    new { event = Events.eDisarmFireAlarm; target = bsEvaluating.name }
+    new { event = Events.eAllClearGas; target = bsEvaluating.name }
+  }
+}

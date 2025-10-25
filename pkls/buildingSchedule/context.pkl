@@ -1,0 +1,21 @@
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+// This module contains all contexts for the buildingSchedule SM
+
+scheduleContext = new Csml.ContextDescription {
+  variables {
+    new {
+      name = Vars.vCurrentScheduleMode
+      value = "''"
+    }
+  }
+}
+
+roomContext {
+  variables {
+    new {
+      name = Vars.vZoneId
+      value = "''"
+    }
+  }
+}
