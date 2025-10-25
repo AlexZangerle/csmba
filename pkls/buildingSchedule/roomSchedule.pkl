@@ -1,5 +1,5 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-import "https://raw.githubusercontent.com/AlexZangerle/Csmlba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/context.pkl" as Context
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/actions.pkl" as Actions
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/guards.pkl" as Guards
@@ -40,7 +40,7 @@ local const rsActive: Csml.StateDescription = new {
       target = rsWarning.name
     }
     new {
-      event = Events.eEnterWeekendClosedMode
+      event = Events.eEnterWeekend
       target = rsWarning.name
     }
     new {
@@ -59,7 +59,7 @@ local const rsInactive: Csml.StateDescription = new {
   on {
     // The global scheduler says the building is now open.
     new {
-      event = Events.eEnterBusinessHoursMode
+      event = Events.eEnterBusinessHours
       target = rsActive.name
     }
     new {
@@ -99,7 +99,7 @@ local const rsWarning: Csml.StateDescription = new {
     }
     // The schedule changed back to open before the timer finished.
     new {
-      event = Events.eEnterBusinessHoursMode
+      event = Events.eEnterBusinessHours
       target = rsActive.name
     }
     new {
@@ -138,7 +138,7 @@ local const rsAuthorizedStay: Csml.StateDescription = new {
     }
     // The building is officially open now, so the override is no longer needed.
     new {
-      event = Events.eEnterBusinessHoursMode
+      event = Events.eEnterBusinessHours
       target = rsActive.name
     }
     new {
