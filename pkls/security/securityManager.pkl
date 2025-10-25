@@ -177,6 +177,6 @@ local const smEmergencyResponseActive: Csml.StateDescription = new {
     // When the safety event is cleared, return to the normal secure state.
     new { event = Events.eDisarmFireAlarm; target = smSecure.name }
     // Make sure you have an 'all clear' event defined for gas
-    new { event = Events.eAllClearGas; target = smSecure.name }
+    new { event = Events.eGasPurged; target = smSecure.name }
   }
 }

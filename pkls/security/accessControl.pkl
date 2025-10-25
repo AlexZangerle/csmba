@@ -215,7 +215,7 @@ local const acEmergencyUnlock: Csml.StateDescription = new {
   on {
     // Wait for the safety all-clear event
     new { event = Events.eDisarmFireAlarm; target = acLocked.name }
-    new { event = Events.eAllClearGas; target = acLocked.name }
+    new { event = Events.eGasPurged; target = acLocked.name }
   }
 }
 

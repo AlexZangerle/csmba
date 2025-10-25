@@ -113,6 +113,6 @@ local const bsEmergencyOverride: Csml.StateDescription = new {
   on {
     // When the alarm is disarmed, re-evaluate to return to the correct state.
     new { event = Events.eDisarmFireAlarm; target = bsEvaluating.name }
-    new { event = Events.eAllClearGas; target = bsEvaluating.name }
+    new { event = Events.eGasPurged; target = bsEvaluating.name }
   }
 }
