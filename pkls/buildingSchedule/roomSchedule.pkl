@@ -1,5 +1,8 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/Csmlba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/UIBK-DPS-DC/Cirrina-Specifications/main/pkl/CollaborativeStateMachineDescription.pkl" as Csml
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/guards.pkl" as Guards
 
 /// This module defines the LOCAL room scheduler.
 /// It listens to the global schedule and manages local user overrides.
@@ -17,14 +20,14 @@ class roomScheduleSM extends Csml.StateMachineDescription {
   }
 }
 
-local rsInit: Csml.StateDescription = new {
+local const rsInit: Csml.StateDescription = new {
   name = "init"
   initial = true
   always { new { target = rsInactive.name } }
 }
 
 /// The room is active
-local rsActive: Csml.StateDescription = new {
+local const rsActive: Csml.StateDescription = new {
   name = "active"
   entry {
     Actions.aRaiseZoneActive
@@ -48,7 +51,7 @@ local rsActive: Csml.StateDescription = new {
 }
 
 /// The room is "closed." It tells devices to shut down and ignore occupancy.
-local rsInactive: Csml.StateDescription = new {
+local const rsInactive: Csml.StateDescription = new {
   name = "inactive"
   entry {
     Actions.aRaiseZoneInactive
@@ -68,7 +71,7 @@ local rsInactive: Csml.StateDescription = new {
 
 /// The "grace period" state. The building is closing, but this room is
 /// giving its occupant a chance to respond.
-local rsWarning: Csml.StateDescription = new {
+local const rsWarning: Csml.StateDescription = new {
   name = "warning"
   entry {
     // 1. Tell the lighting SM to dim the lights
@@ -108,7 +111,7 @@ local rsWarning: Csml.StateDescription = new {
 
 /// The "person working late" state. This room has a temporary
 /// exception to the 'AfterHours' policy.
-rsAuthorizedStay: Csml.StateDescription = new {
+local const rsAuthorizedStay: Csml.StateDescription = new {
   name = "authorizedStay"
   entry {
     // 1. Tell the lighting SM to go from dim back to full brightness.
@@ -146,7 +149,7 @@ rsAuthorizedStay: Csml.StateDescription = new {
 }
 
 /// Safety protocols override all schedules.
-local rsEmergency: Csml.StateDescription = new {
+local const rsEmergency: Csml.StateDescription = new {
   name = "emergency"
   on {
     // When the alarm is disarmed, go to 'Inactive' and wait for the

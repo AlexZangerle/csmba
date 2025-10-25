@@ -71,3 +71,14 @@ vDesiredTemp = "desiredTemp"
 vCurrentScheduleMode = "currentSchedule"
 
 vZoneId = "zoneId"
+
+vFailedAttemptsCount = "failedAttemptsCount"
+vLastFailedAttemptTime = "lastFailedAttemptTime"
+vAlertDetails = "alertDetails"
+// Local context for AccessControlSM
+vDoorId = "doorId" // Provided at startup
+vIsEvacuationRoute = "isEvacuationRoute" // Boolean, provided at startup
+vUserId = "userId"
+vUserRole = "userRole"
+vAuthenticationStatus = "authenticationStatus"
+vAccessDecision = "accessDecision"

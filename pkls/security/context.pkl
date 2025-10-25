@@ -1,0 +1,25 @@
+
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+// This module contains all contexts for the gasSafety SM
+
+securityManagerContext = new Csml.ContextDescription {
+  variables {
+    new { name = Vars.vFailedAttemptsCount; value = "'0'" }
+    new { name = Vars.vLastFailedAttemptTime; value = "'0'" }
+    new { name = Vars.vAlertDetails; value = "''" }
+  }
+}
+
+accessControlContext = new Csml.ContextDescription {
+  variables {
+    new { name = Vars.vDoorId; value = "''" }
+    new { name = Vars.vZoneId; value = "''" }
+    new { name = Vars.vIsEvacuationRoute; value = "'false'" }
+    new { name = Vars.vUserId; value = "''" }
+    new { name = Vars.vUserRole; value = "''" }
+    new { name = Vars.vAuthenticationStatus; value = "''" }
+    new { name = Vars.vCurrentScheduleMode; value = "'unknown'" }
+    new { name = Vars.vAccessDecision; value = "''" }
+  }
+}

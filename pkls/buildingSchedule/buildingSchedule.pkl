@@ -1,6 +1,10 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https: //raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https: //raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https: //raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/guards.pkl" as Guards
 
 /// This module defines the building's global scheduler.
 /// Its only job is to publish the building's official operational mode.
@@ -17,7 +21,7 @@ class buildingScheduleSM extends Csml.StateMachineDescription {
   }
 }
 
-local bsInit: Csml.StateDescription = new {
+local const bsInit: Csml.StateDescription = new {
   name = "init"
   initial = true
   always {
@@ -28,7 +32,7 @@ local bsInit: Csml.StateDescription = new {
 }
 
 /// A central state to call the time service and route to the correct operational mode.
-local bsEvaluating: Csml.StateDescription = new {
+local const bsEvaluating: Csml.StateDescription = new {
   name = "evaluating"
   entry {
     new Csml.InvokeActionDescription {
@@ -56,7 +60,7 @@ local bsEvaluating: Csml.StateDescription = new {
   }
 }
 
-local bsBusinessHours: Csml.StateDescription = new {
+local const bsBusinessHours: Csml.StateDescription = new {
   name = "businessHours"
   entry {
     Actions.aRaiseEnterBusinessHours
@@ -74,7 +78,7 @@ local bsBusinessHours: Csml.StateDescription = new {
   }
 }
 
-local bsAfterHours: Csml.StateDescription = new {
+local const bsAfterHours: Csml.StateDescription = new {
   name = "afterHours"
   entry {
     Actions.aRaiseEnterAfterHours
@@ -92,7 +96,7 @@ local bsAfterHours: Csml.StateDescription = new {
   }
 }
 
-local bsWeekendClosed: Csml.StateDescription = new {
+local const bsWeekendClosed: Csml.StateDescription = new {
   name = "weekendClosed"
   entry {
     aRaiseEnterWeekend
@@ -104,7 +108,7 @@ local bsWeekendClosed: Csml.StateDescription = new {
   }
 }
 
-local bsEmergencyOverride: Csml.StateDescription = new {
+local const bsEmergencyOverride: Csml.StateDescription = new {
   name = "emergencyOverride"
   on {
     // When the alarm is disarmed, re-evaluate to return to the correct state.

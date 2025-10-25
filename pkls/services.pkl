@@ -243,4 +243,63 @@ bindings {
     endPoint = "/highRiskTemp"
     method = "POST"
   }
+  new HttpServiceImplementationBinding {
+    name = "getScheduleModeService" // Service called by buildingScheduleSM
+    `local` = false
+    scheme = "http"
+    host = "localhost" // Or your building-service container name
+    port = 8005
+    endPoint = "/getScheduleMode" // The new endpoint in building_service.py
+    method = "POST"
+  }
+
+  // --- Bindings for Access Control ---
+  new HttpServiceImplementationBinding {
+    name = "authenticateUserService" // Service called by accessControlSM
+    `local` = false
+    scheme = "http"
+    host = "localhost"
+    port = 8005
+    endPoint = "/authenticateUser" // New endpoint needed
+    method = "POST"
+  }
+  new HttpServiceImplementationBinding {
+    name = "controlDoorLockService" // Service called by accessControlSM
+    `local` = false
+    scheme = "http"
+    host = "localhost"
+    port = 8005
+    endPoint = "/controlDoorLock" // New endpoint needed
+    method = "POST"
+  }
+  new HttpServiceImplementationBinding {
+    name = "checkAccessRuleService" // Service called by accessControlSM
+    `local` = false
+    scheme = "http"
+    host = "localhost"
+    port = 8005
+    endPoint = "/checkAccessRule" // New endpoint needed
+    method = "POST"
+  }
+
+  // --- Bindings for Security Manager ---
+  new HttpServiceImplementationBinding {
+    name = "notifySecurityPersonnelService" // Service called by securityManagerSM
+    `local` = false
+    scheme = "http"
+    host = "localhost"
+    port = 8005
+    endPoint = "/notifySecurity"
+    method = "POST"
+  }
+  // Optional: Police notification service binding
+  // new HttpServiceImplementationBinding {
+  //   name = "notifyPoliceService"
+  //   `local` = false
+  //   scheme = "http"
+  //   host = "localhost"
+  //   port = 8005
+  //   endPoint = "/notifyPolice"
+  //   method = "POST"
+  // }
 }

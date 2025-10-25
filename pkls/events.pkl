@@ -144,8 +144,25 @@ eEnterWeekend = "enterWeekend"
 eStartScheduleCheck = "startScheduleCheck"
 eRequestStay = "requestStay"
 eUserLeftZone = "userLeftZone"
-eZoneActive = "zoneActive"     // Output to local devices (data: { zone: "Room101" })
-eZoneInactive = "zoneInactive"   // Output to local devices (data: { zone: "Room101" })
+eZoneActive = "zoneActive"
+eZoneInactive = "zoneInactive"
 eZoneWarning = "zoneWarning"
 eShutdownRoom = "shutdownRoomNow"
 eRecheckOverride = "recheckOverride"
+eForcedEntry = "forcedEntry"
+eAccessDenied = "accessDenied"
+eTamperDetected = "tamperDetected"
+eManualSecurityAlert = "manualSecurityAlert"
+eClearSecurityAlert = "clearSecurityAlert"
+eLockdownZone = "lockdownZone"
+eUnlockAllEvacuationRoutes = "unlockAllEvacuationRoutes"
+eFlashAllLights = "flashAllLights"
+eActivateBuildingAlarm = "activateBuildingAlarm"
+eSecurityBreachNotification = "securityBreachNotification"
+// --- Access Control Events (Inputs/Outputs) ---
+eAuthenticationRequest = "authenticationRequest" // Input (Data: { cardId: "...", doorId: "..." })
+eForceUnlockRequest = "forceUnlockRequest" // Manual override input
+ePhysicalTamper = "physicalTamper" // Input from door sensor
+eDoorForcedOpen = "doorForcedOpen" // Input from door sensor
+eAccessGranted = "accessGranted" // Output (Data: { doorId: "...", zone: "...", user: "...", role: "..." })
+

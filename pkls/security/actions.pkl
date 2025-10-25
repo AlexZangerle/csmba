@@ -1,0 +1,80 @@
+
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+// This module contains actions for the gasSafety SM
+
+// Raise to start gas leak detection
+aRaiseSecurityBreach = new Csml.RaiseActionDescription {
+  event {
+    name = Events.eSecurityBreachNotification
+    channel = "global"
+    data {
+      new { name = "level"; value = "'Elevated'" }
+      new { name = "details"; value = Vars.vAlertDetails }
+    }
+  }
+}
+
+// Raise once a gas leak has been detected
+// includes location of gas leak as payload
+aRaiseFlashLights = new Csml.RaiseActionDescription { event { name = Events.eFlashAllLights; channel = "global" } }
+
+
+aRaiseBuildingAlarm = new Csml.RaiseActionDescription { event { name = Events.eActivateBuildingAlarm; channel = "global" } }
+
+aRaiseUnlockEvacuationRoutes = new Csml.RaiseActionDescription { event { name = Events.eUnlockAllEvacuationRoutes; channel = "global" } }
+
+aRaiseAccessDeniedAuth = new Csml.RaiseActionDescription {
+  event {
+    name = Events.eAccessDenied
+    channel = "global"
+    data {
+      new { name = "doorId"; value = Vars.vDoorId }
+      new { name = "zone"; value = Vars.vZoneId }
+      new { name = "user"; value = "'Unknown'" }
+      new { name = "reason"; value = "'Authentication Failed'" }
+    }
+  }
+}
+
+aRaiseAccessDeniedRule = new Csml.RaiseActionDescription {
+  event {
+    name = Events.eAccessDenied
+    channel = "global"
+    data {
+      new { name = "doorId"; value = Vars.vDoorId }
+      new { name = "zone"; value = Vars.vZoneId }
+      new { name = "user"; value = "'Unknown'" }
+      new { name = "reason"; value = "'Authentication Failed'" }
+    }
+  }
+}
+
+aRaiseAccessGranted = new Csml.RaiseActionDescription {
+  event {
+    name = Events.eAccessGranted
+    channel = "global"
+    data {
+      new { name = "doorId"; value = Vars.vDoorId }
+      new { name = "zone"; value = Vars.vZoneId }
+      new { name = "user"; value = Vars.vUserId }
+      new { name = "role"; value = Vars.vUserRole }
+    }
+  }
+}
+
+aRaiseAutoRelock = new Csml.RaiseActionDescription { event { name = "autoRelock"; channel = "internal" } }
+
+aRaiseReturnToLock = new Csml.RaiseActionDescription { event { name = "returnToLock"; channel = "internal" } }
+
+aRaiseForcedEntry = new Csml.RaiseActionDescription {
+  event {
+    name = Events.eForcedEntry
+    channel = "global"
+    data {
+      new { name = "doorId"; value = Vars.vDoorId }
+      new { name = "zone"; value = Vars.vZoneId }
+    }
+  }
+}

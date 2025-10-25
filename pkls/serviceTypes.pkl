@@ -82,6 +82,12 @@ stPeak = "peak"
 stGetIndoorTemp = "getIndoorTemp"
 
 stGetScheduleMode = "getScheduleMode"
-
-// Service to set HVAC services 
+// Service to set HVAC services
 stSetHVAC = "setHVAC"
+
+stNotifySecurityPersonnel = "notifySecurityPersonnelService"
+stNotifyPolice = "notifyPoliceService"
+
+stAuthenticateUser = "authenticateUserService"
+stControlDoorLock = "controlDoorLockService"
+stCheckAccessRule = "checkAccessRuleService"

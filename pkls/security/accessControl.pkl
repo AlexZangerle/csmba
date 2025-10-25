@@ -1,0 +1,243 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/guards.pkl" as Guards
+
+/// This module defines the state machine for a single access-controlled door.
+/// One instance runs per door, managing locks and authentication.
+class accessControlSM extends Csml.StateMachineDescription {
+  name = "accessControl"
+  localContext = Context.accessControlContext
+  states {
+    acInit
+    acLocked
+    acAuthenticating
+    acCheckingRules
+    acUnlocked
+    acAccessDenied
+    acEmergencyUnlock
+    acForcedOpenAlarm
+  }
+}
+
+local const acInit: Csml.StateDescription = new {
+  name = "init"
+  initial = true
+  // Ensure the door is locked on startup
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stControlDoorLock
+      input {
+        new { name = "doorId"; value = Vars.vDoorId }
+        new { name = "command"; value = "'lock'" }
+      }
+    }
+  }
+  always { new { target = acLocked.name } }
+}
+
+/// Default secure state. Door is locked. Listens for access attempts and overrides.
+local const acLocked: Csml.StateDescription = new {
+  name = "locked"
+  on {
+    // --- Normal Access Attempt ---
+    new {
+      event = Events.eAuthenticationRequest
+      // Only react if the request is for this specific door
+      guards { Guards.isCurrentDoor }
+      target = acAuthenticating.name
+    }
+
+    // --- Overrides & Alarms ---
+    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    new { event = Events.eGasLeakDetected; guards { Guards.checkIsEvacuationRoute }; target = acEmergencyUnlock.name }
+    new { event = Events.eUnlockAllEvacuationRoutes; guards { Guards.checkIsEvacuationRoute }; target = acEmergencyUnlock.name }
+    new {
+      event = Events.eLockdownZone // Can receive lockdown command even when locked
+      guards { Guards.isCurrentZone }
+      // Action: Potentially log that lockdown is being enforced, but stay in Locked state.
+    }
+    new { event = Events.eDoorForcedOpen; target = acForcedOpenAlarm.name }
+    new { event = Events.ePhysicalTamper; target = acForcedOpenAlarm.name } // Treat tamper like forced open for alert
+    new { event = Events.eForceUnlockRequest; target = acUnlocked.name } // Manual override
+  }
+}
+
+/// Calls the authentication service.
+local const acAuthenticating: Csml.StateDescription = new {
+  name = "authenticating"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stAuthenticateUser
+      input { new { name = "cardId"; value = "$cardId" } }
+      output {
+        new { reference = Vars.vUserId }
+        new { reference = Vars.vUserRole }
+        new { reference = Vars.vAuthenticationStatus }
+      }
+      done { new { name = "authComplete"; channel = "internal" } }
+      // Add onError handling here if service fails
+    }
+  }
+  on {
+    new {
+      event = "authComplete"
+      guards { Guards.authSuccessful }
+      target = acCheckingRules.name // Authentication succeeded, now check rules
+    }
+    new {
+      event = "authComplete"
+      guards { Guards.authFailed }
+      actions {
+        // Raise Access Denied event immediately for failed auth
+        Actions.aRaiseAccessDenied
+      }
+      target = acAccessDenied.name // Auth failed
+    }
+    // --- Overrides during authentication ---
+    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    // ... other overrides ...
+  }
+}
+
+/// Calls the rule checking service based on authenticated role and current schedule.
+local const acCheckingRules: Csml.StateDescription = new {
+  name = "checkingRules"
+  entry {
+    // Here we assume vCurrentScheduleMode is up-to-date.
+    // A more robust implementation might call stGetScheduleMode here first.
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stCheckAccessRule
+      input {
+        new { name = "userRole"; value = Vars.vUserRole }
+        new { name = "zoneId"; value = Vars.vZoneId }
+        new { name = "currentScheduleMode"; value = Vars.vCurrentScheduleMode }
+      }
+      output { new { reference = Vars.vAccessDecision } }
+      done { new { name = "rulesChecked"; channel = "internal" } }
+      // Add onError handling
+    }
+  }
+  on {
+    new {
+      event = "rulesChecked"
+      guards { Guards.allowAccess }
+      actions {
+        Actions.aRaiseAccessGranted
+      }
+      target = acUnlocked.name // Rules allow access
+    }
+    new {
+      event = "rulesChecked"
+      guards { Guards.denyAccess }
+      actions {
+        // Raise Access Denied event for rule failure
+        Actions.aRaiseAccessDeniedRule
+      }
+      target = acAccessDenied.name // Rules deny access
+    }
+    // --- Overrides during rule check ---
+    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    // ... other overrides ...
+  }
+}
+
+/// Door is temporarily unlocked.
+local const acUnlocked: Csml.StateDescription = new {
+  name = "unlocked"
+  entry {
+    // --- FIX: Remove the RaiseActionDescription from here ---
+    // 1. Send unlock command
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stControlDoorLock
+      input {
+        new { name = "doorId"; value = Vars.vDoorId }
+        new { name = "command"; value = "'unlock'" }
+      }
+    }
+  }
+  // 2. Automatically re-lock after a short period
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "autoRelockTimer"
+      delay = "10000" // 10 seconds
+      action = Actions.aRaiseAutoRelock
+    }
+  }
+  on {
+    new { event = "autoRelock"; target = acLocked.name }
+
+    // --- Overrides & Alarms ---
+    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    new {
+      event = Events.eLockdownZone
+      guards { Guards.isCurrentZone }
+      target = acLocked.name // Force lock immediately
+    }
+    new { event = Events.eDoorForcedOpen; target = acForcedOpenAlarm.name } // Can still be forced while unlocked
+    new { event = Events.ePhysicalTamper; target = acForcedOpenAlarm.name }
+  }
+}
+
+/// Access was denied (failed auth or policy). Briefly show status, then re-lock.
+local const acAccessDenied: Csml.StateDescription = new {
+  name = "accessDenied"
+  // Entry: Could potentially flash an indicator light via a service call
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "deniedDelay"
+      delay = "3000" // 3 seconds
+      action = Actions.aRaiseReturnToLock
+    }
+  }
+  on {
+    new { event = "returnToLock"; target = acLocked.name }
+    // Critical overrides still apply
+    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+  }
+}
+
+/// Highest priority state during safety emergencies. Forces door unlocked.
+local const acEmergencyUnlock: Csml.StateDescription = new {
+  name = "emergencyUnlock"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stControlDoorLock
+      input {
+        new { name = "doorId"; value = Vars.vDoorId }
+        new { name = "command"; value = "'unlock'" }
+      }
+    }
+  }
+  on {
+    // Wait for the safety all-clear event
+    new { event = Events.eDisarmFireAlarm; target = acLocked.name }
+    new { event = Events.eAllClearGas; target = acLocked.name }
+  }
+}
+
+/// Alarm state if physical tampering or forced entry is detected.
+local const acForcedOpenAlarm: Csml.StateDescription = new {
+  name = "forcedOpenAlarm"
+  entry {
+    // Raise critical alert to the Security Manager
+    Actions.aRaiseForcedEntry
+    // Try to re-lock the door, though it might fail if physically broken
+    new CSM.InvokeActionDescription {
+      serviceType = ServiceTypes.stControlDoorLock
+      input {
+        new { name = "doorId"; value = Vars.vDoorId }
+        new { name = "command"; value = "'lock'" }
+      }
+    }
+  }
+  on {
+    // Needs a manual reset event from security personnel to clear the alarm
+    new { event = Events.eClearSecurityAlert; target = acLocked.name }
+    // Safety overrides still function
+    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+  }
+}
