@@ -12,6 +12,10 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccup
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/energyManagement.pkl?v=1" as energyManagement
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/fire.pkl" as fire
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/hvac.pkl" as hvac
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/roomSchedule.pkl" as roomSchedule
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/securityManager.pkl" as securityManager
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/accessControl.pkl" as accessControl
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/buildingSchedule.pkl" as buildingSchedule
 
 name = "Building System"
 version = "3.0.0"
@@ -25,6 +29,11 @@ stateMachines {
     new electricalSafety.electricalSafetySM {}
     new gasSafety.gasSafetySM {}
     new energyManagement.energyManagementSM {}
+    new hvac.hvacSM {}
+    new buildingSchedule.buildingScheduleSM {}
+    new roomSchedule.roomScheduleSM {}
+    new securityManager.securityManagerSM {}
+    new accessControl.accessControlSM {}
 }
 persistentContext {
   variables {
