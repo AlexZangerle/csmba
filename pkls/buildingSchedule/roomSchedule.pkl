@@ -11,7 +11,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingS
 /// One instance of this SM will run for each room/zone.
 class roomScheduleSM extends Csml.StateMachineDescription {
   name = "roomSchedule"
-  localcontext = Context.roomContext
+  localContext = Context.roomContext
   states {
     rsInit
     rsActive
