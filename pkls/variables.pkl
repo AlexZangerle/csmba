@@ -83,3 +83,4 @@ vUserRole = "userRole"
 vAuthenticationStatus = "authenticationStatus"
 vAccessDecision = "accessDecision"
 
+vTest = "test"

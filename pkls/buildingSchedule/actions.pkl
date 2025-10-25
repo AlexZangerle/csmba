@@ -18,7 +18,7 @@ aRaiseEnterWeekend = new Csml.RaiseActionDescription { event { name = Events.eEn
 aRaiseZoneActive = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneActive
-    data { new { name = "zoneId"; value = Vars.vZoneId } }
+    data { new { name = "test"; value = Vars.vTest } }
     channel = "global"
   }
 }
@@ -26,7 +26,7 @@ aRaiseZoneActive = new Csml.RaiseActionDescription {
 aRaiseZoneInactive = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneInactive
-    data { new { name = "zoneId"; value = Vars.vZoneId } }
+    data { new { name = "test"; value = Vars.vTest } }
     channel = "global"
   }
 }
@@ -34,7 +34,7 @@ aRaiseZoneInactive = new Csml.RaiseActionDescription {
 aRaiseZoneWarning = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneWarning
-    data { new { name = "zoneId"; value = Vars.vZoneId } }
+    data { new { name = "test"; value = Vars.vTest } }
     channel = "global"
   }
 }

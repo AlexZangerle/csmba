@@ -29,7 +29,7 @@ local const rsInit: Csml.StateDescription = new {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stInitializeZone
       // The service returns the chosen zone ID into our local variable
-      output { new { reference = Vars.vZoneId } }
+      output { new { reference = Vars.vTest } }
       // When the service is done, raise an internal event
       done { new { name = "zoneInitialized"; channel = "internal" } }
     }

@@ -16,9 +16,9 @@ isWeekend = new Csml.GuardDescription {
 }
 
 requestedStay = new Csml.GuardDescription {
-  expression = "$zone == \(Vars.vZoneId)"
+  expression = "$zone == \(Vars.vTest)"
 }
 
 userLeftZone = new Csml.GuardDescription {
-  expression = "$zone == \(Vars.vZoneId)"
+  expression = "$zone == \(Vars.vTest)"
 }
