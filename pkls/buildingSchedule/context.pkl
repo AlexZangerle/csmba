@@ -14,7 +14,7 @@ scheduleContext = new Csml.ContextDescription {
 roomContext {
   variables {
     new {
-      name = Vars.vtest
+      name = Vars.vZoneId
       value = "'none'"
     }
   }
