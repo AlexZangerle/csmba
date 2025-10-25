@@ -93,7 +93,7 @@ local const acAuthenticating: Csml.StateDescription = new {
       guards { Guards.authFailed }
       actions {
         // Raise Access Denied event immediately for failed auth
-        Actions.aRaiseAccessDenied
+        Actions.aRaiseAccessDeniedAuth
       }
       target = acAccessDenied.name // Auth failed
     }
