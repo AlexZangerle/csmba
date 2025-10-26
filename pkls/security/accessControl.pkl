@@ -62,7 +62,7 @@ local const acLocked: Csml.StateDescription = new {
     // --- Overrides & Alarms ---
     new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
     new { event = Events.eGasLeakDetected guards { Guards.checkIsEvacuationRoute } target = acEmergencyUnlock.name }
-    new { event = Events.eUnlockAllEvacuationRoutesguards { Guards.checkIsEvacuationRoute } target = acEmergencyUnlock.name }
+    new { event = Events.eUnlockAllEvacuationRoutesguards guards { Guards.checkIsEvacuationRoute } target = acEmergencyUnlock.name }
     new {
       event = Events.eLockdownZone // Can receive lockdown command even when locked
       guards { Guards.isCurrentZone }
