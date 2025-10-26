@@ -30,8 +30,8 @@ local const smInit: Csml.StateDescription = new {
 local const smSecure: Csml.StateDescription = new {
   name = "secure"
   entry {
-    new Csml.AssignActionDescription { variable { name = Vars.vFailedAttemptsCount; value = "'0'" } }
-    new Csml.AssignActionDescription { variable { name = Vars.vAlertDetails; value = "''" } }
+    new Csml.AssignActionDescription { variable { name = Vars.vFailedAttemptsCount value = "'0'" } }
+    new Csml.AssignActionDescription { variable { name = Vars.vAlertDetails value = "''" } }
   }
   on {
     // --- High Severity Events ---
@@ -39,7 +39,7 @@ local const smSecure: Csml.StateDescription = new {
       event = Events.eForcedEntry
       actions {
         new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails; value = "'Forced entry detected at door ' + $doorId + ' in zone ' + $zone" }
+          variable { name = Vars.vAlertDetails value = "'Forced entry detected at door ' + $doorId + ' in zone ' + $zone" }
         }
       }
       target = smIntrusionAlert.name
@@ -48,7 +48,7 @@ local const smSecure: Csml.StateDescription = new {
       event = Events.eTamperDetected
       actions {
         new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails; value = "'Tamper detected on device ' + $deviceId + ' at ' + $location" }
+          variable { name = Vars.vAlertDetails value = "'Tamper detected on device ' + $deviceId + ' at ' + $location" }
         }
       }
       target = smIntrusionAlert.name // Treat tampering seriously
@@ -57,7 +57,7 @@ local const smSecure: Csml.StateDescription = new {
       event = Events.eManualSecurityAlert
       actions {
         new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails; value = "'Manual alert triggered: ' + $reason" }
+          variable { name = Vars.vAlertDetails value = "'Manual alert triggered: ' + $reason" }
         }
       }
       target = smIntrusionAlert.name
@@ -69,10 +69,10 @@ local const smSecure: Csml.StateDescription = new {
       actions {
         // Increment counter. In real system, check timestamp delta here.
         new Csml.AssignActionDescription {
-          variable { name = Vars.vFailedAttemptsCount; value = "\(Vars.vFailedAttemptsCount) + 1" }
+          variable { name = Vars.vFailedAttemptsCount value = "\(Vars.vFailedAttemptsCount) + 1" }
         }
         new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails; value = "'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
+          variable { name = Vars.vAlertDetails value = "'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
         }
       }
       // Transition if count reaches threshold (e.g., 3)
@@ -81,8 +81,8 @@ local const smSecure: Csml.StateDescription = new {
     }
 
     // --- Safety Overrides ---
-    new { event = Events.eFireAlarm; target = smEmergencyResponseActive.name }
-    new { event = Events.eGasLeakDetected; target = smEmergencyResponseActive.name }
+    new { event = Events.eFireAlarm target = smEmergencyResponseActive.name }
+    new { event = Events.eGasLeakDetected target = smEmergencyResponseActive.name }
   }
 }
 
@@ -93,7 +93,7 @@ local const smElevatedRisk: Csml.StateDescription = new {
     // Notify security personnel, but don't trigger major alarms yet.
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stNotifySecurityPersonnel
-      input { new { name = "message"; value = Vars.vAlertDetails } }
+      input { new { name = "message" value = Vars.vAlertDetails } }
     }
     Actions.aRaiseSecurityBreach
   }
@@ -102,19 +102,19 @@ local const smElevatedRisk: Csml.StateDescription = new {
     new Csml.TimeoutActionDescription {
       name = "riskDecayTimer"
       delay = "1800000" // 30 minutes
-      action = new Csml.RaiseActionDescription { event { name = "decayRisk"; channel = "internal" } }
+      action = new Csml.RaiseActionDescription { event { name = "decayRisk" channel = "internal" } }
     }
   }
   on {
-    new { event = "decayRisk"; target = smSecure.name }
+    new { event = "decayRisk" target = smSecure.name }
 
     // Further failed attempts escalate to IntrusionAlert
     new {
       event = Events.eAccessDenied
       actions {
-        new Csml.AssignActionDescription { variable { name = Vars.vFailedAttemptsCount; value = "\(Vars.vFailedAttemptsCount) + 1" } }
+        new Csml.AssignActionDescription { variable { name = Vars.vFailedAttemptsCount value = "\(Vars.vFailedAttemptsCount) + 1" } }
         new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails; value = "'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
+          variable { name = Vars.vAlertDetails value = "'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
         }
       }
       guards { Guards.failedAttemptHardlimitReached }
@@ -122,16 +122,16 @@ local const smElevatedRisk: Csml.StateDescription = new {
     }
 
     // High severity events still trigger immediate escalation
-    new { event = Events.eForcedEntry; target = smIntrusionAlert.name }
-    new { event = Events.eTamperDetected; target = smIntrusionAlert.name }
-    new { event = Events.eManualSecurityAlert; target = smIntrusionAlert.name }
+    new { event = Events.eForcedEntry target = smIntrusionAlert.name }
+    new { event = Events.eTamperDetected target = smIntrusionAlert.name }
+    new { event = Events.eManualSecurityAlert target = smIntrusionAlert.name }
 
     // Safety Overrides
-    new { event = Events.eFireAlarm; target = smEmergencyResponseActive.name }
-    new { event = Events.eGasLeakDetected; target = smEmergencyResponseActive.name }
+    new { event = Events.eFireAlarm target = smEmergencyResponseActive.name }
+    new { event = Events.eGasLeakDetected target = smEmergencyResponseActive.name }
 
     // Manual Clear
-    new { event = Events.eClearSecurityAlert; target = smSecure.name }
+    new { event = Events.eClearSecurityAlert target = smSecure.name }
   }
 }
 
@@ -145,23 +145,23 @@ local const smIntrusionAlert: Csml.StateDescription = new {
     Actions.aRaiseFlashLights
     Actions.aRaiseBuildingAlarm
     // Potentially lock down specific zones based on $zone from triggering event
-    // new Csml.RaiseActionDescription { event { name = Events.eLockdownZone; channel = "global"; data { new { name="zone"; value="$zone"} } } }
+    // new Csml.RaiseActionDescription { event { name = Events.eLockdownZone channel = "global" data { new { name="zone" value="$zone"} } } }
 
     // Call external services
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stNotifySecurityPersonnel
-      input { new { name = "message"; value = "'INTRUSION ALERT: ' + \(Vars.vAlertDetails)" } }
+      input { new { name = "message" value = "'INTRUSION ALERT: ' + \(Vars.vAlertDetails)" } }
     }
     // Optionally notify police automatically (use with caution!)
-    // new Csml.InvokeActionDescription { serviceType = ServiceTypes.stNotifyPolice; input { ... } }
+    // new Csml.InvokeActionDescription { serviceType = ServiceTypes.stNotifyPolice input { ... } }
   }
   on {
     // Safety Overrides take precedence
-    new { event = Events.eFireAlarm; target = smEmergencyResponseActive.name }
-    new { event = Events.eGasLeakDetected; target = smEmergencyResponseActive.name }
+    new { event = Events.eFireAlarm target = smEmergencyResponseActive.name }
+    new { event = Events.eGasLeakDetected target = smEmergencyResponseActive.name }
 
     // Wait for manual clear from authorized personnel
-    new { event = Events.eClearSecurityAlert; target = smSecure.name }
+    new { event = Events.eClearSecurityAlert target = smSecure.name }
   }
 }
 
@@ -175,8 +175,8 @@ local const smEmergencyResponseActive: Csml.StateDescription = new {
   }
   on {
     // When the safety event is cleared, return to the normal secure state.
-    new { event = Events.eDisarmFireAlarm; target = smSecure.name }
+    new { event = Events.eDisarmFireAlarm target = smSecure.name }
     // Make sure you have an 'all clear' event defined for gas
-    new { event = Events.eGasPurged; target = smSecure.name }
+    new { event = Events.eGasPurged target = smSecure.name }
   }
 }

@@ -301,6 +301,15 @@ bindings {
     endPoint = "/initializeZone"
     method = "POST"
   }
+  new HttpServiceImplementationBinding {
+    name = "getDoorRouteTypeService" // Service called by securityManagerSM
+    `local` = false
+    scheme = "http"
+    host = "localhost"
+    port = 8005
+    endPoint = "/getDoorRouteType"
+    method = "POST"
+  }
   // Optional: Police notification service binding
   // new HttpServiceImplementationBinding {
   //   name = "notifyPoliceService"

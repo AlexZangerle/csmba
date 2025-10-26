@@ -15,7 +15,7 @@ accessControlContext = new Csml.ContextDescription {
   variables {
     new { name = Vars.vDoorId; value = "''" }
     new { name = Vars.vZoneId; value = "''" }
-    new { name = Vars.vIsEvacuationRoute; value = "'false'" }
+    new { name = Vars.vIsEvacuationRoute; value = "false" }
     new { name = Vars.vUserId; value = "''" }
     new { name = Vars.vUserRole; value = "''" }
     new { name = Vars.vAuthenticationStatus; value = "''" }

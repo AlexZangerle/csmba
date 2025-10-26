@@ -29,14 +29,22 @@ local const acInit: Csml.StateDescription = new {
   // Ensure the door is locked on startup
   entry {
     new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stControlDoorLock
+      serviceType = ServiceTypes.stGetDoorRouteType
       input {
-        new { name = "doorId"; value = Vars.vDoorId }
-        new { name = "command"; value = "'lock'" }
+        new {
+          name = "doorId"
+          value = Vars.vDoorId } }
+      output {
+        new {
+          reference = Vars.vIsEvacuationRoute } }
+      done {
+        new {
+          name = "doorTypeDetermined"
+          channel = "internal" }
       }
     }
   }
-  always { new { target = acLocked.name } }
+  on { new { event = "doorTypeDetermined" target = acLocked.name } }
 }
 
 /// Default secure state. Door is locked. Listens for access attempts and overrides.
@@ -52,17 +60,17 @@ local const acLocked: Csml.StateDescription = new {
     }
 
     // --- Overrides & Alarms ---
-    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
-    new { event = Events.eGasLeakDetected; guards { Guards.checkIsEvacuationRoute }; target = acEmergencyUnlock.name }
-    new { event = Events.eUnlockAllEvacuationRoutes; guards { Guards.checkIsEvacuationRoute }; target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
+    new { event = Events.eGasLeakDetected guards { Guards.checkIsEvacuationRoute } target = acEmergencyUnlock.name }
+    new { event = Events.eUnlockAllEvacuationRoutesguards { Guards.checkIsEvacuationRoute } target = acEmergencyUnlock.name }
     new {
       event = Events.eLockdownZone // Can receive lockdown command even when locked
       guards { Guards.isCurrentZone }
       // Action: Potentially log that lockdown is being enforced, but stay in Locked state.
     }
-    new { event = Events.eDoorForcedOpen; target = acForcedOpenAlarm.name }
-    new { event = Events.ePhysicalTamper; target = acForcedOpenAlarm.name } // Treat tamper like forced open for alert
-    new { event = Events.eForceUnlockRequest; target = acUnlocked.name } // Manual override
+    new { event = Events.eDoorForcedOpen target = acForcedOpenAlarm.name }
+    new { event = Events.ePhysicalTamper target = acForcedOpenAlarm.name } // Treat tamper like forced open for alert
+    new { event = Events.eForceUnlockRequest target = acUnlocked.name } // Manual override
   }
 }
 
@@ -72,13 +80,13 @@ local const acAuthenticating: Csml.StateDescription = new {
   entry {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stAuthenticateUser
-      input { new { name = "cardId"; value = "$cardId" } }
+      input { new { name = "cardId" value = "$cardId" } }
       output {
         new { reference = Vars.vUserId }
         new { reference = Vars.vUserRole }
         new { reference = Vars.vAuthenticationStatus }
       }
-      done { new { name = "authComplete"; channel = "internal" } }
+      done { new { name = "authComplete" channel = "internal" } }
       // Add onError handling here if service fails
     }
   }
@@ -98,7 +106,7 @@ local const acAuthenticating: Csml.StateDescription = new {
       target = acAccessDenied.name // Auth failed
     }
     // --- Overrides during authentication ---
-    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
     // ... other overrides ...
   }
 }
@@ -112,12 +120,12 @@ local const acCheckingRules: Csml.StateDescription = new {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stCheckAccessRule
       input {
-        new { name = "userRole"; value = Vars.vUserRole }
-        new { name = "zoneId"; value = Vars.vZoneId }
-        new { name = "currentScheduleMode"; value = Vars.vCurrentScheduleMode }
+        new { name = "userRole" value = Vars.vUserRole }
+        new { name = "zoneId" value = Vars.vZoneId }
+        new { name = "currentScheduleMode" value = Vars.vCurrentScheduleMode }
       }
       output { new { reference = Vars.vAccessDecision } }
-      done { new { name = "rulesChecked"; channel = "internal" } }
+      done { new { name = "rulesChecked" channel = "internal" } }
       // Add onError handling
     }
   }
@@ -140,7 +148,7 @@ local const acCheckingRules: Csml.StateDescription = new {
       target = acAccessDenied.name // Rules deny access
     }
     // --- Overrides during rule check ---
-    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
     // ... other overrides ...
   }
 }
@@ -154,8 +162,8 @@ local const acUnlocked: Csml.StateDescription = new {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stControlDoorLock
       input {
-        new { name = "doorId"; value = Vars.vDoorId }
-        new { name = "command"; value = "'unlock'" }
+        new { name = "doorId" value = Vars.vDoorId }
+        new { name = "command" value = "'unlock'" }
       }
     }
   }
@@ -168,17 +176,17 @@ local const acUnlocked: Csml.StateDescription = new {
     }
   }
   on {
-    new { event = "autoRelock"; target = acLocked.name }
+    new { event = "autoRelock" target = acLocked.name }
 
     // --- Overrides & Alarms ---
-    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
     new {
       event = Events.eLockdownZone
       guards { Guards.isCurrentZone }
       target = acLocked.name // Force lock immediately
     }
-    new { event = Events.eDoorForcedOpen; target = acForcedOpenAlarm.name } // Can still be forced while unlocked
-    new { event = Events.ePhysicalTamper; target = acForcedOpenAlarm.name }
+    new { event = Events.eDoorForcedOpen target = acForcedOpenAlarm.name } // Can still be forced while unlocked
+    new { event = Events.ePhysicalTamper target = acForcedOpenAlarm.name }
   }
 }
 
@@ -194,9 +202,9 @@ local const acAccessDenied: Csml.StateDescription = new {
     }
   }
   on {
-    new { event = "returnToLock"; target = acLocked.name }
+    new { event = "returnToLock" target = acLocked.name }
     // Critical overrides still apply
-    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
   }
 }
 
@@ -207,15 +215,15 @@ local const acEmergencyUnlock: Csml.StateDescription = new {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stControlDoorLock
       input {
-        new { name = "doorId"; value = Vars.vDoorId }
-        new { name = "command"; value = "'unlock'" }
+        new { name = "doorId" value = Vars.vDoorId }
+        new { name = "command" value = "'unlock'" }
       }
     }
   }
   on {
     // Wait for the safety all-clear event
-    new { event = Events.eDisarmFireAlarm; target = acLocked.name }
-    new { event = Events.eGasPurged; target = acLocked.name }
+    new { event = Events.eDisarmFireAlarm target = acLocked.name }
+    new { event = Events.eGasPurged target = acLocked.name }
   }
 }
 
@@ -229,15 +237,15 @@ local const acForcedOpenAlarm: Csml.StateDescription = new {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stControlDoorLock
       input {
-        new { name = "doorId"; value = Vars.vDoorId }
-        new { name = "command"; value = "'lock'" }
+        new { name = "doorId" value = Vars.vDoorId }
+        new { name = "command" value = "'lock'" }
       }
     }
   }
   on {
     // Needs a manual reset event from security personnel to clear the alarm
-    new { event = Events.eClearSecurityAlert; target = acLocked.name }
+    new { event = Events.eClearSecurityAlert target = acLocked.name }
     // Safety overrides still function
-    new { event = Events.eFireAlarm; target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
   }
 }

@@ -76,9 +76,10 @@ vFailedAttemptsCount = "failedAttemptsCount"
 vLastFailedAttemptTime = "lastFailedAttemptTime"
 vAlertDetails = "alertDetails"
 // Local context for AccessControlSM
-vDoorId = "doorId" // Provided at startup
-vIsEvacuationRoute = "isEvacuationRoute" // Boolean, provided at startup
+vDoorId = "doorId"
+vIsEvacuationRoute = "isEvacuationRoute"
 vUserId = "userId"
 vUserRole = "userRole"
 vAuthenticationStatus = "authenticationStatus"
 vAccessDecision = "accessDecision"
+stGetDoorRouteType = "getDoorRouteTypeService"

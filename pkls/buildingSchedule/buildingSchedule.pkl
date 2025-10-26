@@ -38,7 +38,7 @@ local const bsEvaluating: Csml.StateDescription = new {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stGetScheduleMode
       output { new { reference = Vars.vCurrentScheduleMode } }
-      done { new { name = Events.eScheduleCheckComplete; channel = "internal" } }
+      done { new { name = Events.eScheduleCheckComplete channel = "internal" } }
     }
   }
   on {
@@ -73,8 +73,8 @@ local const bsBusinessHours: Csml.StateDescription = new {
     }
   }
   on {
-    new { event = Events.eStartScheduleCheck; target = bsEvaluating.name }
-    new { event = Events.eFireAlarm; target = bsEmergencyOverride.name }
+    new { event = Events.eStartScheduleCheck target = bsEvaluating.name }
+    new { event = Events.eFireAlarm target = bsEmergencyOverride.name }
   }
 }
 
@@ -91,8 +91,8 @@ local const bsAfterHours: Csml.StateDescription = new {
     }
   }
   on {
-    new { event = Events.eStartScheduleCheck; target = bsEvaluating.name }
-    new { event = Events.eFireAlarm; target = bsEmergencyOverride.name }
+    new { event = Events.eStartScheduleCheck target = bsEvaluating.name }
+    new { event = Events.eFireAlarm target = bsEmergencyOverride.name }
   }
 }
 
@@ -103,8 +103,8 @@ local const bsWeekendClosed: Csml.StateDescription = new {
   }
   // This state would have the same polling logic as bsAfterHours.
   on {
-    new { event = Events.eStartScheduleCheck; target = bsEvaluating.name }
-    new { event = Events.eFireAlarm; target = bsEmergencyOverride.name }
+    new { event = Events.eStartScheduleCheck target = bsEvaluating.name }
+    new { event = Events.eFireAlarm target = bsEmergencyOverride.name }
   }
 }
 
@@ -112,7 +112,7 @@ local const bsEmergencyOverride: Csml.StateDescription = new {
   name = "emergencyOverride"
   on {
     // When the alarm is disarmed, re-evaluate to return to the correct state.
-    new { event = Events.eDisarmFireAlarm; target = bsEvaluating.name }
-    new { event = Events.eGasPurged; target = bsEvaluating.name }
+    new { event = Events.eDisarmFireAlarm target = bsEvaluating.name }
+    new { event = Events.eGasPurged target = bsEvaluating.name }
   }
 }
