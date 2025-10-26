@@ -132,7 +132,7 @@ eDrasticEnergySaving = "drasticEnergySaving"
 // Raised to check current grid status
 eStartGridCheck = "startGridCheck"
 
-eStartIndoorTempCheck = "startGridCheck"
+eStartIndoorTempCheck = "startIndoorTempCheck"
 
 eIndoorTempCheckComplete = "indoorTempCheckComplete"
 
