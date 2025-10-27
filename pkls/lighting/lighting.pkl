@@ -3,172 +3,239 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pk
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/guards.pkl" as Guards
+// Import the context definition needed for zoneId
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/context.pkl" as Context
 
 // This module contains the definition for the lighting SM
-// Integrates with Occupancy, Schedule, Energy Saving, and Security Alarms.
 
-lightingSM = new Csml.StateMachineDescription {
+// Integrates with Occupancy, Schedule, Energy Saving, and Security Alarms.
+class lightingSM extends Csml.StateMachineDescription {
   name = "lighting"
   localContext = Context.lightingContext
   states {
-    new Csml.StateDescription {
-      name = "init"
-      initial = true
-      always { new { target = "off" } }
+    init
+    off
+    turnOn
+    dim
+    userLevel
+    // --- UPDATED: Replaced single flashing state with two ---
+    flashingAlarm_Off
+    flashingAlarm_On
+  }
+}
+
+// Initially always transitions to off
+local const init: Csml.StateDescription = new {
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = off.name
+    }
+  }
+}
+
+// Lights off - default state when inactive or vacant.
+local const off: Csml.StateDescription = new {
+  name = "off"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stTurnOff
+    }
+  }
+  on {
+    // --- Standard Occupancy Logic (Only applies if zone is active) ---
+    new {
+      event = Events.eOccupancyDetected
+      guards { Guards.energySavingInactive }
+      target = turnOn.name
+    }
+    new {
+      event = Events.eOccupancyDetected
+      guards { Guards.energySavingActive }
+      target = dim.name
+    }
+    new {
+      event = Events.eActivateLightUserLevel
+      target = userLevel.name
     }
 
-    new Csml.StateDescription {
-      name = "off"
-      entry { new Csml.InvokeActionDescription { serviceType = ServiceTypes.stTurnOff } }
-      on {
-        new {
-          event = Events.eOccupancyDetected
-          guards { Guards.energySavingInactive }
-          target = "on"
-        }
-        new {
-          event = Events.eOccupancyDetected
-          guards { Guards.energySavingActive }
-          target = "dim"
-        }
-        new {
-          event = Events.eActivateLightUserLevel
-          // --- FIX: Removed isMyZone guard --- (Assume event is targeted correctly)
-          target = "userLevel"
-        }
-        new {
-          event = Events.eZoneActive
-          guards { Guards.isMyZone } // OK: This event carries zone data
-          // Stay off, wait for occupancy trigger
-        }
-        new {
-          event = Events.eAccessGranted
-          guards { Guards.isMyZone } // OK: This event carries zone data
-          target = "on"
-        }
-        new {
-          event = Events.eZoneWarning
-          guards { Guards.isMyZone } // OK: This event carries zone data
-          // Stay off if already off
-        }
-        new {
-          event = Events.eFlashAllLights
-          // --- FIX: Removed isMyZone guard --- (Assume command is building-wide or targeted via topic)
-          target = "flashingAlarm_Off"
-        }
-        new {
-          event = Events.eActivateEnergySaving
-          actions{ new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "true" } } }
-        }
-        new {
-          event = Events.eDeactivateEnergySaving
-          actions{ new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "false" } } }
-        }
-      }
+    // --- Schedule & Access Integration ---
+    new {
+      event = Events.eZoneActive
+      guards { Guards.isMyZone }
+      // Stay off, wait for occupancy trigger
+    }
+    new {
+      event = Events.eAccessGranted
+      guards { Guards.isMyZone }
+      target = turnOn.name // Assume immediate activation needed
+    }
+    new {
+      event = Events.eZoneWarning
+      guards { Guards.isMyZone }
+      // Stay off if already off
+    }
+    // eZoneInactive: Already off
+
+    // --- Security Integration ---
+    new {
+      event = Events.eFlashAllLights
+      target = flashingAlarm_Off.name // Start flashing cycle with Off
     }
 
-    new Csml.StateDescription {
-      name = "on"
-      entry { new Csml.InvokeActionDescription { serviceType = ServiceTypes.stTurnOn } }
-      on {
-        new { event = Events.eOccupancyTransient; target = "dim" }
-        new { event = Events.eOccupancyVacant; target = "off" }
-        new {
-          event = Events.eActivateLightUserLevel
-          // --- FIX: Removed isMyZone guard ---
-          target = "userLevel"
-        }
-        new { event = Events.eZoneWarning; guards { Guards.isMyZone }; target = "dim" } // OK
-        new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = "off" } // OK
-        new {
-          event = Events.eFlashAllLights
-          // --- FIX: Removed isMyZone guard ---
-          target = "flashingAlarm_Off"
-        }
-      }
+    // --- Energy Saving ---
+    new {
+      event = Events.eActivateEnergySaving
+      actions{ new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "true" } } }
     }
+    new {
+      event = Events.eDeactivateEnergySaving
+      actions{ new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "false" } } }
+    }
+  }
+}
 
-    new Csml.StateDescription {
-      name = "dim"
-      entry { new Csml.InvokeActionDescription { serviceType = ServiceTypes.stDim } }
-      on {
-        new { event = Events.eOccupancyDetected; guards { Guards.energySavingInactive }; target = "on" }
-        new { event = Events.eOccupancyDetected; guards { Guards.energySavingActive } /* Stay dim */ }
-        new { event = Events.eOccupancyVacant; target = "off" }
-        new {
-          event = Events.eActivateLightUserLevel
-          // --- FIX: Removed isMyZone guard ---
-          target = "userLevel"
-        }
-        new { event = Events.eZoneActive; guards { Guards.isMyZone }; target = "on" } // OK
-        new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = "off" } // OK
-        new {
-          event = Events.eFlashAllLights
-          // --- FIX: Removed isMyZone guard ---
-          target = "flashingAlarm_Off"
-        }
-        new { event = Events.eActivateEnergySaving; actions{ new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "true" } } } }
-        new { event = Events.eDeactivateEnergySaving; actions{ new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "false" } } } }
-      }
+// Lights on - zone is active and occupied.
+local const turnOn: Csml.StateDescription = new {
+  name = "on"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stTurnOn
     }
+  }
+  on {
+    // --- Standard Occupancy Logic ---
+    new { event = Events.eOccupancyTransient; target = dim.name }
+    new { event = Events.eOccupancyVacant; target = off.name }
+    new { event = Events.eActivateLightUserLevel target = userLevel.name }
 
-    new Csml.StateDescription {
-      name = "userLevel"
-      localContext = Context.lightingContext
-      staticContext { variables{ Vars.vUserLightLevel } }
-      entry {
-        new Csml.AssignActionDescription {
-          variable { name = Vars.vUserLightLevel.name; value = "if ($lightLevel != null && $lightLevel != -1) $lightLevel else lightLevel" }
-        }
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stTurnUserLevel
-          input { new { name = "lightLevel"; value = "lightLevel" } }
-        }
-      }
-      on {
-        new {
-          event = Events.eDeactivateLightUserLevel
-          // --- FIX: Removed isMyZone guard ---
-          target = "off"
-        }
-        new { event = Events.eZoneWarning; guards { Guards.isMyZone }; target = "dim" } // OK
-        new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = "off" } // OK
-        new {
-          event = Events.eFlashAllLights
-          // --- FIX: Removed isMyZone guard ---
-          target = "flashingAlarm_Off"
-        }
-      }
-    }
+    // --- Schedule Integration ---
+    new { event = Events.eZoneWarning; guards { Guards.isMyZone }; target = dim.name }
+    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name }
 
-    new Csml.StateDescription {
-      name = "flashingAlarm_Off"
-      entry { new Csml.InvokeActionDescription { serviceType = ServiceTypes.stTurnOff } }
-      after { new Csml.TimeoutActionDescription { name = "flashOffPeriodTimer"; delay = "1000"; action = new Csml.RaiseActionDescription { event { name = "flashOn"; channel = "internal" } } } }
-      on {
-        new { event = "flashOn"; target = "flashingAlarm_On" }
-        new {
-          event = Events.eClearSecurityAlert
-          // --- FIX: Removed isMyZone guard --- (Assume clear is building-wide or targeted via topic)
-          target = "off"
-        }
-      }
-    }
+    // --- Security Integration ---
+    new { event = Events.eFlashAllLights target = flashingAlarm_Off.name } // Start flashing cycle with Off
+  }
+}
 
-    new Csml.StateDescription {
-      name = "flashingAlarm_On"
-      entry { new Csml.InvokeActionDescription { serviceType = ServiceTypes.stTurnOn } }
-      after { new Csml.TimeoutActionDescription { name = "flashOnPeriodTimer"; delay = "500"; action = new Csml.RaiseActionDescription { event { name = "flashOff"; channel = "internal" } } } }
-      on {
-        new { event = "flashOff"; target = "flashingAlarm_Off" }
-        new {
-          event = Events.eClearSecurityAlert
-          // --- FIX: Removed isMyZone guard ---
-          target = "off"
-        }
+// Lights dim - grace period, warning, or energy saving.
+local const dim: Csml.StateDescription = new {
+  name = "dim"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stDim
+    }
+  }
+  on {
+    // --- Standard Occupancy Logic ---
+    new { event = Events.eOccupancyDetected; guards { Guards.energySavingInactive }; target = turnOn.name }
+    new { event = Events.eOccupancyDetected; guards { Guards.energySavingActive } /* Stay dim */ }
+    new { event = Events.eOccupancyVacant; target = off.name }
+    new { event = Events.eActivateLightUserLevel target = userLevel.name }
+
+    // --- Schedule Integration ---
+    new { event = Events.eZoneActive; guards { Guards.isMyZone }; target = turnOn.name }
+    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name }
+
+    // --- Security Integration ---
+    new { event = Events.eFlashAllLights target = flashingAlarm_Off.name } // Start flashing cycle with Off
+
+    // --- Energy Saving ---
+    new { event = Events.eActivateEnergySaving; actions{ new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "true" } } } }
+    new { event = Events.eDeactivateEnergySaving; actions{ new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "false" } } } }
+  }
+}
+
+// Lights at manual level - user override.
+local const userLevel: Csml.StateDescription = new {
+  name = "userLevel"
+  localContext = Context.lightingContext
+  staticContext { variables{ Vars.vUserLightLevel } }
+  entry {
+    new Csml.AssignActionDescription {
+      variable {
+        name = Vars.vUserLightLevel.name
+        value = "if ($lightLevel != null && $lightLevel != -1) $lightLevel else lightLevel"
       }
     }
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stTurnUserLevel
+      input { new { name = "lightLevel"; value = "lightLevel" } }
+    }
+  }
+  on {
+    // --- Standard Deactivation ---
+    new { event = Events.eDeactivateLightUserLevel target = off.name }
+
+    // --- Schedule Integration ---
+    new { event = Events.eZoneWarning; guards { Guards.isMyZone }; target = dim.name } // Warning overrides
+    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name } // Inactive overrides
+
+    // --- Security Integration ---
+    new { event = Events.eFlashAllLights target = flashingAlarm_Off.name } // Start flashing cycle with Off
+  }
+}
+
+// --- UPDATED Flashing Logic: Two-State Sequential Flashing ---
+
+local const flashingAlarm_Off: Csml.StateDescription = new {
+  name = "flashingAlarm_Off"
+  entry {
+    // Turn the light OFF when entering this state
+    new Csml.InvokeActionDescription { serviceType = ServiceTypes.stTurnOff }
+  }
+  after {
+    // After a delay (e.g., 1 second), raise event to turn ON
+    new Csml.TimeoutActionDescription {
+      name = "flashOffPeriodTimer"
+      delay = "1000" // Light is off for 1 second
+      action = new Csml.RaiseActionDescription { event { name = "flashOn"; channel = "internal" } }
+    }
+  }
+  on {
+    // Transition to the ON state
+    new {
+      event = "flashOn"
+      target = flashingAlarm_On.name
+    }
+    // Exit condition: Security alert cleared
+    new {
+      event = Events.eClearSecurityAlert
+      target = off.name // Go to off state to reset
+    }
+    // Consider reaction to eZoneInactive? Should flashing stop if zone is deactivated?
+    // new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name }
+  }
+}
+
+local const flashingAlarm_On: Csml.StateDescription = new {
+  name = "flashingAlarm_On"
+  entry {
+    // Turn the light ON when entering this state
+    new Csml.InvokeActionDescription { serviceType = ServiceTypes.stTurnOn }
+  }
+  after {
+    // After a shorter delay (e.g., 0.5 seconds), raise event to turn OFF
+    new Csml.TimeoutActionDescription {
+      name = "flashOnPeriodTimer"
+      delay = "500" // Light is on for 0.5 seconds
+      action = new Csml.RaiseActionDescription { event { name = "flashOff"; channel = "internal" } }
+    }
+  }
+  on {
+    // Transition back to the OFF state
+    new {
+      event = "flashOff"
+      target = flashingAlarm_Off.name
+    }
+    // Exit condition: Security alert cleared
+    new {
+      event = Events.eClearSecurityAlert
+      target = off.name // Go to off state to reset
+    }
+    // Consider reaction to eZoneInactive?
+    // new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name }
   }
 }
 
