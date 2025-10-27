@@ -97,6 +97,16 @@ local const rVacant: Csml.StateDescription = new {
       delay = "30000"
       action = Actions.aRaiseStartDetectingOccupancy
     }
+    new Csml.TimeoutActionDescription {
+      name = "detectServiceTime"
+      delay = "30000"
+      action = new Csml.RaiseActionDescription {
+        event {
+          name =  "startServiceTimeDetection"
+          channel = "internal"
+        }
+      }
+    }
   }
   on {
     new {
@@ -117,6 +127,16 @@ local const rVacant: Csml.StateDescription = new {
           }
         }
       }
+    }
+    new {
+      event = Events.eOccupancyDetected
+      actions {
+        // RaiseIn Action
+      }
+    }
+    new {
+      event = "serviceTookToLong"
+      target = "someMaintenanceState"
     }
     new {
       event = Events.eDetectionComplete

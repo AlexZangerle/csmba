@@ -17,25 +17,25 @@ class energyManagementSM extends Csml.StateMachineDescription {
     name = "energyManagement"
     localContext = Context.energyManagementContext
     states{
-        emInit
-        emNormal
-        emPeak
-        emGridRequestResponse
+        init
+        normal
+        peak
+        gridRequestResponse
     }
 }
 
-local const emInit: Csml.StateDescription = new {
+local const init: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
         new {
-            target = emNormal.name
+            target = normal.name
         }
     }
 }
 //Always start in normal mode
 //Energy saving deactivated when entering this mode
-local const emNormal: Csml.StateDescription = new {
+local const normal: Csml.StateDescription = new {
     name = "normal"
     entry{
         Actions.aRaiseDeactiveEnergySaving
@@ -95,7 +95,7 @@ local const emNormal: Csml.StateDescription = new {
             guards{
                 Guards.gridDemandResponse
             }
-            target = emGridRequestResponse.name
+            target = gridRequestResponse.name
         }
         new {
             event = Events.eEnergyCheckComplete
@@ -103,13 +103,13 @@ local const emNormal: Csml.StateDescription = new {
                 Guards.priceAboveMax
                 Guards.gridNormal
             }
-            target = emPeak.name
+            target = peak.name
         }
     }
 }
 
 // If current energy price is above threshold, throttle consumption
-local const emPeak: Csml.StateDescription = new {
+local const peak: Csml.StateDescription = new {
     name = "peakDemand"
     entry {
         Actions.aRaiseEnergySaving
@@ -168,7 +168,7 @@ local const emPeak: Csml.StateDescription = new {
             guards{
                 Guards.gridDemandResponse
             }
-            target = emGridRequestResponse.name
+            target = gridRequestResponse.name
         }
         new {
             event = Events.eEnergyCheckComplete
@@ -176,13 +176,13 @@ local const emPeak: Csml.StateDescription = new {
                 Guards.priceUnderMax
                 Guards.gridNormal
             }
-            target = emNormal.name
+            target = normal.name
         }
     }
 }
 
 // When demand response is received, throttle demand more aggressively
-local const emGridRequestResponse: Csml.StateDescription = new {
+local const gridRequestResponse: Csml.StateDescription = new {
     name = "requestReponse"
     entry {
         Actions.aRaiseDrasticEnergySaving
@@ -242,7 +242,7 @@ local const emGridRequestResponse: Csml.StateDescription = new {
                 Guards.gridNormal
                 Guards.priceAboveMax
             }
-            target = emPeak.name
+            target = peak.name
         }
         new {
             event = Events.eEnergyCheckComplete
@@ -250,7 +250,7 @@ local const emGridRequestResponse: Csml.StateDescription = new {
                 Guards.priceUnderMax
                 Guards.gridNormal
             }
-            target = emNormal.name
+            target = normal.name
         }
     }
 }

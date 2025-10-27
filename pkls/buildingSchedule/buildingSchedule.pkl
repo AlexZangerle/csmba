@@ -12,27 +12,27 @@ class buildingScheduleSM extends Csml.StateMachineDescription {
   name = "buildingSchedule"
   localContext = Context.scheduleContext
   states {
-    bsInit
-    bsEvaluating
-    bsBusinessHours
-    bsAfterHours
-    bsWeekendClosed
-    bsEmergencyOverride
+    init
+    evaluating
+    businessHours
+    afterHours
+    weekendClosed
+    emergencyOverride
   }
 }
 
-local const bsInit: Csml.StateDescription = new {
+local const init: Csml.StateDescription = new {
   name = "init"
   initial = true
   always {
     new {
-      target = bsEvaluating.name
+      target = evaluating.name
     }
   }
 }
 
 /// A central state to call the time service and route to the correct operational mode.
-local const bsEvaluating: Csml.StateDescription = new {
+local const evaluating: Csml.StateDescription = new {
   name = "evaluating"
   entry {
     new Csml.InvokeActionDescription {
@@ -45,22 +45,22 @@ local const bsEvaluating: Csml.StateDescription = new {
     new {
       event = Events.eScheduleCheckComplete
       guards { Guards.isBusinessHours }
-      target = bsBusinessHours.name
+      target = businessHours.name
     }
     new {
       event = Events.eScheduleCheckComplete
       guards { Guards.isAfterHours }
-      target = bsAfterHours.name
+      target = afterHours.name
     }
     new {
       event = Events.eScheduleCheckComplete
       guards { Guards.isWeekend }
-      target = bsWeekendClosed.name
+      target = weekendClosed.name
     }
   }
 }
 
-local const bsBusinessHours: Csml.StateDescription = new {
+local const businessHours: Csml.StateDescription = new {
   name = "businessHours"
   entry {
     Actions.aRaiseEnterBusinessHours
@@ -73,12 +73,12 @@ local const bsBusinessHours: Csml.StateDescription = new {
     }
   }
   on {
-    new { event = Events.eStartScheduleCheck target = bsEvaluating.name }
-    new { event = Events.eFireAlarm target = bsEmergencyOverride.name }
+    new { event = Events.eStartScheduleCheck target = evaluating.name }
+    new { event = Events.eFireAlarm target = emergencyOverride.name }
   }
 }
 
-local const bsAfterHours: Csml.StateDescription = new {
+local const afterHours: Csml.StateDescription = new {
   name = "afterHours"
   entry {
     Actions.aRaiseEnterAfterHours
@@ -91,28 +91,28 @@ local const bsAfterHours: Csml.StateDescription = new {
     }
   }
   on {
-    new { event = Events.eStartScheduleCheck target = bsEvaluating.name }
-    new { event = Events.eFireAlarm target = bsEmergencyOverride.name }
+    new { event = Events.eStartScheduleCheck target = evaluating.name }
+    new { event = Events.eFireAlarm target = emergencyOverride.name }
   }
 }
 
-local const bsWeekendClosed: Csml.StateDescription = new {
+local const weekendClosed: Csml.StateDescription = new {
   name = "weekendClosed"
   entry {
     Actions.aRaiseEnterWeekend
   }
-  // This state would have the same polling logic as bsAfterHours.
+  // This state would have the same polling logic as afterHours.
   on {
-    new { event = Events.eStartScheduleCheck target = bsEvaluating.name }
-    new { event = Events.eFireAlarm target = bsEmergencyOverride.name }
+    new { event = Events.eStartScheduleCheck target = evaluating.name }
+    new { event = Events.eFireAlarm target = emergencyOverride.name }
   }
 }
 
-local const bsEmergencyOverride: Csml.StateDescription = new {
+local const emergencyOverride: Csml.StateDescription = new {
   name = "emergencyOverride"
   on {
     // When the alarm is disarmed, re-evaluate to return to the correct state.
-    new { event = Events.eDisarmFireAlarm target = bsEvaluating.name }
-    new { event = Events.eGasPurged target = bsEvaluating.name }
+    new { event = Events.eDisarmFireAlarm target = evaluating.name }
+    new { event = Events.eGasPurged target = evaluating.name }
   }
 }

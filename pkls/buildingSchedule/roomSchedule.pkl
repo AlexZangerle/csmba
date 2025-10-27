@@ -13,16 +13,16 @@ class roomScheduleSM extends Csml.StateMachineDescription {
   name = "roomSchedule"
   localContext = Context.roomContext
   states {
-    rsInit
-    rsActive
-    rsInactive
-    rsWarning
-    rsAuthorizedStay
-    rsEmergency
+    init
+    active
+    inactive
+    warning
+    authorizedStay
+    emergency
   }
 }
 
-local const rsInit: Csml.StateDescription = new {
+local const init: Csml.StateDescription = new {
   name = "init"
   initial = true
   entry {
@@ -38,13 +38,13 @@ local const rsInit: Csml.StateDescription = new {
   on {
     new {
       event = "zoneInitialized"
-      target = rsInactive.name
+      target = inactive.name
     }
   }
 }
 
 /// The room is active
-local const rsActive: Csml.StateDescription = new {
+local const active: Csml.StateDescription = new {
   name = "active"
   entry {
     Actions.aRaiseZoneActive
@@ -54,21 +54,21 @@ local const rsActive: Csml.StateDescription = new {
     // Start the graceful shutdown warning.
     new {
       event = Events.eEnterAfterHoursMode
-      target = rsWarning.name
+      target = warning.name
     }
     new {
       event = Events.eEnterWeekend
-      target = rsWarning.name
+      target = warning.name
     }
     new {
       event = Events.eFireAlarm
-      target = rsEmergency.name
+      target = emergency.name
     }
   }
 }
 
 /// The room is "closed." It tells devices to shut down and ignore occupancy.
-local const rsInactive: Csml.StateDescription = new {
+local const inactive: Csml.StateDescription = new {
   name = "inactive"
   entry {
     Actions.aRaiseZoneInactive
@@ -77,18 +77,18 @@ local const rsInactive: Csml.StateDescription = new {
     // The global scheduler says the building is now open.
     new {
       event = Events.eEnterBusinessHours
-      target = rsActive.name
+      target = active.name
     }
     new {
       event = Events.eFireAlarm
-      target = rsEmergency.name
+      target = emergency.name
     }
   }
 }
 
 /// The "grace period" state. The building is closing, but this room is
 /// giving its occupant a chance to respond.
-local const rsWarning: Csml.StateDescription = new {
+local const warning: Csml.StateDescription = new {
   name = "warning"
   entry {
     // 1. Tell the lighting SM to dim the lights
@@ -107,28 +107,28 @@ local const rsWarning: Csml.StateDescription = new {
     new {
       event = Events.eRequestStay
       guards { Guards.requestedStay } // Only react if it's for this room
-      target = rsAuthorizedStay.name
+      target = authorizedStay.name
     }
     // The timer expired. No one responded. Shut the room down.
     new {
       event = Events.eShutdownRoom
-      target = rsInactive.name
+      target = inactive.name
     }
     // The schedule changed back to open before the timer finished.
     new {
       event = Events.eEnterBusinessHours
-      target = rsActive.name
+      target = active.name
     }
     new {
       event = Events.eFireAlarm
-      target = rsEmergency.name
+      target = emergency.name
     }
   }
 }
 
 /// The "person working late" state. This room has a temporary
 /// exception to the 'AfterHours' policy.
-local const rsAuthorizedStay: Csml.StateDescription = new {
+local const authorizedStay: Csml.StateDescription = new {
   name = "authorizedStay"
   entry {
     // 1. Tell the lighting SM to go from dim back to full brightness.
@@ -145,35 +145,35 @@ local const rsAuthorizedStay: Csml.StateDescription = new {
   on {
     new {
       event = Events.eRecheckOverride
-      target = rsWarning.name
+      target = warning.name
     }
     // The user has left (e.g., badged out of the building).
     new {
       event = Events.eUserLeftZone
       guards { Guards.userLeftZone }
-      target = rsInactive.name
+      target = inactive.name
     }
     // The building is officially open now, so the override is no longer needed.
     new {
       event = Events.eEnterBusinessHours
-      target = rsActive.name
+      target = active.name
     }
     new {
       event = Events.eFireAlarm
-      target = rsEmergency.name
+      target = emergency.name
     }
   }
 }
 
 /// Safety protocols override all schedules.
-local const rsEmergency: Csml.StateDescription = new {
+local const emergency: Csml.StateDescription = new {
   name = "emergency"
   on {
     // When the alarm is disarmed, go to 'Inactive' and wait for the
     // global scheduler to re-broadcast the correct policy.
     new {
       event = Events.eDisarmFireAlarm
-      target = rsInactive.name
+      target = inactive.name
     }
   }
 }
