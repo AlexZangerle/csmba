@@ -1,6 +1,5 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 // This module contains all contexts for the shading SM
 
 blindLockContext = new Csml.ContextDescription {
@@ -8,6 +7,10 @@ blindLockContext = new Csml.ContextDescription {
     new {
       name = Vars.vIsLocked
       value = "false"
+    }
+    new {
+      name = Vars.vZoneId
+      value = "'testZone'"
     }
   }
 }

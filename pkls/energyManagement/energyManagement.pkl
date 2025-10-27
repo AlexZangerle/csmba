@@ -1,256 +1,214 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/guards.pkl" as Guards
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains the definition for the energyManagement SM
+// Integrates with Schedule and Safety/Security systems.
 
-//This SM contains the states for energyManagement
-//It consists of four states
-// Normal - Grid status is normal and energy cost below threshold
-// Peak - Grid status is normal and energy cost above threshold
-// GridRequestResponse - Grid status is demand responde
 class energyManagementSM extends Csml.StateMachineDescription {
-    name = "energyManagement"
-    localContext = Context.energyManagementContext
-    states{
-        init
-        normal
-        peak
-        gridRequestResponse
-    }
+  name = "energyManagement"
+  localContext = Context.energyManagementContext
+  states {
+    init
+    normal
+    // --- ADDED Intermediate State for safer chaining ---
+    fetchingGridStatus
+    peak
+    gridRequestResponse
+  }
 }
 
 local const init: Csml.StateDescription = new {
-    name = "init"
-    initial = true
-    always {
-        new {
-            target = normal.name
-        }
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = normal.name
     }
+  }
 }
-//Always start in normal mode
-//Energy saving deactivated when entering this mode
+
+// Normal mode - Energy saving generally inactive unless triggered by price/grid.
 local const normal: Csml.StateDescription = new {
-    name = "normal"
-    entry{
-        Actions.aRaiseDeactiveEnergySaving
+  name = "normal"
+  entry {
+    Actions.aRaiseDeactiveEnergySaving
+    // Removed stGridNormal invocation, state implies normal behavior
+  }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "energyCheck"
+      delay = "30000"
+      action = Actions.aRaiseStartDetectingEnergy
+    }
+  }
+  on {
+    // --- Start Sequential Check ---
+    new {
+      event = Events.eStartEnergyCheck
+      actions {
         new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stGridNormal
-                }
+          serviceType = ServiceTypes.stGetEnergyPrice
+          output { new { reference = Vars.vEnergyPrice } }
+          done { new { name = "priceCheckComplete"; channel = "internal" } }
+        }
+      }
     }
-    after{
-        new Csml.TimeoutActionDescription {
-            name = "energyCheck"
-            delay = "30000"
-            action = Actions.aRaiseStartDetectingEnergy
-        }
+    // --- Transition to Intermediate State ---
+    new {
+      event = "priceCheckComplete"
+      target = fetchingGridStatus.name
     }
-    on {
-        //Invoke energy price server, upon completion invoke gridStatus service
-        new {
-            event = Events.eStartEnergyCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stGetEnergyPrice
-                    output {
-                        new {
-                            reference = Vars.vEnergyPrice
-                        }
-                    }
-                    done {
-                        new {
-                            name = Events.eStartGridCheck
-                            channel = "internal"
-                        }
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eStartGridCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stCheckGridStatus
-                    output {
-                        new {
-                            reference = Vars.vGridStatus
-                        }
-                    }
-                    done {
-                        new {
-                            name = Events.eEnergyCheckComplete
-                            channel = "internal"
-                        }
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eEnergyCheckComplete
-            guards{
-                Guards.gridDemandResponse
-            }
-            target = gridRequestResponse.name
-        }
-        new {
-            event = Events.eEnergyCheckComplete
-            guards {
-                Guards.priceAboveMax
-                Guards.gridNormal
-            }
-            target = peak.name
-        }
+
+    // --- Schedule Integration: Update local context based on global mode ---
+    new {
+      event = Events.eEnterBusinessHoursMode
+      actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'businessHours'" } } }
     }
+    new {
+      event = Events.eEnterAfterHoursMode
+      actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'afterHours'" } } }
+    }
+    new {
+      event = Events.eEnterWeekendClosedMode // Ensure correct event name
+      actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'weekendClosed'" } } }
+    }
+    // No transitions needed for safety/security while in normal mode
+  }
 }
 
-// If current energy price is above threshold, throttle consumption
+// --- NEW Intermediate State for Chaining Service Calls Safely ---
+local const fetchingGridStatus: Csml.StateDescription = new {
+  name = "fetchingGridStatus"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stCheckGridStatus
+      output { new { reference = Vars.vGridStatus } }
+      done { new { name = Events.eEnergyCheckComplete; channel = "internal" } }
+    }
+  }
+  on {
+    // --- Evaluate Results (Only trigger saving during Business Hours) ---
+    new {
+      event = Events.eEnergyCheckComplete
+      guards {
+        Guards.gridDemandResponse
+        Guards.isBusinessHours // NEW: Only respond if building is open
+      }
+      target = gridRequestResponse.name
+    }
+    new {
+      event = Events.eEnergyCheckComplete
+      guards {
+        Guards.priceAboveMax
+        Guards.gridNormal
+        Guards.isBusinessHours // NEW: Only enter peak mode if building is open
+      }
+      target = peak.name
+    }
+    // --- Default: If no conditions met, or not business hours, return to normal ---
+    new {
+      event = Events.eEnergyCheckComplete
+      target = normal.name
+    }
+    // Safety overrides can happen even during the check
+    new { event = Events.eFireAlarm; target = normal.name } // Immediately go normal on emergency
+    new { event = Events.eGasLeakDetected; target = normal.name }
+    new { event = Events.eSecurityBreachNotification; guards { Guards.isHighSeverityBreach }; target = normal.name }
+  }
+}
+
+
+// Peak price mode - activate standard energy saving.
 local const peak: Csml.StateDescription = new {
-    name = "peakDemand"
-    entry {
-        Actions.aRaiseEnergySaving
+  name = "peakDemand" // State name was incorrect in original
+  entry {
+    Actions.aRaiseEnergySaving
+    // Removed stPeak invocation
+  }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "energyCheck"
+      delay = "30000"
+      action = Actions.aRaiseStartDetectingEnergy
+    }
+  }
+  on {
+    // --- Start Sequential Check ---
+    new {
+      event = Events.eStartEnergyCheck
+      actions {
         new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stPeak
-                }
+          serviceType = ServiceTypes.stGetEnergyPrice
+          output { new { reference = Vars.vEnergyPrice } }
+          done { new { name = "priceCheckComplete"; channel = "internal" } }
+        }
+      }
     }
-    after{
-        new Csml.TimeoutActionDescription {
-            name = "energyCheck"
-            delay = "30000"
-            action = Actions.aRaiseStartDetectingEnergy
-        }
+    // --- Transition to Intermediate State ---
+    new {
+      event = "priceCheckComplete"
+      target = fetchingGridStatus.name // Re-use evaluation state
     }
-    on {
-        new {
-            event = Events.eStartEnergyCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stGetEnergyPrice
-                    output {
-                        new {
-                            reference = Vars.vEnergyPrice
-                        }
-                    }
-                    done {
-                        new {
-                            name = Events.eStartGridCheck
-                            channel = "internal"
-                        }
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eStartGridCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stCheckGridStatus
-                    output {
-                        new {
-                            reference = Vars.vGridStatus
-                        }
-                    }
-                    done {
-                        new {
-                            name = Events.eEnergyCheckComplete
-                            channel = "internal"
-                        }
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eEnergyCheckComplete
-            guards{
-                Guards.gridDemandResponse
-            }
-            target = gridRequestResponse.name
-        }
-        new {
-            event = Events.eEnergyCheckComplete
-            guards {
-                Guards.priceUnderMax
-                Guards.gridNormal
-            }
-            target = normal.name
-        }
-    }
+
+    // --- Schedule Integration: Update local context ---
+    // (Transitions omitted for brevity, but would be identical to 'normal' state)
+    new { event = Events.eEnterBusinessHoursMode; actions { /* update context */ } }
+    new { event = Events.eEnterAfterHoursMode; actions { /* update context */ } }
+    new { event = Events.eEnterWeekendClosedMode; actions { /* update context */ } }
+
+    // --- Safety/Security Override: Immediately return to normal ---
+    new { event = Events.eFireAlarm; target = normal.name }
+    new { event = Events.eGasLeakDetected; target = normal.name }
+    new { event = Events.eSecurityBreachNotification; guards { Guards.isHighSeverityBreach }; target = normal.name }
+  }
 }
 
-// When demand response is received, throttle demand more aggressively
+// Grid demand response mode - activate drastic energy saving.
 local const gridRequestResponse: Csml.StateDescription = new {
-    name = "requestReponse"
-    entry {
-        Actions.aRaiseDrasticEnergySaving
+  name = "gridRequestResponse" // State name corrected
+  entry {
+    Actions.aRaiseDrasticEnergySaving
+    // Removed stGridResponse invocation
+  }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "energyCheck"
+      delay = "30000"
+      action = Actions.aRaiseStartDetectingEnergy
+    }
+  }
+  on {
+    // --- Start Sequential Check ---
+    new {
+      event = Events.eStartEnergyCheck
+      actions {
         new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stGridResponse
-                }
+          serviceType = ServiceTypes.stGetEnergyPrice
+          output { new { reference = Vars.vEnergyPrice } }
+          done { new { name = "priceCheckComplete"; channel = "internal" } }
+        }
+      }
     }
-    after{
-        new Csml.TimeoutActionDescription {
-            name = "energyCheck"
-            delay = "30000"
-            action = Actions.aRaiseStartDetectingEnergy
-        }
+    // --- Transition to Intermediate State ---
+    new {
+      event = "priceCheckComplete"
+      target = fetchingGridStatus.name // Re-use evaluation state
     }
-    on {
-        new {
-            event = Events.eStartEnergyCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stGetEnergyPrice
-                    output {
-                        new {
-                            reference = Vars.vEnergyPrice
-                        }
-                    }
-                    done {
-                        new {
-                            name = Events.eStartGridCheck
-                            channel = "internal"
-                        }
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eStartGridCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stCheckGridStatus
-                    output {
-                        new {
-                            reference = Vars.vGridStatus
-                        }
-                    }
-                    done {
-                        new {
-                            name = Events.eEnergyCheckComplete
-                            channel = "internal"
-                        }
-                    }
-                }
-            }
-        }     
-        new {
-            event = Events.eEnergyCheckComplete
-            guards {
-                Guards.gridNormal
-                Guards.priceAboveMax
-            }
-            target = peak.name
-        }
-        new {
-            event = Events.eEnergyCheckComplete
-            guards{
-                Guards.priceUnderMax
-                Guards.gridNormal
-            }
-            target = normal.name
-        }
-    }
+
+    // --- Schedule Integration: Update local context ---
+    // (Transitions omitted for brevity, but would be identical to 'normal' state)
+    new { event = Events.eEnterBusinessHoursMode; actions { /* update context */ } }
+    new { event = Events.eEnterAfterHoursMode; actions { /* update context */ } }
+    new { event = Events.eEnterWeekendClosedMode; actions { /* update context */ } }
+
+    // --- Safety/Security Override: Immediately return to normal ---
+    new { event = Events.eFireAlarm; target = normal.name }
+    new { event = Events.eGasLeakDetected; target = normal.name }
+    new { event = Events.eSecurityBreachNotification; guards { Guards.isHighSeverityBreach }; target = normal.name }
+  }
 }

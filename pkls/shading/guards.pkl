@@ -1,6 +1,5 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains all guards for shading SM
 
@@ -23,9 +22,11 @@ isColdGuard = new Csml.GuardDescription {
 }
 // Guards to determine if there currently is a fire alarm / smoke alert
 noFireAlarm = new Csml.GuardDescription {
-    expression  = "!\(Vars.vFireAlarm)"
+  expression = "!\(Vars.vFireAlarm)"
 }
 
 noSmokeAlert = new Csml.GuardDescription {
-    expression = "!\(Vars.vSmokeAlert)"
+  expression = "!\(Vars.vSmokeAlert)"
 }
+
+isMyZone = new Csml.GuardDescription { expression = "$zoneId == \(Vars.vZoneId)" }

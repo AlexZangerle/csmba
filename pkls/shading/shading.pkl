@@ -1,401 +1,198 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/guards.pkl?v=1" as Guards
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/actions.pkl" as Actions
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains the definition for the shading SM
+// Integrates with Temperature, User Control, Schedule, Safety, and Security.
 
-// The shading SM contains six states:
-// half, fullyOpen, close, userLevel, emergency + an initialization state
-// The state transitions are controlled by outside temperature detection, except for userLevel, which is determined by the user
 class shadingSM extends Csml.StateMachineDescription {
-    name = "shading"
-    localContext = Context.blindLockContext
-    states {
-        init
-        half
-        fullyOpen
-        close
-        userLevel
-        emergency
-    }
+  name = "shading"
+  // --- UPDATED: Add local context for zoneId and lock status ---
+  localContext = Context.blindLockContext // Ensure this context also defines vZoneId
+  states {
+    init
+    half
+    fullyOpen
+    close
+    userLevel
+    emergency
+  }
 }
 
 local const init: Csml.StateDescription = new {
-    name = "init"
-    initial = true
-    always {
-        new {
-            target = half.name
-        }
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = half.name
     }
+  }
 }
-// Initially the SM always transitions to half
+
+// Default active state, blinds partially closed.
 local const half: Csml.StateDescription = new {
-    name = "half"
-    entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlindsHalf
-        }
+  name = "half"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stBlindsHalf
     }
-    on {
-        // Depending on temperature readings transitions to fullyOpen or clsoe take place
-        // Given that the blinds are not locked
-        new {
-            event = Events.eTempLow
-            guards {
-                Guards.isLockedGuard
-            }
-            target = fullyOpen.name
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eTempHigh
-            guards {
-                Guards.isLockedGuard
-            }
-            target = close.name
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    }
-                }
-            }
-        }
-        // Transition to userLevel when an event with a manual level is received
-        new {
-            event = Events.eActivateBlindsUserLevel
-            target = userLevel.name
-        }
-        new {
-            event = Events.eLockBlinds
-            actions {
-                Actions.aBlindLock
-            }
-        }
-        new {
-            event = Events.eUnlockBlinds
-            actions {
-                Actions.aBlindUnlock
-            }
-        }
-        // On Fire/Smoke events, transition to emergency state
-        new {
-            event = Events.eFireAlarm
-            target = emergency.name
-        }
-        new {
-            event = Events.eSmokeAlert
-            target = emergency.name
-        }
-    }
+  }
+  on {
+    // --- Temperature Control (If not locked) ---
+    new { event = Events.eTempLow; guards { Guards.isLockedGuard }; target = fullyOpen.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new { event = Events.eTempHigh; guards { Guards.isLockedGuard }; target = close.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+
+    // --- User Control ---
+    new { event = Events.eActivateBlindsUserLevel; target = userLevel.name }
+    new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
+    new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
+
+    // --- Schedule Integration ---
+    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = close.name } // Force close on inactive
+
+    // --- Safety Integration ---
+    new { event = Events.eFireAlarm; target = emergency.name }
+    new { event = Events.eSmokeAlert; target = emergency.name }
+    new { event = Events.eGasLeakDetected; target = emergency.name } // Added Gas
+
+    // --- Security Integration ---
+    new { event = Events.eLockdownZone; guards { Guards.isMyZone }; target = close.name } // Force close on lockdown
+  }
 }
 
-// Blinds fullyOpen when temperature is low
+// Blinds fully open (e.g., cold weather for passive heating).
 local const fullyOpen: Csml.StateDescription = new {
-    name = "fullyOpen"
-    entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlindsOpen
-        }
+  name = "fullyOpen"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stBlindsOpen
     }
-    on {
-        // Transitions to half/close depending on temperature
-        // Given blinds are not locked
-        new {
-            event = Events.eTempMedium
-            guards {
-                Guards.isLockedGuard
-            }
-            target = half.name
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    } 
-                }
-            }
-        }
-        new {
-            event = Events.eTempHigh
-            guards {
-                Guards.isLockedGuard
-            }
-            target = close.name
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eActivateBlindsUserLevel
-            target = userLevel.name
-        }
-        new {
-            event = Events.eLockBlinds
-            actions {
-                Actions.aBlindLock
-            }
-        }
-        new {
-            event = Events.eUnlockBlinds
-            actions {
-                Actions.aBlindUnlock
-            }
-        }
-        new {
-            event = Events.eFireAlarm
-            target = emergency.name
-        }
-        new {
-            event = Events.eSmokeAlert
-            target = emergency.name
-        }
-    }
+  }
+  on {
+    // --- Temperature Control (If not locked) ---
+    new { event = Events.eTempMedium; guards { Guards.isLockedGuard }; target = half.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new { event = Events.eTempHigh; guards { Guards.isLockedGuard }; target = close.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+
+    // --- User Control ---
+    new { event = Events.eActivateBlindsUserLevel; target = userLevel.name }
+    new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
+    new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
+
+    // --- Schedule Integration ---
+    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = close.name }
+
+    // --- Safety Integration ---
+    new { event = Events.eFireAlarm; target = emergency.name }
+    new { event = Events.eSmokeAlert; target = emergency.name }
+    new { event = Events.eGasLeakDetected; target = emergency.name }
+
+    // --- Security Integration ---
+    new { event = Events.eLockdownZone; guards { Guards.isMyZone }; target = close.name }
+  }
 }
 
-// Blinds close when temperature is high
+// Blinds fully closed (e.g., hot weather or forced by schedule/security).
 local const close: Csml.StateDescription = new {
-    name = "close"
-    entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlindsClose
-        }
+  name = "close"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stBlindsClose
     }
-    on {
-        // Transition to half, fullyOpen depending on temperature
-        // Given blinds are not locked
-        new {
-            event = Events.eTempMedium
-            guards {
-                Guards.isLockedGuard
-            }
-            target = half.name
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eTempLow
-            guards {
-                Guards.isLockedGuard
-            }
-            target = fullyOpen.name
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    }
-                    
-                }
-            }
-        }
-        new {
-            event = Events.eActivateBlindsUserLevel
-            target = userLevel.name
-        }
-        new {
-            event = Events.eLockBlinds
-            actions {
-                Actions.aBlindLock
-            }
-        }
-        new {
-            event = Events.eUnlockBlinds
-            actions {
-                Actions.aBlindUnlock
-            }
-        }
-        new {
-            event = Events.eFireAlarm
-            target = emergency.name
-        }
-        new {
-            event = Events.eSmokeAlert
-            target = emergency.name
-        }
+  }
+  on {
+    // --- Temperature Control (If not locked AND zone is active) ---
+    // Note: These transitions should ideally also check if the zone is active
+    new { event = Events.eTempMedium; guards { Guards.isLockedGuard /* && Guards.isZoneActive? */ }; target = half.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new { event = Events.eTempLow; guards { Guards.isLockedGuard /* && Guards.isZoneActive? */ }; target = fullyOpen.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+
+    // --- User Control ---
+    new { event = Events.eActivateBlindsUserLevel; target = userLevel.name } // User can override closed state unless locked?
+    new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
+    new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
+
+    // --- Schedule Integration ---
+    new {
+      event = Events.eZoneActive // Zone becomes active again
+      guards { Guards.isMyZone }
+      target = half.name // Go back to default active state
     }
-    
+
+    // --- Safety Integration ---
+    new { event = Events.eFireAlarm; target = emergency.name }
+    new { event = Events.eSmokeAlert; target = emergency.name }
+    new { event = Events.eGasLeakDetected; target = emergency.name }
+
+    // --- Security Integration ---
+    new {
+      event = Events.eClearSecurityAlert // Lockdown is over
+      guards { Guards.isMyZone }
+      target = half.name // Go back to default active state
+    }
+  }
 }
 
-// Blinds fullyOpen to manual user level
-// Manual level can be saved between outwards transitions and eventual re-entry.
-// If user level event with level -1 is received, previous manual level will be used. 
+// Blinds at manual user level.
 local const userLevel: Csml.StateDescription = new {
-    name = "userLevel"
-    staticContext {
-        variables{
-            Vars.vUserBlindLevel
-        }
-    }
-    entry {
-        new Csml.AssignActionDescription {
-        variable {
-            name = Vars.vUserBlindLevel.name
-            value = "if ($blindLevel != -1) $blindLevel else blindLevel"
-        }
-    }
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlindsUserLevel
-            input {
-                new {
-                    name = "blindLevel"
-                    value = "blindLevel"
-                }
-            }
-        }
-    }
-    on {
-        // Assign temperature readings in the background, for accurate exit on deactivation of manual level
-        new {
-            event = Events.eTempLow
-            actions{
-                new Csml.AssignActionDescription{
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eTempMedium
-            actions {
-                new Csml.AssignActionDescription{
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eTempHigh
-            actions{
-                new Csml.AssignActionDescription{
-                    variable {
-                        name = Vars.vTemperature
-                        value = "$temp"
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eLockBlinds
-            actions {
-                Actions.aBlindLock
-            }
-        }
-        new {
-            event = Events.eUnlockBlinds
-            actions {
-                Actions.aBlindUnlock
-            }
-        }
-        // Once manual level is deactivated, transition to correct target depending on current temperature
-        new {
-            event = Events.eDeactivateBlindsUserLevel
-            guards {
-                Guards.isColdGuard
-            }
-            target = fullyOpen.name
-        }
-        new {
-            event = Events.eDeactivateBlindsUserLevel
-            guards {
-                Guards.isMediumGuard
-            }
-            target = half.name
-        }
-        new{
-            event = Events.eDeactivateBlindsUserLevel
-            guards {
-                Guards.isHotGuard
-            }
-            target = close.name
-        }
-        new {
-            event = Events.eFireAlarm
-            target = emergency.name
-        }
-        new {
-            event = Events.eSmokeAlert
-            target = emergency.name
-        }
-    }
-    
+  name = "userLevel"
+  // --- UPDATED: Needs local context for zoneId ---
+  localContext = Context.blindLockContext // Ensure context includes vZoneId
+  staticContext { variables { Vars.vUserBlindLevel } }
+  entry {
+    new Csml.AssignActionDescription { variable { name = Vars.vUserBlindLevel.name; value = "if ($blindLevel != -1) $blindLevel else blindLevel" } }
+    new Csml.InvokeActionDescription { serviceType = ServiceTypes.stBlindsUserLevel; input { new { name = "blindLevel"; value = "blindLevel" } } }
+  }
+  on {
+    // --- Background Temperature Update ---
+    new { event = Events.eTempLow; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new { event = Events.eTempMedium; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new { event = Events.eTempHigh; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+
+    // --- User Control ---
+    new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
+    new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
+    new { event = Events.eDeactivateBlindsUserLevel; guards { Guards.isColdGuard }; target = fullyOpen.name }
+    new { event = Events.eDeactivateBlindsUserLevel; guards { Guards.isMediumGuard }; target = half.name }
+    new { event = Events.eDeactivateBlindsUserLevel; guards { Guards.isHotGuard }; target = close.name }
+
+    // --- Schedule Integration ---
+    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = close.name } // Inactive overrides user level
+
+    // --- Safety Integration ---
+    new { event = Events.eFireAlarm; target = emergency.name }
+    new { event = Events.eSmokeAlert; target = emergency.name }
+    new { event = Events.eGasLeakDetected; target = emergency.name } // Overrides user level
+
+    // --- Security Integration ---
+    new { event = Events.eLockdownZone; guards { Guards.isMyZone }; target = close.name } // Lockdown overrides user level
+  }
 }
 
-// Emergency state is entered once smoke or fire alarm is triggered
-// Blinds completely fullyOpen until manual disarming of the alarm
+// Emergency state: Blinds fully open for safety/access.
 local const emergency: Csml.StateDescription = new {
-    name = "emergency"
-    entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlindsUserLevel
-            input {
-                new {
-                    name = "blindLevel"
-                    value = "100"
-                }
-            }
-        }
+  name = "emergency"
+  entry {
+    // Force blinds to 100% open
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stBlindsUserLevel
+      input { new { name = "blindLevel"; value = "'100'" } } // Set to string '100'
     }
-    on {
-        new {
-            event = Events.eTempLow
-            guards {
-                Guards.noFireAlarm
-                Guards.noSmokeAlert
-            }
-            target = fullyOpen.name
-        }
-        new {
-            event = Events.eTempMedium
-            guards {
-                Guards.noFireAlarm
-                Guards.noSmokeAlert
-            }
-            target = half.name
-        }
-        new {
-            event = Events.eTempHigh
-            guards {
-                Guards.noFireAlarm
-                Guards.noSmokeAlert
-            }
-            target = close.name
-        }
-        new {
-            event = Events.eActivateBlindsUserLevel
-            guards {
-                Guards.noFireAlarm
-                Guards.noSmokeAlert
-            }
-            target = userLevel.name
-        }
+  }
+  // --- UPDATED: Exit only on clear signals ---
+  on {
+    // Ignore temperature events while in emergency
+    new {
+      event = Events.eDisarmFireAlarm
+      target = half.name // Go back to default active state to re-evaluate
     }
+    new {
+      // Using eGasPurged as the clear signal based on previous discussion
+      event = Events.eGasPurged
+      target = half.name // Go back to default active state
+    }
+    // Note: Smoke alert clear (eDisarmSmokeAlert) might also be needed if separate from fire
+  }
 }

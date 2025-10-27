@@ -1,25 +1,33 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains all guards for energyManagement SM
 
 // Guard to check if gridStatus is demandResponse
 gridDemandResponse = new Csml.GuardDescription {
-    expression = "\(Vars.vGridStatus) == 'demandResponse'"
+  expression = "\(Vars.vGridStatus) == 'demandResponse'"
 }
 
 // Guard to check if gridStatus is normal
 gridNormal = new Csml.GuardDescription {
-    expression = "\(Vars.vGridStatus) == 'normal'"
+  expression = "\(Vars.vGridStatus) == 'normal'"
 }
 
 // Guard to check if current energy price is above maximum
 priceAboveMax = new Csml.GuardDescription {
-    expression = "\(Vars.vEnergyPrice) > \(Vars.vMaxEnergyPrice)"
+  expression = "\(Vars.vEnergyPrice) > \(Vars.vMaxEnergyPrice)"
 }
 
 // Guard to check if current energy price is under maximum
 priceUnderMax = new Csml.GuardDescription {
-    expression = "\(Vars.vEnergyPrice) <= \(Vars.vMaxEnergyPrice)"
+  expression = "\(Vars.vEnergyPrice) <= \(Vars.vMaxEnergyPrice)"
+}
+// --- NEW: Guard to check if building is in business hours ---
+isBusinessHours = new Csml.GuardDescription {
+  expression = "\(Vars.vCurrentSystemScheduleMode) == 'businessHours'"
+}
+
+// --- NEW: Guard to check for high severity security breach ---
+isHighSeverityBreach = new Csml.GuardDescription {
+  expression = "$level == 'High'" // Checks data in eSecurityBreachNotification
 }

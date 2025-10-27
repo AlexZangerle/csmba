@@ -1,7 +1,6 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 // This module contains actions for the gasSafety SM
 
 // Raise to start gas leak detection
@@ -15,7 +14,16 @@ aRaiseSecurityBreach = new Csml.RaiseActionDescription {
     }
   }
 }
-
+aRaiseServereSecurityBreach = new Csml.RaiseActionDescription {
+  event {
+    name = Events.eSecurityBreachNotification
+    channel = "global"
+    data {
+      new { name = "level"; value = "'High'" }
+      new { name = "details"; value = Vars.vAlertDetails }
+    }
+  }
+}
 // Raise once a gas leak has been detected
 // includes location of gas leak as payload
 aRaiseFlashLights = new Csml.RaiseActionDescription { event { name = Events.eFlashAllLights; channel = "global" } }
