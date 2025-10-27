@@ -76,7 +76,7 @@ local const half: Csml.StateDescription = new {
         }
         // Transition to userLevel when an event with a manual level is received
         new {
-            event = Events.eActivateBlinduserLevel
+            event = Events.eActivateBlindsUserLevel
             target = userLevel.name
         }
         new {
@@ -145,7 +145,7 @@ local const fullyOpen: Csml.StateDescription = new {
             }
         }
         new {
-            event = Events.eActivateBlinduserLevel
+            event = Events.eActivateBlindsUserLevel
             target = userLevel.name
         }
         new {
@@ -214,7 +214,7 @@ local const close: Csml.StateDescription = new {
             }
         }
         new {
-            event = Events.eActivateBlinduserLevel
+            event = Events.eActivateBlindsUserLevel
             target = userLevel.name
         }
         new {
@@ -317,21 +317,21 @@ local const userLevel: Csml.StateDescription = new {
         }
         // Once manual level is deactivated, transition to correct target depending on current temperature
         new {
-            event = Events.eDeactivateBlinduserLevel
+            event = Events.eDeactivateBlindsUserLevel
             guards {
                 Guards.isColdGuard
             }
             target = fullyOpen.name
         }
         new {
-            event = Events.eDeactivateBlinduserLevel
+            event = Events.eDeactivateBlindsUserLevel
             guards {
                 Guards.isMediumGuard
             }
             target = half.name
         }
         new{
-            event = Events.eDeactivateBlinduserLevel
+            event = Events.eDeactivateBlindsUserLevel
             guards {
                 Guards.isHotGuard
             }
@@ -390,7 +390,7 @@ local const emergency: Csml.StateDescription = new {
             target = close.name
         }
         new {
-            event = Events.eActivateBlinduserLevel
+            event = Events.eActivateBlindsUserLevel
             guards {
                 Guards.noFireAlarm
                 Guards.noSmokeAlert
