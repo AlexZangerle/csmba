@@ -66,7 +66,7 @@ local const normal: Csml.StateDescription = new {
 
     // --- Schedule Integration: Update local context based on global mode ---
     new {
-      event = Events.eEnterBusinessHoursMode
+      event = Events.eEnterBusinessHours
       actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'businessHours'" } } }
     }
     new {
@@ -74,7 +74,7 @@ local const normal: Csml.StateDescription = new {
       actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'afterHours'" } } }
     }
     new {
-      event = Events.eEnterWeekendClosedMode // Ensure correct event name
+      event = Events.eEnterWeekend // Ensure correct event name
       actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'weekendClosed'" } } }
     }
     // No transitions needed for safety/security while in normal mode
@@ -157,9 +157,9 @@ local const peak: Csml.StateDescription = new {
 
     // --- Schedule Integration: Update local context ---
     // (Transitions omitted for brevity, but would be identical to 'normal' state)
-    new { event = Events.eEnterBusinessHoursMode; actions { /* update context */ } }
+    new { event = Events.eEnterBusinessHours; actions { /* update context */ } }
     new { event = Events.eEnterAfterHoursMode; actions { /* update context */ } }
-    new { event = Events.eEnterWeekendClosedMode; actions { /* update context */ } }
+    new { event = Events.eEnterWeekend; actions { /* update context */ } }
 
     // --- Safety/Security Override: Immediately return to normal ---
     new { event = Events.eFireAlarm; target = normal.name }
@@ -202,9 +202,18 @@ local const gridRequestResponse: Csml.StateDescription = new {
 
     // --- Schedule Integration: Update local context ---
     // (Transitions omitted for brevity, but would be identical to 'normal' state)
-    new { event = Events.eEnterBusinessHoursMode; actions { /* update context */ } }
-    new { event = Events.eEnterAfterHoursMode; actions { /* update context */ } }
-    new { event = Events.eEnterWeekendClosedMode; actions { /* update context */ } }
+    new {
+      event = Events.eEnterBusinessHours
+      actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'businessHours'" } } }
+    }
+    new {
+      event = Events.eEnterAfterHoursMode
+      actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'afterHours'" } } }
+    }
+    new {
+      event = Events.eEnterWeekend // Ensure correct event name
+      actions { new Csml.AssignActionDescription { variable { name = Vars.vCurrentSystemScheduleMode; value = "'weekendClosed'" } } }
+    }
 
     // --- Safety/Security Override: Immediately return to normal ---
     new { event = Events.eFireAlarm; target = normal.name }
