@@ -15,7 +15,7 @@ class lightingSM extends Csml.StateMachineDescription {
   states {
     init
     off
-    on
+    turnOn
     dim
     userLevel
     // --- UPDATED: Replaced single flashing state with two ---
@@ -48,7 +48,7 @@ local const off: Csml.StateDescription = new {
     new {
       event = Events.eOccupancyDetected
       guards { Guards.energySavingInactive }
-      target = on.name
+      target = turnOn.name
     }
     new {
       event = Events.eOccupancyDetected
@@ -70,7 +70,7 @@ local const off: Csml.StateDescription = new {
     new {
       event = Events.eAccessGranted
       guards { Guards.isMyZone }
-      target = on.name // Assume immediate activation needed
+      target = turnOn.name // Assume immediate activation needed
     }
     new {
       event = Events.eZoneWarning
@@ -99,7 +99,7 @@ local const off: Csml.StateDescription = new {
 }
 
 // Lights on - zone is active and occupied.
-local const on: Csml.StateDescription = new {
+local const turnOn: Csml.StateDescription = new {
   name = "on"
   entry {
     new Csml.InvokeActionDescription {
@@ -131,13 +131,13 @@ local const dim: Csml.StateDescription = new {
   }
   on {
     // --- Standard Occupancy Logic ---
-    new { event = Events.eOccupancyDetected; guards { Guards.energySavingInactive }; target = on.name }
+    new { event = Events.eOccupancyDetected; guards { Guards.energySavingInactive }; target = turnOn.name }
     new { event = Events.eOccupancyDetected; guards { Guards.energySavingActive } /* Stay dim */ }
     new { event = Events.eOccupancyVacant; target = off.name }
     new { event = Events.eActivateLightUserLevel; guards { Guards.isMyZone }; target = userLevel.name }
 
     // --- Schedule Integration ---
-    new { event = Events.eZoneActive; guards { Guards.isMyZone }; target = on.name }
+    new { event = Events.eZoneActive; guards { Guards.isMyZone }; target = turnOn.name }
     new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name }
 
     // --- Security Integration ---
@@ -199,7 +199,7 @@ local const flashingAlarm_Off: Csml.StateDescription = new {
     // Transition to the ON state
     new {
       event = "flashOn"
-      target = flashingAlarm_On.name
+      target = flashingAlarm_turnOn.name
     }
     // Exit condition: Security alert cleared
     new {
