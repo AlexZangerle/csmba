@@ -1,6 +1,5 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 // This module contains all contexts for the gasSafety SM
 
 securityManagerContext = new Csml.ContextDescription {
@@ -14,7 +13,7 @@ securityManagerContext = new Csml.ContextDescription {
 accessControlContext = new Csml.ContextDescription {
   variables {
     new { name = Vars.vDoorId; value = "''" }
-    new { name = Vars.vZoneId; value = "''" }
+    new { name = Vars.vZoneId; value = "'testZone'" }
     new { name = Vars.vIsEvacuationRoute; value = "false" }
     new { name = Vars.vUserId; value = "''" }
     new { name = Vars.vUserRole; value = "''" }

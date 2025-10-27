@@ -15,7 +15,7 @@ roomContext = new Csml.ContextDescription {
   variables {
     new {
       name = Vars.vZoneId
-      value = "'none'"
+      value = "'testZone'"
     }
   }
 }
