@@ -1,16 +1,19 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains all guards for energyManagement SM
 
 // Guard to check if arc fault has been detected
 roomToCold = new Csml.GuardDescription {
-    expression = "\(Vars.vIndoorTemp) < \(Vars.vDesiredTemp)"
+  expression = "\(Vars.vIndoorTemp) < \(Vars.vDesiredTemp)"
 }
 roomToHot = new Csml.GuardDescription {
-    expression = "\(Vars.vIndoorTemp) > \(Vars.vDesiredTemp)"
+  expression = "\(Vars.vIndoorTemp) > \(Vars.vDesiredTemp)"
 }
 roomComfortable = new Csml.GuardDescription {
-    expression = "\(Vars.vIndoorTemp) == \(Vars.vDesiredTemp)"
+  expression = "\(Vars.vIndoorTemp) == \(Vars.vDesiredTemp)"
+}
+
+isMyZone = new Csml.GuardDescription {
+  expression = "$zoneId == \(Vars.vZoneId)"
 }

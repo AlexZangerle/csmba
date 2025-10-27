@@ -1,240 +1,278 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/guards.pkl" as Guards
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
-// This module contains the definition for the hvac SM
-
+// This module contains the definition for the HVAC SM
+// Integrates with Occupancy, Scheduling, and Safety systems.
 
 class hvacSM extends Csml.StateMachineDescription {
-    name = "hvac"
-    localContext = Context.hvacContext
-    states{
-        init
-        off
-        fanOnly
-        heating
-        cooling
-    }
+  name = "hvac"
+  // --- UPDATED: Needs local context for Zone ID ---
+  localContext = Context.hvacContext // Ensure hvacContext defines vZoneId
+  states {
+    init
+    off
+    fanOnly
+    heating
+    cooling
+    // --- NEW: Emergency state ---
+    emergency
+  }
 }
 
 local const init: Csml.StateDescription = new {
-    name = "init"
-    initial = true
-    always {
-        new {
-            target = off.name
-        }
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = off.name
     }
+  }
 }
-//Always starts in monitoring state
-//Invokes service to check for arc faults every 30 seconds
+
+// Default state when zone inactive or vacant. System is off.
 local const off: Csml.StateDescription = new {
-    name = "off"
-    on {
-        new {
-            event = Events.eOccupancyDetected
-            target = fanOnly.name
-        }
+  name = "off"
+  entry {
+    // Ensure HVAC unit is physically off when entering this state
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stSetHVAC
+      input { new { name = "mode"; value = "'off'" } }
     }
-    
+  }
+  on {
+    // --- Standard Occupancy Logic (Now implicitly enabled by being in this state) ---
+    new {
+      event = Events.eOccupancyDetected
+      // Transition only happens if not forced off by schedule/emergency
+      target = fanOnly.name
+    }
+    // --- Schedule Integration ---
+    new {
+      // Zone becomes active (BusinessHours or Override) -> Start assessing climate.
+      event = Events.eZoneActive
+      guards { Guards.isMyZone } // Make sure hvac/guards.pkl has isMyZone
+      target = fanOnly.name
+    }
+    // --- Safety Integration ---
+    new { event = Events.eFireAlarm; target = emergency.name }
+    new { event = Events.eGasLeakDetected; target = emergency.name }
+    // Note: No transition needed for eZoneInactive/eZoneWarning as it's already off.
+  }
 }
 
-// If an arc fault is detected, invoke service to trip the corresponding circuit breaker
+// Monitoring state. Circulates air and decides whether to heat or cool.
 local const fanOnly: Csml.StateDescription = new {
-    name = "fanOnly"
-    entry {
+  name = "fanOnly"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stSetHVAC
+      input { new { name = "mode"; value = "'fan'" } }
+    }
+    // Immediately check temperature upon entering
+    Actions.aRaiseIndoorTempCheck
+  }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "periodicTempCheck"
+      delay = "300000" // Check every 5 minutes
+      action = Actions.aRaiseIndoorTempCheck
+    }
+  }
+  on {
+    new {
+      event = Events.eStartIndoorTempCheck
+      actions {
         new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stSetHVAC
-            input {
-                new{
-                    name = "mode"
-                    value = "'fan'"
-                }
-            }
+          serviceType = ServiceTypes.stGetIndoorTemp
+          output { new { reference = Vars.vIndoorTemp } } // Ensure Vars defines vIndoorTemp
+          done { new { name = Events.eIndoorTempCheckComplete; channel = "internal" } }
         }
-        Actions.aRaiseIndoorTempCheck
+      }
     }
-    after {
-        new Csml.TimeoutActionDescription {
-            name = "periodicTempCheck"
-            delay = "20000"
-            action = Actions.aRaiseIndoorTempCheck
-        }
+    new {
+      event = Events.eIndoorTempCheckComplete
+      guards { Guards.roomToCold }
+      target = heating.name
     }
-    on {
-        //Transitions to ack state if eletrical fault has been manually reset
-        //Currently gas state for testing purposes until eletrical subsystem is fully operational 
-        new {
-            event = Events.eStartIndoorTempCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                serviceType = ServiceTypes.stGetIndoorTemp
-                output {
-                    new{
-                        reference = Vars.vIndoorTemp
-                    }
-                }
-                  done {
-                    new {
-                      name = Events.eIndoorTempCheckComplete
-                      channel = "internal"
-                    }
-                  }
-                }
-            }
-        }
-        new {
-            event = Events.eIndoorTempCheckComplete
-            guards{
-                Guards.roomToCold
-            }
-            target = heating.name
-        }
-        new {
-            event = Events.eIndoorTempCheckComplete
-            guards{
-                Guards.roomToHot
-            }
-            target = cooling.name
-        }
-        new {
-            event = Events.eOccupancyVacant
-            target = off.name
-        }
+    new {
+      event = Events.eIndoorTempCheckComplete
+      guards { Guards.roomToHot }
+      target = cooling.name
     }
+    new {
+      event = Events.eOccupancyVacant
+      target = off.name
+    }
+    // --- Schedule Integration ---
+    new {
+      // Schedule enters warning period -> Stay in fanOnly (already reduced load)
+      event = Events.eZoneWarning
+      guards { Guards.isMyZone }
+      // No target needed, remain in fanOnly
+    }
+    new {
+      // Schedule forces shutdown
+      event = Events.eZoneInactive
+      guards { Guards.isMyZone }
+      target = off.name
+    }
+    // --- Safety Integration ---
+    new { event = Events.eFireAlarm; target = emergency.name }
+    new { event = Events.eGasLeakDetected; target = emergency.name }
+  }
 }
 
-// Invokes Ack Service and transitions back to monitoring state
+// Active heating state.
 local const heating: Csml.StateDescription = new {
-    name = "heating"
-    entry {
+  name = "heating"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stSetHVAC
+      input { new { name = "mode"; value = "'heat'" } }
+    }
+    // Check temp immediately in case conditions changed rapidly
+    Actions.aRaiseIndoorTempCheck
+  }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "periodicTempCheck"
+      delay = "600000" // Check every 10 minutes while actively heating
+      action = Actions.aRaiseIndoorTempCheck
+    }
+  }
+  on {
+    new {
+      event = Events.eStartIndoorTempCheck
+      actions {
         new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stSetHVAC
-            input {
-                new{
-                    name = "mode"
-                    value = "'heat'"
-                }
-            }
+          serviceType = ServiceTypes.stGetIndoorTemp
+          output { new { reference = Vars.vIndoorTemp } }
+          done { new { name = Events.eIndoorTempCheckComplete; channel = "internal" } }
         }
-        Actions.aRaiseIndoorTempCheck
+      }
     }
-    after {
-        new Csml.TimeoutActionDescription {
-            name = "periodicTempCheck"
-            delay = "20000"
-            action = Actions.aRaiseIndoorTempCheck
-        }
+    new {
+      event = Events.eIndoorTempCheckComplete
+      guards { Guards.roomComfortable } // Target reached
+      target = fanOnly.name
     }
-    on {
-        //Transitions to ack state if eletrical fault has been manually reset
-        //Currently gas state for testing purposes until eletrical subsystem is fully operational 
-        new {
-            event = Events.eStartIndoorTempCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                serviceType = ServiceTypes.stGetIndoorTemp
-                output {
-                    new{
-                        reference = Vars.vIndoorTemp
-                    }
-                }
-                  done {
-                    new {
-                      name = Events.eIndoorTempCheckComplete
-                      channel = "internal"
-                    }
-                  }
-                }
-            }
-
-        }
-        new {
-            event = Events.eIndoorTempCheckComplete
-            guards{
-                Guards.roomComfortable
-            }
-            target = fanOnly.name
-        }
-        new {
-            event = Events.eIndoorTempCheckComplete
-            guards{
-                Guards.roomToHot
-            }
-            target = cooling.name
-        }
-        new {
-            event = Events.eOccupancyVacant
-            target = off.name
-        }
+    new {
+      event = Events.eIndoorTempCheckComplete
+      guards { Guards.roomToHot } // Overshot or conditions changed
+      target = cooling.name
     }
+    new {
+      event = Events.eOccupancyVacant
+      target = off.name
+    }
+    // --- Schedule Integration ---
+    new {
+      // Schedule enters warning period -> Reduce load
+      event = Events.eZoneWarning
+      guards { Guards.isMyZone }
+      target = fanOnly.name
+    }
+    new {
+      // Schedule forces shutdown
+      event = Events.eZoneInactive
+      guards { Guards.isMyZone }
+      target = off.name
+    }
+    // --- Safety Integration ---
+    new { event = Events.eFireAlarm; target = emergency.name }
+    new { event = Events.eGasLeakDetected; target = emergency.name }
+  }
 }
-//Testing purposes
-local const cooling: Csml.StateDescription = new {
-    name = "cooling"
-    entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stSetHVAC
-            input {
-                new{
-                    name = "mode"
-                    value = "'cool'"
-                }
-            }
-        }
-        Actions.aRaiseIndoorTempCheck
-    }
-    after {
-        new Csml.TimeoutActionDescription {
-            name = "periodicTempCheck"
-            delay = "20000"
-            action = Actions.aRaiseIndoorTempCheck
-        }
-    }
-    on {
-        //Transitions to ack state if eletrical fault has been manually reset
-        //Currently gas state for testing purposes until eletrical subsystem is fully operational 
-        new {
-            event = Events.eStartIndoorTempCheck
-            actions {
-                new Csml.InvokeActionDescription {
-                serviceType = ServiceTypes.stGetIndoorTemp
-                output {
-                    new{
-                        reference = Vars.vIndoorTemp
-                    }
-                }
-                  done {
-                    new {
-                      name = Events.eIndoorTempCheckComplete
-                      channel = "internal"
-                    }
-                  }
-                }
-            }
 
-        }
-        new {
-            event = Events.eIndoorTempCheckComplete
-            guards{
-                Guards.roomComfortable
-            }
-            target = fanOnly.name
-        }
-        new {
-            event = Events.eIndoorTempCheckComplete
-            guards{
-                Guards.roomToCold
-            }
-            target = heating.name
-        }
-        new {
-            event = Events.eOccupancyVacant
-            target = off.name
-        }
+// Active cooling state.
+local const cooling: Csml.StateDescription = new {
+  name = "cooling"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stSetHVAC
+      input { new { name = "mode"; value = "'cool'" } }
     }
+    Actions.aRaiseIndoorTempCheck
+  }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "periodicTempCheck"
+      delay = "600000" // Check every 10 minutes while actively cooling
+      action = Actions.aRaiseIndoorTempCheck
+    }
+  }
+  on {
+    new {
+      event = Events.eStartIndoorTempCheck
+      actions {
+        new Csml.InvokeActionDescription {
+          serviceType = ServiceTypes.stGetIndoorTemp
+          output { new { reference = Vars.vIndoorTemp } }
+          done { new { name = Events.eIndoorTempCheckComplete; channel = "internal" } }
+        }
+      }
+    }
+    new {
+      event = Events.eIndoorTempCheckComplete
+      guards { Guards.roomComfortable } // Target reached
+      target = fanOnly.name
+    }
+    new {
+      event = Events.eIndoorTempCheckComplete
+      guards { Guards.roomToCold } // Overshot or conditions changed
+      target = heating.name
+    }
+    new {
+      event = Events.eOccupancyVacant
+      target = off.name
+    }
+    // --- Schedule Integration ---
+    new {
+      // Schedule enters warning period -> Reduce load
+      event = Events.eZoneWarning
+      guards { Guards.isMyZone }
+      target = fanOnly.name
+    }
+    new {
+      // Schedule forces shutdown
+      event = Events.eZoneInactive
+      guards { Guards.isMyZone }
+      target = off.name
+    }
+    // --- Safety Integration ---
+    new { event = Events.eFireAlarm; target = emergency.name }
+    new { event = Events.eGasLeakDetected; target = emergency.name }
+  }
+}
+
+// --- NEW: Emergency State ---
+local const emergency: Csml.StateDescription = new {
+  name = "emergency"
+  entry {
+    // Example: Shut down HVAC during fire to prevent smoke spread.
+    // For Gas, might want 'fan' + 100% fresh air. Needs refinement based on event type.
+    // For simplicity now, just turn off.
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stSetHVAC
+      input { new { name = "mode"; value = "'off'" } }
+    }
+    // Could raise an eHvacEmergencyShutdown event here if needed.
+  }
+  on {
+    // Wait for the all-clear signal for the specific emergency.
+    new {
+      event = Events.eDisarmFireAlarm
+      target = off.name // Go to off state to reset
+    }
+    new {
+      // Using eGasPurged as the clear signal based on previous discussion
+      event = Events.eGasPurged
+      target = off.name // Go to off state to reset
+    }
+  }
 }
