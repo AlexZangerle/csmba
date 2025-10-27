@@ -38,7 +38,7 @@ local const half: Csml.StateDescription = new {
     name = "half"
     entry {
         new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlindhalf
+            serviceType = ServiceTypes.stBlindsHalf
         }
     }
     on {
@@ -108,7 +108,7 @@ local const fullyOpen: Csml.StateDescription = new {
     name = "fullyOpen"
     entry {
         new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlindfullyOpen
+            serviceType = ServiceTypes.stBlindsOpen
         }
     }
     on {
@@ -176,7 +176,7 @@ local const close: Csml.StateDescription = new {
     name = "close"
     entry {
         new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlindclose
+            serviceType = ServiceTypes.stBlindsClose
         }
     }
     on {
@@ -259,7 +259,7 @@ local const userLevel: Csml.StateDescription = new {
         }
     }
         new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlinduserLevel
+            serviceType = ServiceTypes.stBlindsUserLevel
             input {
                 new {
                     name = "blindLevel"
@@ -355,7 +355,7 @@ local const emergency: Csml.StateDescription = new {
     name = "emergency"
     entry {
         new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stBlinduserLevel
+            serviceType = ServiceTypes.stBlindsUserLevel
             input {
                 new {
                     name = "blindLevel"
