@@ -3,211 +3,254 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pk
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/guards.pkl" as Guards
+// Import the context definition needed for zoneId
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/context.pkl" as Context
 
 // This module contains the definition for the lighting SM
 
-// The lighting SM contains five states:
-// On, Off, Dim, UserLevel + an initialization state
-// The state transitions are controlled by occupancy detection, except for userLevel, which is determined by the user
+// The lighting SM contains five states: On, Off, Dim, UserLevel + an initialization state
+// State transitions are controlled by occupancy detection AND room schedule status.
 class lightingSM extends Csml.StateMachineDescription {
-    name = "lighting"
-    states {
-        lInit
-        lOff
-        lOn
-        lDim
-        lUserLevel
-    }
+  name = "lighting"
+  localContext = Context.lightingContext
+  states {
+    init
+    off
+    on
+    dim
+    userLevel
+  }
 }
 
 // Initially always transitions to off
-local const lInit: Csml.StateDescription = new {
-    name = "init"
-    initial = true
-    always {
-        new {
-            target = lOff.name
-        }
+local const init: Csml.StateDescription = new {
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = off.name
     }
+  }
 }
 
-// Lights off - no occupancy detected
-local const lOff: Csml.StateDescription = new {
-    name = "off"
-    entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stTurnOff
-        }
+// Lights off - default state when inactive or vacant.
+local const off: Csml.StateDescription = new {
+  name = "off"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stTurnOff
     }
-    on {
-        // Only transitions to on if energy saving mode is not active
-        new {
-            event = Events.eOccupancyDetected
-            guards {
-                Guards.energySavingInactive
-            }
-            target = lOn.name
-        }
-        new {
-            event = Events.eActivateLightUserLevel
-            target = lUserLevel.name
-        }
-        new {
-            event = Events.eOccupancyDetected
-            guards {
-                Guards.energySavingActive
-            }
-            target = lDim.name
-        }
-        new {
-            event = Events.eActivateEnergySaving
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vEnergySaving
-                        value = "true"
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eDeactivateEnergySaving
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vEnergySaving
-                        value = "false"
-                    }
-                }
-            }
-        }
+  }
+  on {
+    // --- Standard Occupancy Logic (Only applies if zone is active) ---
+    new {
+      event = Events.eOccupancyDetected
+      guards {
+        Guards.energySavingInactive
+      }
+      target = on.name
     }
-}
+    new {
+      event = Events.eOccupancyDetected
+      guards {
+        Guards.energySavingActive
+      }
+      target = dim.name
+    }
+    new {
+      event = Events.eActivateLightUserLevel
+      guards { Guards.isMyZone } // User level only applies if zone is active implicitly
+      target = userLevel.name
+    }
 
-// Lights on - occupancy detected
-local const lOn: Csml.StateDescription = new {
-    name = "on"
-    entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stTurnOn
-        }
+    // --- Schedule Integration ---
+    new {
+      event = Events.eZoneActive
+      guards { Guards.isMyZone }
+      // Stay off when zone becomes active, let occupancy detection trigger 'on'/'dim'.
     }
-    on {
-        new {
-            event = Events.eOccupancyTransient
-            target = lDim.name
-        }
-        new {
-            event = Events.eActivateLightUserLevel
-            target = lUserLevel.name
-        }
+    new {
+      event = Events.eZoneWarning
+      guards { Guards.isMyZone }
+      // Stay off if already off during warning.
     }
-}
+    // eZoneInactive: Already off, do nothing.
 
-// Lights dim - vacancy grace period
-local const lDim: Csml.StateDescription = new {
-    name = "dim"
-    entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stDim
-        }
-    }
-    on {
-        new {
-            event = Events.eOccupancyDetected
-            guards {
-                Guards.energySavingInactive
-            }
-            target = lOn.name
-        }
-        new {
-            event = Events.eOccupancyVacant
-            target = lOff.name
-        }
-        new{
-            event = Events.eActivateLightUserLevel
-            target = lUserLevel.name
-        }
-        new {
-            event = Events.eActivateEnergySaving
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vEnergySaving
-                        value = "true"
-                    }
-                }
-            }
-        }
-        new {
-            event = Events.eDeactivateEnergySaving
-            actions{
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vEnergySaving
-                        value = "false"
-                    }
-                }
-            }
-        }
-    }
-}
-
-// Lights at manual level - lights are set to manual level, and dont change depending on occupancy anymore
-local const lUserLevel: Csml.StateDescription = new {
-    name = "userLevel"
-    staticContext {
-        variables{
-            Vars.vUserLightLevel
-        }
-    }
-    entry {
+    // --- Energy Saving (Potentially redundant now) ---
+    new {
+      event = Events.eActivateEnergySaving
+      actions{
         new Csml.AssignActionDescription {
-            variable {
-                name = Vars.vUserLightLevel.name
-                value = "if ($lightLevel != -1) $lightLevel else lightLevel"
-            } 
+          variable { name = Vars.vEnergySaving; value = "true" }
         }
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stTurnUserLevel
-            input {
-                new {
-                    name = "lightLevel"
-                    value = "lightLevel"
-                }
-            }
-        }
+      }
     }
-    on {
-        new {
-            event = Events.eDeactivateLightUserLevel
-            guards{
-                Guards.occupancyTransientGuard
-            }
-            target = lDim.name
+    new {
+      event = Events.eDeactivateEnergySaving
+      actions{
+        new Csml.AssignActionDescription {
+          variable { name = Vars.vEnergySaving; value = "false" }
         }
-        new {
-            event = Events.eDeactivateLightUserLevel
-            guards{
-                Guards.energySavingInactive
-                Guards.occupancyOccupiedGuard
-            }
-            target = lOn.name
-        }
-        new {
-            event = Events.eDeactivateLightUserLevel
-            guards{
-                Guards.energySavingActive
-                Guards.occupancyOccupiedGuard
-            }
-            target = lDim.name
-        }
-        new {
-            event = Events.eDeactivateLightUserLevel
-            guards{
-                Guards.occupancyVacantGuard
-            }
-            target = lOff.name
-        }
+      }
     }
+  }
 }
+
+// Lights on - zone is active and occupied.
+local const on: Csml.StateDescription = new {
+  name = "on"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stTurnOn
+    }
+  }
+  on {
+    // --- Standard Occupancy Logic ---
+    new {
+      event = Events.eOccupancyTransient // Person might be leaving
+      target = dim.name
+    }
+    new {
+      event = Events.eOccupancyVacant // Person definitely left
+      target = off.name
+    }
+    new {
+      event = Events.eActivateLightUserLevel
+      guards { Guards.isMyZone }
+      target = userLevel.name
+    }
+
+    // --- Schedule Integration ---
+    new {
+      // Room scheduler signals warning period (building closing).
+      event = Events.eZoneWarning
+      guards { Guards.isMyZone }
+      target = dim.name // Dim the lights as a warning
+    }
+    new {
+      // Room scheduler commands shutdown (AfterHours confirmed).
+      event = Events.eZoneInactive
+      guards { Guards.isMyZone }
+      target = off.name // Force off
+    }
+  }
+}
+
+// Lights dim - vacancy grace period OR schedule warning OR energy saving override.
+local const dim: Csml.StateDescription = new {
+  name = "dim"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stDim
+    }
+  }
+  on {
+    // --- Standard Occupancy Logic ---
+    new {
+      event = Events.eOccupancyDetected // Person returned or stayed
+      guards {
+        Guards.energySavingInactive
+      }
+      target = on.name
+    }
+    new {
+      event = Events.eOccupancyDetected // Person returned/stayed, but energy saving is active
+      guards {
+        Guards.energySavingActive
+      }
+      // Stay dim if energy saving is on, even if occupied
+    }
+    new {
+      event = Events.eOccupancyVacant // Confirmed vacant
+      target = off.name
+    }
+    new {
+      event = Events.eActivateLightUserLevel
+      guards { Guards.isMyZone }
+      target = userLevel.name
+    }
+
+    // --- Schedule Integration ---
+    new {
+      // Room scheduler confirms override or returns to Business Hours.
+      event = Events.eZoneActive
+      guards { Guards.isMyZone }
+      // If zone becomes active (override confirmed), return to full brightness
+      // Needs check if still occupied? Assume yes if we were dim due to warning.
+      target = on.name // Go back to 'on' state
+    }
+    new {
+      // Room scheduler commands shutdown (AfterHours confirmed).
+      event = Events.eZoneInactive
+      guards { Guards.isMyZone }
+      target = off.name // Force off
+    }
+
+    // --- Energy Saving (Potentially redundant now) ---
+    new {
+      event = Events.eActivateEnergySaving
+      actions{
+        new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "true" } }
+      }
+    }
+    new {
+      event = Events.eDeactivateEnergySaving
+      actions{
+        new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "false" } }
+        // If energy saving turns off WHILE dim, should we go back to ON? Only if occupied.
+        // This requires knowing *why* we are dim. Add complexity or keep simple? Keep simple for now.
+      }
+    }
+  }
+}
+
+// Lights at manual level - user override.
+local const userLevel: Csml.StateDescription = new {
+  name = "userLevel"
+  localContext = Context.lightingContext // Assumes lighting context includes vZoneId
+  staticContext {
+    variables{
+      Vars.vUserLightLevel
+    }
+  }
+  // --- REVERTED Entry Logic ---
+  entry {
+    new Csml.AssignActionDescription {
+      variable {
+        name = Vars.vUserLightLevel.name
+        // Use $lightLevel from eActivateLightUserLevel event data if provided, otherwise keep existing value
+        value = "if ($lightLevel != null && $lightLevel != -1) $lightLevel else lightLevel"
+      }
+    }
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stTurnUserLevel
+      input { new { name = "lightLevel"; value = "lightLevel" } }
+    }
+  }
+  // --- REVERTED On Logic (but keep schedule transitions) ---
+  on {
+    // --- Standard Deactivation ---
+    new {
+      event = Events.eDeactivateLightUserLevel // User cancels manual mode
+      guards{ Guards.isMyZone }
+      // Simplest: go back to OFF and let occupancy detection take over.
+      target = off.name
+    }
+
+    // --- Schedule Integration (Kept from previous version) ---
+    new {
+      // Room scheduler signals warning period (building closing).
+      event = Events.eZoneWarning
+      guards { Guards.isMyZone }
+      target = dim.name // Schedule warning overrides user level
+    }
+    new {
+      // Room scheduler commands shutdown (AfterHours confirmed).
+      event = Events.eZoneInactive
+      guards { Guards.isMyZone }
+      target = off.name // Force off, overriding user level
+    }
+    // Note: eZoneActive doesn't need a transition here, user level persists.
+  }
+}
+

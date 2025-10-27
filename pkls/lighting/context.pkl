@@ -1,0 +1,13 @@
+
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+// This module contains all contexts for the hvac SM
+
+lightingContext = new Csml.ContextDescription {
+    variables {
+        new {
+          name = Vars.vZoneId
+          value = "''"
+        }
+    }
+}

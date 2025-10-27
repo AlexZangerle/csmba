@@ -27,3 +27,5 @@ occupancyOccupiedGuard = new Csml.GuardDescription {
 occupancyTransientGuard = new Csml.GuardDescription {
     expression = "\(Vars.vCurrentOccupancy) == 'transient'"
 }
+
+isMyZone = new Csml.GuardDescription { expression = "$zone == Vars.vZoneId" }

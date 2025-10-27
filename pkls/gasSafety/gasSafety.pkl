@@ -15,26 +15,26 @@ class gasSafetySM extends Csml.StateMachineDescription {
     name = "gasSafety"
     localContext = Context.gasSafetyContext
     states {
-        gsInit
-        gsMonitoring
-        gsGasLeak
-        gsAcknowledged
+        init
+        monitoring
+        gasLeak
+        acknowledged
     }
 }
 
-local const gsInit: Csml.StateDescription = new {
+local const init: Csml.StateDescription = new {
     name = "init"
     initial = true
     always {
         new {
-            target = gsMonitoring.name
+            target = monitoring.name
         }
     }
 }
 
 // Always starts in monitoring state
 // Invokes gas detection service every 30 seconds
-local const gsMonitoring: Csml.StateDescription = new {
+local const monitoring: Csml.StateDescription = new {
     name = "monitoring"
     after {
         new Csml.TimeoutActionDescription {
@@ -69,13 +69,13 @@ local const gsMonitoring: Csml.StateDescription = new {
             guards {
                 Guards.foundGasLeak
             }
-            target = gsGasLeak.name
+            target = gasLeak.name
         }
     }
 }
 
 // Invokes close valve service and raises global gas leak event
-local const gsGasLeak: Csml.StateDescription = new {
+local const gasLeak: Csml.StateDescription = new {
     name = "gasLeak"
     entry {
         new Csml.InvokeActionDescription {
@@ -92,12 +92,12 @@ local const gsGasLeak: Csml.StateDescription = new {
     on {
         new {
             event = Events.eGasPurged
-            target = gsAcknowledged.name
+            target = acknowledged.name
         }
     }
 }
 
-local const gsAcknowledged: Csml.StateDescription = new {
+local const acknowledged: Csml.StateDescription = new {
     name = "acknowledged"
     entry {
         new Csml.InvokeActionDescription {
@@ -106,7 +106,7 @@ local const gsAcknowledged: Csml.StateDescription = new {
     }
     always {
         new {
-            target = gsMonitoring.name
+            target = monitoring.name
         }
     }
 }
