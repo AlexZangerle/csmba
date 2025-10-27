@@ -39,7 +39,7 @@ aRaiseAccessDeniedAuth = new Csml.RaiseActionDescription {
     channel = "global"
     data {
       new { name = "doorId"; value = Vars.vDoorId }
-      new { name = "zone"; value = Vars.vZoneId }
+      new { name = "zoneId"; value = Vars.vZoneId }
       new { name = "user"; value = "'Unknown'" }
       new { name = "reason"; value = "'Authentication Failed'" }
     }
@@ -52,7 +52,7 @@ aRaiseAccessDeniedRule = new Csml.RaiseActionDescription {
     channel = "global"
     data {
       new { name = "doorId"; value = Vars.vDoorId }
-      new { name = "zone"; value = Vars.vZoneId }
+      new { name = "zoneId"; value = Vars.vZoneId }
       new { name = "user"; value = "'Unknown'" }
       new { name = "reason"; value = "'Authentication Failed'" }
     }
@@ -65,7 +65,7 @@ aRaiseAccessGranted = new Csml.RaiseActionDescription {
     channel = "global"
     data {
       new { name = "doorId"; value = Vars.vDoorId }
-      new { name = "zone"; value = Vars.vZoneId }
+      new { name = "zoneId"; value = Vars.vZoneId }
       new { name = "user"; value = Vars.vUserId }
       new { name = "role"; value = Vars.vUserRole }
     }
