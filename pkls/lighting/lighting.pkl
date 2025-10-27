@@ -199,7 +199,7 @@ local const flashingAlarm_Off: Csml.StateDescription = new {
     // Transition to the ON state
     new {
       event = "flashOn"
-      target = flashingAlarm_turnOn.name
+      target = flashingAlarm_On.name
     }
     // Exit condition: Security alert cleared
     new {
