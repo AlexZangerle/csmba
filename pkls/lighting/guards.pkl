@@ -24,8 +24,8 @@ occupancyOccupiedGuard = new Csml.GuardDescription {
 }
 
 // Guard to verify if current occupancy is transient
-occupancyTransientGuard = new Csml.GuardDescription {a
+occupancyTransientGuard = new Csml.GuardDescription {
     expression = "\(Vars.vCurrentOccupancy) == 'transient'"
 }
 
-isMyZone = new Csml.GuardDescription { expression = "$zoneId == Vars.vZoneId" }
+isMyZone = new Csml.GuardDescription { expression = "$zoneId == \(Vars.vZoneId)" }
