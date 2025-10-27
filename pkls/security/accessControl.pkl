@@ -12,18 +12,18 @@ class accessControlSM extends Csml.StateMachineDescription {
   name = "accessControl"
   localContext = Context.accessControlContext
   states {
-    acInit
-    acLocked
-    acAuthenticating
-    acCheckingRules
-    acUnlocked
-    acAccessDenied
-    acEmergencyUnlock
-    acForcedOpenAlarm
+    init
+    locked
+    authenticating
+    checkingRules
+    unlocked
+    accessDenied
+    emergencyUnlock
+    forcedOpenAlarm
   }
 }
 
-local const acInit: Csml.StateDescription = new {
+local const init: Csml.StateDescription = new {
   name = "init"
   initial = true
   // Ensure the door is locked on startup
@@ -44,11 +44,11 @@ local const acInit: Csml.StateDescription = new {
       }
     }
   }
-  on { new { event = "doorTypeDetermined" target = acLocked.name } }
+  on { new { event = "doorTypeDetermined" target = locked.name } }
 }
 
 /// Default secure state. Door is locked. Listens for access attempts and overrides.
-local const acLocked: Csml.StateDescription = new {
+local const locked: Csml.StateDescription = new {
   name = "locked"
   on {
     // --- Normal Access Attempt ---
@@ -56,26 +56,26 @@ local const acLocked: Csml.StateDescription = new {
       event = Events.eAuthenticationRequest
       // Only react if the request is for this specific door
       guards { Guards.isCurrentDoor }
-      target = acAuthenticating.name
+      target = authenticating.name
     }
 
     // --- Overrides & Alarms ---
-    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
-    new { event = Events.eGasLeakDetected guards { Guards.checkIsEvacuationRoute } target = acEmergencyUnlock.name }
-    new { event = Events.eUnlockAllEvacuationRoutes guards { Guards.checkIsEvacuationRoute } target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = emergencyUnlock.name }
+    new { event = Events.eGasLeakDetected guards { Guards.checkIsEvacuationRoute } target = emergencyUnlock.name }
+    new { event = Events.eUnlockAllEvacuationRoutes guards { Guards.checkIsEvacuationRoute } target = emergencyUnlock.name }
     new {
       event = Events.eLockdownZone // Can receive lockdown command even when locked
       guards { Guards.isCurrentZone }
       // Action: Potentially log that lockdown is being enforced, but stay in Locked state.
     }
-    new { event = Events.eDoorForcedOpen target = acForcedOpenAlarm.name }
-    new { event = Events.ePhysicalTamper target = acForcedOpenAlarm.name } // Treat tamper like forced open for alert
-    new { event = Events.eForceUnlockRequest target = acUnlocked.name } // Manual override
+    new { event = Events.eDoorForcedOpen target = forcedOpenAlarm.name }
+    new { event = Events.ePhysicalTamper target = forcedOpenAlarm.name } // Treat tamper like forced open for alert
+    new { event = Events.eForceUnlockRequest target = unlocked.name } // Manual override
   }
 }
 
 /// Calls the authentication service.
-local const acAuthenticating: Csml.StateDescription = new {
+local const authenticating: Csml.StateDescription = new {
   name = "authenticating"
   entry {
     new Csml.InvokeActionDescription {
@@ -94,7 +94,7 @@ local const acAuthenticating: Csml.StateDescription = new {
     new {
       event = "authComplete"
       guards { Guards.authSuccessful }
-      target = acCheckingRules.name // Authentication succeeded, now check rules
+      target = checkingRules.name // Authentication succeeded, now check rules
     }
     new {
       event = "authComplete"
@@ -103,16 +103,16 @@ local const acAuthenticating: Csml.StateDescription = new {
         // Raise Access Denied event immediately for failed auth
         Actions.aRaiseAccessDeniedAuth
       }
-      target = acAccessDenied.name // Auth failed
+      target = accessDenied.name // Auth failed
     }
     // --- Overrides during authentication ---
-    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = emergencyUnlock.name }
     // ... other overrides ...
   }
 }
 
 /// Calls the rule checking service based on authenticated role and current schedule.
-local const acCheckingRules: Csml.StateDescription = new {
+local const checkingRules: Csml.StateDescription = new {
   name = "checkingRules"
   entry {
     // Here we assume vCurrentScheduleMode is up-to-date.
@@ -136,7 +136,7 @@ local const acCheckingRules: Csml.StateDescription = new {
       actions {
         Actions.aRaiseAccessGranted
       }
-      target = acUnlocked.name // Rules allow access
+      target = unlocked.name // Rules allow access
     }
     new {
       event = "rulesChecked"
@@ -145,16 +145,16 @@ local const acCheckingRules: Csml.StateDescription = new {
         // Raise Access Denied event for rule failure
         Actions.aRaiseAccessDeniedRule
       }
-      target = acAccessDenied.name // Rules deny access
+      target = accessDenied.name // Rules deny access
     }
     // --- Overrides during rule check ---
-    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = emergencyUnlock.name }
     // ... other overrides ...
   }
 }
 
 /// Door is temporarily unlocked.
-local const acUnlocked: Csml.StateDescription = new {
+local const unlocked: Csml.StateDescription = new {
   name = "unlocked"
   entry {
     // --- FIX: Remove the RaiseActionDescription from here ---
@@ -176,22 +176,22 @@ local const acUnlocked: Csml.StateDescription = new {
     }
   }
   on {
-    new { event = "autoRelock" target = acLocked.name }
+    new { event = "autoRelock" target = locked.name }
 
     // --- Overrides & Alarms ---
-    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = emergencyUnlock.name }
     new {
       event = Events.eLockdownZone
       guards { Guards.isCurrentZone }
-      target = acLocked.name // Force lock immediately
+      target = locked.name // Force lock immediately
     }
-    new { event = Events.eDoorForcedOpen target = acForcedOpenAlarm.name } // Can still be forced while unlocked
-    new { event = Events.ePhysicalTamper target = acForcedOpenAlarm.name }
+    new { event = Events.eDoorForcedOpen target = forcedOpenAlarm.name } // Can still be forced while unlocked
+    new { event = Events.ePhysicalTamper target = forcedOpenAlarm.name }
   }
 }
 
 /// Access was denied (failed auth or policy). Briefly show status, then re-lock.
-local const acAccessDenied: Csml.StateDescription = new {
+local const accessDenied: Csml.StateDescription = new {
   name = "accessDenied"
   // Entry: Could potentially flash an indicator light via a service call
   after {
@@ -202,14 +202,14 @@ local const acAccessDenied: Csml.StateDescription = new {
     }
   }
   on {
-    new { event = "returnToLock" target = acLocked.name }
+    new { event = "returnToLock" target = locked.name }
     // Critical overrides still apply
-    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = emergencyUnlock.name }
   }
 }
 
 /// Highest priority state during safety emergencies. Forces door unlocked.
-local const acEmergencyUnlock: Csml.StateDescription = new {
+local const emergencyUnlock: Csml.StateDescription = new {
   name = "emergencyUnlock"
   entry {
     new Csml.InvokeActionDescription {
@@ -222,13 +222,13 @@ local const acEmergencyUnlock: Csml.StateDescription = new {
   }
   on {
     // Wait for the safety all-clear event
-    new { event = Events.eDisarmFireAlarm target = acLocked.name }
-    new { event = Events.eGasPurged target = acLocked.name }
+    new { event = Events.eDisarmFireAlarm target = locked.name }
+    new { event = Events.eGasPurged target = locked.name }
   }
 }
 
 /// Alarm state if physical tampering or forced entry is detected.
-local const acForcedOpenAlarm: Csml.StateDescription = new {
+local const forcedOpenAlarm: Csml.StateDescription = new {
   name = "forcedOpenAlarm"
   entry {
     // Raise critical alert to the Security Manager
@@ -244,8 +244,8 @@ local const acForcedOpenAlarm: Csml.StateDescription = new {
   }
   on {
     // Needs a manual reset event from security personnel to clear the alarm
-    new { event = Events.eClearSecurityAlert target = acLocked.name }
+    new { event = Events.eClearSecurityAlert target = locked.name }
     // Safety overrides still function
-    new { event = Events.eFireAlarm target = acEmergencyUnlock.name }
+    new { event = Events.eFireAlarm target = emergencyUnlock.name }
   }
 }
