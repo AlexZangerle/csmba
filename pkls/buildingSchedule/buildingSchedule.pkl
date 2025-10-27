@@ -1,13 +1,12 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/guards.pkl" as Guards
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/actions.pkl" as Actions
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
-/// This module defines the building's global scheduler.
-/// Its only job is to publish the building's official operational mode.
+/// This module defines the buildingScheduleSM
 class buildingScheduleSM extends Csml.StateMachineDescription {
   name = "buildingSchedule"
   localContext = Context.scheduleContext
@@ -31,7 +30,7 @@ local const init: Csml.StateDescription = new {
   }
 }
 
-/// A central state to call the time service and route to the correct operational mode.
+/// The central state calling the time service and routing to the corresponding operational mode.
 local const evaluating: Csml.StateDescription = new {
   name = "evaluating"
   entry {
@@ -60,6 +59,8 @@ local const evaluating: Csml.StateDescription = new {
   }
 }
 
+/// The state signifying that the building is currently in its normal operating hours
+/// Re-checks every 15 minutes
 local const businessHours: Csml.StateDescription = new {
   name = "businessHours"
   entry {
@@ -78,6 +79,8 @@ local const businessHours: Csml.StateDescription = new {
   }
 }
 
+
+/// State to signify the building is currently between businessHours on a weekday
 local const afterHours: Csml.StateDescription = new {
   name = "afterHours"
   entry {
@@ -96,18 +99,27 @@ local const afterHours: Csml.StateDescription = new {
   }
 }
 
+/// State to signify it is currently weekend
+/// Less frequent schedule check
 local const weekendClosed: Csml.StateDescription = new {
   name = "weekendClosed"
   entry {
     Actions.aRaiseEnterWeekend
   }
-  // This state would have the same polling logic as afterHours.
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "scheduleCheck"
+      delay = "7200000" // 2 hours
+      action = Actions.aRaiseStartScheduleCheck
+    }
+  }
   on {
     new { event = Events.eStartScheduleCheck target = evaluating.name }
     new { event = Events.eFireAlarm target = emergencyOverride.name }
   }
 }
 
+/// State signifying the building is currently in an emergency
 local const emergencyOverride: Csml.StateDescription = new {
   name = "emergencyOverride"
   on {

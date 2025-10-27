@@ -1,29 +1,12 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-// This module contains actions for the eletricalSafety SM
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+// This module contains actions for the hvac SM
 
 
-// Raise to start arc fault detection
+// Raise to start an indoor temperature check
 aRaiseIndoorTempCheck = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eStartIndoorTempCheck
-        channel = "internal"
-    }
-}
-
-// Raise if an arc fault has been detected 
-// Includes location of arcFault as payload
-aRaiseArcFaultDetected = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eArcFaultDetected
-        data {
-            new {
-                name = "arcFaultLocation"
-                value = Vars.vArcFaultLocation
-            }
-        }
-        channel = "global"
-    }
+  event {
+    name = Events.eStartIndoorTempCheck
+    channel = "internal"
+  }
 }

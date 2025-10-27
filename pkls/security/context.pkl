@@ -1,7 +1,8 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-// This module contains all contexts for the gasSafety SM
+// This module contains all contexts for the accessControlSM and securityManagerSM
 
+// securityManagerContext contains a count of failed attempts, a timestamp of the last failed attempt and the details for the alert
 securityManagerContext = new Csml.ContextDescription {
   variables {
     new { name = Vars.vFailedAttemptsCount; value = "'0'" }
@@ -10,6 +11,7 @@ securityManagerContext = new Csml.ContextDescription {
   }
 }
 
+// accessControlContext contains door and zone id, a flag to signify if its part of an evacuationroute, user details, etc.
 accessControlContext = new Csml.ContextDescription {
   variables {
     new { name = Vars.vDoorId; value = "'testDoor'" }

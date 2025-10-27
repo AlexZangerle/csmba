@@ -6,9 +6,9 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTy
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
-/// This module defines the LOCAL room scheduler.
+/// This module defines the roomScheduleSM.
 /// It listens to the global schedule and manages local user overrides.
-/// One instance of this SM will run for each room/zone.
+/// One instance of this SM will run for each room or zone.
 class roomScheduleSM extends Csml.StateMachineDescription {
   name = "roomSchedule"
   localContext = Context.roomContext
@@ -28,9 +28,7 @@ local const init: Csml.StateDescription = new {
   entry {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stInitializeZone
-      // The service returns the chosen zone ID into our local variable
       output { new { reference = Vars.vZoneId } }
-      // When the service is done, raise an internal event
       done { new { name = "zoneInitialized" channel = "internal" } }
     }
   }
@@ -50,7 +48,7 @@ local const active: Csml.StateDescription = new {
     Actions.aRaiseZoneActive
   }
   on {
-    // The global scheduler says the building is closing.
+    // The buildingScheduleSM signifies the building is entering afterHours or weekend
     // Start the graceful shutdown warning.
     new {
       event = Events.eEnterAfterHoursMode
@@ -67,14 +65,13 @@ local const active: Csml.StateDescription = new {
   }
 }
 
-/// The room is "closed." It tells devices to shut down and ignore occupancy.
+/// The room is closed - waits for building to open or user to request stay
 local const inactive: Csml.StateDescription = new {
   name = "inactive"
   entry {
     Actions.aRaiseZoneInactive
   }
   on {
-    // The global scheduler says the building is now open.
     new {
       event = Events.eEnterBusinessHours
       target = active.name
@@ -85,25 +82,22 @@ local const inactive: Csml.StateDescription = new {
     }
     new {
       event = Events.eRequestStay
-      guards { Guards.requestedStay } // Check if the request is for this zone
-      target = authorizedStay.name // Grant the override
+      guards { Guards.requestedStay }
+      target = authorizedStay.name
     }
     new {
-      event = Events.eGasLeakDetected // Added Gas
+      event = Events.eGasLeakDetected
       target = emergency.name
     }
   }
 }
 
-/// The "grace period" state. The building is closing, but this room is
-/// giving its occupant a chance to respond.
+/// Grace period state for building closure
 local const warning: Csml.StateDescription = new {
   name = "warning"
   entry {
-    // 1. Tell the lighting SM to dim the lights
     Actions.aRaiseZoneWarning
   }
-  // 2. Start a 5-minute timer.
   after {
     new Csml.TimeoutActionDescription {
       name = "gracePeriodTimer"
@@ -115,10 +109,10 @@ local const warning: Csml.StateDescription = new {
     // The occupant responded to the warning.
     new {
       event = Events.eRequestStay
-      guards { Guards.requestedStay } // Only react if it's for this room
+      guards { Guards.requestedStay }
       target = authorizedStay.name
     }
-    // The timer expired. No one responded. Shut the room down.
+    // The timer expired without response
     new {
       event = Events.eShutdownRoom
       target = inactive.name
@@ -135,15 +129,13 @@ local const warning: Csml.StateDescription = new {
   }
 }
 
-/// The "person working late" state. This room has a temporary
-/// exception to the 'AfterHours' policy.
+/// A person has temporarly requested an extended stay
 local const authorizedStay: Csml.StateDescription = new {
   name = "authorizedStay"
   entry {
-    // 1. Tell the lighting SM to go from dim back to full brightness.
     Actions.aRaiseZoneActive
   }
-  // 2. Give the user a 2-hour "lease" on the override.
+  // Person gets a 2 hour lease, before re-evaluation
   after {
     new Csml.TimeoutActionDescription {
       name = "overrideLeaseTimer"
@@ -156,13 +148,13 @@ local const authorizedStay: Csml.StateDescription = new {
       event = Events.eRecheckOverride
       target = warning.name
     }
-    // The user has left (e.g., badged out of the building).
+    // The person has left
     new {
       event = Events.eUserLeftZone
       guards { Guards.userLeftZone }
       target = inactive.name
     }
-    // The building is officially open now, so the override is no longer needed.
+    // The building is open now, lease no longer required
     new {
       event = Events.eEnterBusinessHours
       target = active.name
@@ -178,8 +170,7 @@ local const authorizedStay: Csml.StateDescription = new {
 local const emergency: Csml.StateDescription = new {
   name = "emergency"
   on {
-    // When the alarm is disarmed, go to 'Inactive' and wait for the
-    // global scheduler to re-broadcast the correct policy.
+    // When the alarm is disarmed, go to 'Inactive' and wait for the re-broadcast of current schedule
     new {
       event = Events.eDisarmFireAlarm
       target = inactive.name

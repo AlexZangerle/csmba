@@ -1,31 +1,31 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains all guards for lightingSM
 
 // Guards to verify if energySavingMode is either on or off
 energySavingActive = new Csml.GuardDescription {
-    expression = "\(Vars.vEnergySaving)"
+  expression = "\(Vars.vEnergySaving)"
 }
 
 energySavingInactive = new Csml.GuardDescription {
-    expression = "!\(Vars.vEnergySaving)"
+  expression = "!\(Vars.vEnergySaving)"
 }
 
 // Guard to verify if current occupancy is vacant
 occupancyVacantGuard = new Csml.GuardDescription {
-    expression = "\(Vars.vCurrentOccupancy) == 'vacant'"
+  expression = "\(Vars.vCurrentOccupancy) == 'vacant'"
 }
 
 // Guard to verify if current occupancy is occupied
 occupancyOccupiedGuard = new Csml.GuardDescription {
-    expression = "\(Vars.vCurrentOccupancy) == 'occupied'"
+  expression = "\(Vars.vCurrentOccupancy) == 'occupied'"
 }
 
 // Guard to verify if current occupancy is transient
 occupancyTransientGuard = new Csml.GuardDescription {
-    expression = "\(Vars.vCurrentOccupancy) == 'transient'"
+  expression = "\(Vars.vCurrentOccupancy) == 'transient'"
 }
 
+// Guard to check if event carries the current zone as data
 isMyZone = new Csml.GuardDescription { expression = "$zoneId == \(Vars.vZoneId)" }

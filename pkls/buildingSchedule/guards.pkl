@@ -1,24 +1,28 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-// This module contains all guards for energyManagement SM
+// This module contains all guards for buildingScheduleSM and roomScheduleSM
 
-// Guard to check if arc fault has been detected
+// Guard to check if building is in businessHours
 isBusinessHours = new Csml.GuardDescription {
   expression = "\(Vars.vCurrentScheduleMode) == 'businessHours'"
 }
 
+// Guard to check if building is in afterHours
 isAfterHours = new Csml.GuardDescription {
   expression = "\(Vars.vCurrentScheduleMode) == 'afterHours'"
 }
 
+// Guard to check if building is in weekend
 isWeekend = new Csml.GuardDescription {
   expression = "\(Vars.vCurrentScheduleMode) == 'weekendClosed'"
 }
 
+// Guard to check if an extended stay has been requested for this zone
 requestedStay = new Csml.GuardDescription {
   expression = "$zoneId == \(Vars.vZoneId)"
 }
 
+// Guard to check if user left this zone
 userLeftZone = new Csml.GuardDescription {
   expression = "$zoneId == \(Vars.vZoneId)"
 }

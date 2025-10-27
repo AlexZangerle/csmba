@@ -7,19 +7,16 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains the definition for the HVAC SM
-// Integrates with Occupancy, Scheduling, and Safety systems.
 
 class hvacSM extends Csml.StateMachineDescription {
   name = "hvac"
-  // --- UPDATED: Needs local context for Zone ID ---
-  localContext = Context.hvacContext // Ensure hvacContext defines vZoneId
+  localContext = Context.hvacContext
   states {
     init
     off
     fanOnly
     heating
     cooling
-    // --- NEW: Emergency state ---
     emergency
   }
 }
@@ -34,38 +31,33 @@ local const init: Csml.StateDescription = new {
   }
 }
 
-// Default state when zone inactive or vacant. System is off.
+// Default state when zone inactive or vacant.
 local const off: Csml.StateDescription = new {
   name = "off"
   entry {
-    // Ensure HVAC unit is physically off when entering this state
+    // Ensure HVAC unit is off when entering
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stSetHVAC
       input { new { name = "mode"; value = "'off'" } }
     }
   }
   on {
-    // --- Standard Occupancy Logic (Now implicitly enabled by being in this state) ---
     new {
       event = Events.eOccupancyDetected
-      // Transition only happens if not forced off by schedule/emergency
       target = fanOnly.name
     }
-    // --- Schedule Integration ---
     new {
-      // Zone becomes active (BusinessHours or Override) -> Start assessing climate.
+      // Zone becomes active -> transition to fanOnly to start evaluating HVAC needs
       event = Events.eZoneActive
-      guards { Guards.isMyZone } // Make sure hvac/guards.pkl has isMyZone
+      guards { Guards.isMyZone }
       target = fanOnly.name
     }
-    // --- Safety Integration ---
     new { event = Events.eFireAlarm; target = emergency.name }
     new { event = Events.eGasLeakDetected; target = emergency.name }
-    // Note: No transition needed for eZoneInactive/eZoneWarning as it's already off.
   }
 }
 
-// Monitoring state. Circulates air and decides whether to heat or cool.
+// Monitoring state, only circulates air and decides whether to heat or cool.
 local const fanOnly: Csml.StateDescription = new {
   name = "fanOnly"
   entry {
@@ -73,7 +65,6 @@ local const fanOnly: Csml.StateDescription = new {
       serviceType = ServiceTypes.stSetHVAC
       input { new { name = "mode"; value = "'fan'" } }
     }
-    // Immediately check temperature upon entering
     Actions.aRaiseIndoorTempCheck
   }
   after {
@@ -89,7 +80,7 @@ local const fanOnly: Csml.StateDescription = new {
       actions {
         new Csml.InvokeActionDescription {
           serviceType = ServiceTypes.stGetIndoorTemp
-          output { new { reference = Vars.vIndoorTemp } } // Ensure Vars defines vIndoorTemp
+          output { new { reference = Vars.vIndoorTemp } }
           done { new { name = Events.eIndoorTempCheckComplete; channel = "internal" } }
         }
       }
@@ -108,20 +99,15 @@ local const fanOnly: Csml.StateDescription = new {
       event = Events.eOccupancyVacant
       target = off.name
     }
-    // --- Schedule Integration ---
     new {
-      // Schedule enters warning period -> Stay in fanOnly (already reduced load)
       event = Events.eZoneWarning
       guards { Guards.isMyZone }
-      // No target needed, remain in fanOnly
     }
     new {
-      // Schedule forces shutdown
       event = Events.eZoneInactive
       guards { Guards.isMyZone }
       target = off.name
     }
-    // --- Safety Integration ---
     new { event = Events.eFireAlarm; target = emergency.name }
     new { event = Events.eGasLeakDetected; target = emergency.name }
   }
@@ -135,7 +121,6 @@ local const heating: Csml.StateDescription = new {
       serviceType = ServiceTypes.stSetHVAC
       input { new { name = "mode"; value = "'heat'" } }
     }
-    // Check temp immediately in case conditions changed rapidly
     Actions.aRaiseIndoorTempCheck
   }
   after {
@@ -158,32 +143,28 @@ local const heating: Csml.StateDescription = new {
     }
     new {
       event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomComfortable } // Target reached
+      guards { Guards.roomComfortable }
       target = fanOnly.name
     }
     new {
       event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomToHot } // Overshot or conditions changed
+      guards { Guards.roomToHot }
       target = cooling.name
     }
     new {
       event = Events.eOccupancyVacant
       target = off.name
     }
-    // --- Schedule Integration ---
     new {
-      // Schedule enters warning period -> Reduce load
       event = Events.eZoneWarning
       guards { Guards.isMyZone }
       target = fanOnly.name
     }
     new {
-      // Schedule forces shutdown
       event = Events.eZoneInactive
       guards { Guards.isMyZone }
       target = off.name
     }
-    // --- Safety Integration ---
     new { event = Events.eFireAlarm; target = emergency.name }
     new { event = Events.eGasLeakDetected; target = emergency.name }
   }
@@ -219,60 +200,50 @@ local const cooling: Csml.StateDescription = new {
     }
     new {
       event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomComfortable } // Target reached
+      guards { Guards.roomComfortable }
       target = fanOnly.name
     }
     new {
       event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomToCold } // Overshot or conditions changed
+      guards { Guards.roomToCold }
       target = heating.name
     }
     new {
       event = Events.eOccupancyVacant
       target = off.name
     }
-    // --- Schedule Integration ---
     new {
-      // Schedule enters warning period -> Reduce load
       event = Events.eZoneWarning
       guards { Guards.isMyZone }
       target = fanOnly.name
     }
     new {
-      // Schedule forces shutdown
       event = Events.eZoneInactive
       guards { Guards.isMyZone }
       target = off.name
     }
-    // --- Safety Integration ---
     new { event = Events.eFireAlarm; target = emergency.name }
     new { event = Events.eGasLeakDetected; target = emergency.name }
   }
 }
 
-// --- NEW: Emergency State ---
+// Emergency State
 local const emergency: Csml.StateDescription = new {
   name = "emergency"
   entry {
-    // Example: Shut down HVAC during fire to prevent smoke spread.
-    // For Gas, might want 'fan' + 100% fresh air. Needs refinement based on event type.
-    // For simplicity now, just turn off.
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stSetHVAC
       input { new { name = "mode"; value = "'off'" } }
     }
-    // Could raise an eHvacEmergencyShutdown event here if needed.
   }
   on {
-    // Wait for the all-clear signal for the specific emergency.
     new {
       event = Events.eDisarmFireAlarm
-      target = off.name // Go to off state to reset
+      target = off.name
     }
     new {
-      // Using eGasPurged as the clear signal based on previous discussion
       event = Events.eGasPurged
-      target = off.name // Go to off state to reset
+      target = off.name
     }
   }
 }

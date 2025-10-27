@@ -1,7 +1,8 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-// This module contains all contexts for the hvac SM
+// This module contains all contexts for the lighting SM
 
+// lightingContext has the current zone
 lightingContext = new Csml.ContextDescription {
   variables {
     new {

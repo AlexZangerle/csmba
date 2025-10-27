@@ -1,20 +1,23 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-// This module contains actions for the eletricalSafety SM
 
 
-// Raise to start arc fault detection
+// This module contains actions for the buildingScheduleSM and roomScheduleSM
+
+// Raise to signal entry of business hours
 aRaiseEnterBusinessHours = new Csml.RaiseActionDescription { event { name = Events.eEnterBusinessHours channel = "global" } }
 
-// Raise if an arc fault has been detected 
-// Includes location of arcFault as payload
+// Raise to start a schedule check
 aRaiseStartScheduleCheck = new Csml.RaiseActionDescription { event { name = Events.eStartScheduleCheck channel = "internal" } }
 
+// Raise to signal entry of after hours
 aRaiseEnterAfterHours = new Csml.RaiseActionDescription { event { name = Events.eEnterAfterHoursMode channel = "global" } }
 
+// Raise to signal entry of weekend
 aRaiseEnterWeekend = new Csml.RaiseActionDescription { event { name = Events.eEnterWeekend channel = "global" } }
 
+// Raise to signify activation of zone
 aRaiseZoneActive = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneActive
@@ -23,6 +26,7 @@ aRaiseZoneActive = new Csml.RaiseActionDescription {
   }
 }
 
+// Raise to signify deactivation of zone
 aRaiseZoneInactive = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneInactive
@@ -31,6 +35,7 @@ aRaiseZoneInactive = new Csml.RaiseActionDescription {
   }
 }
 
+// Raise to signify the zone entering a warning state
 aRaiseZoneWarning = new Csml.RaiseActionDescription {
   event {
     name = Events.eZoneWarning
@@ -39,10 +44,12 @@ aRaiseZoneWarning = new Csml.RaiseActionDescription {
   }
 }
 
+// Raise to put room to inactive
 aRaiseShutdownRoom = new Csml.RaiseActionDescription {
   event { name = Events.eShutdownRoom; channel = "internal" }
 }
 
+// Raise to recheck override
 aRaiseRecheckOverride = new Csml.RaiseActionDescription {
   event { name = Events.eRecheckOverride; channel = "internal" }
 }

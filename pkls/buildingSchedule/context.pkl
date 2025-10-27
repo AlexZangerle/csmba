@@ -1,7 +1,8 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-// This module contains all contexts for the buildingSchedule SM
 
+// This module contains all contexts for the buildingSchedule SM and roomScheduleSM
+// buildingScheduleContext includes the currentScheduleMode
 scheduleContext = new Csml.ContextDescription {
   variables {
     new {
@@ -11,6 +12,7 @@ scheduleContext = new Csml.ContextDescription {
   }
 }
 
+// roomScheduleContext contains the zoneId of the corresponding room
 roomContext = new Csml.ContextDescription {
   variables {
     new {

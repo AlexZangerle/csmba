@@ -1,9 +1,9 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-// This module contains actions for the gasSafety SM
+// This module contains actions for the accessControlSM and securityManagerSM
 
-// Raise to start gas leak detection
+// Raise to signify elevated security breach
 aRaiseSecurityBreach = new Csml.RaiseActionDescription {
   event {
     name = Events.eSecurityBreachNotification
@@ -14,6 +14,8 @@ aRaiseSecurityBreach = new Csml.RaiseActionDescription {
     }
   }
 }
+
+// Raise to signify high security breach
 aRaiseServereSecurityBreach = new Csml.RaiseActionDescription {
   event {
     name = Events.eSecurityBreachNotification
@@ -24,15 +26,17 @@ aRaiseServereSecurityBreach = new Csml.RaiseActionDescription {
     }
   }
 }
-// Raise once a gas leak has been detected
-// includes location of gas leak as payload
+
+// Raise to start flashing lights
 aRaiseFlashLights = new Csml.RaiseActionDescription { event { name = Events.eFlashAllLights; channel = "global" } }
 
-
+// Raise to start the building alarm
 aRaiseBuildingAlarm = new Csml.RaiseActionDescription { event { name = Events.eActivateBuildingAlarm; channel = "global" } }
 
+// Raise to unlock evacuation routes
 aRaiseUnlockEvacuationRoutes = new Csml.RaiseActionDescription { event { name = Events.eUnlockAllEvacuationRoutes; channel = "global" } }
 
+// Raise if access was denied based on authentication
 aRaiseAccessDeniedAuth = new Csml.RaiseActionDescription {
   event {
     name = Events.eAccessDenied
@@ -46,6 +50,7 @@ aRaiseAccessDeniedAuth = new Csml.RaiseActionDescription {
   }
 }
 
+// Raise if access was denied based on rule
 aRaiseAccessDeniedRule = new Csml.RaiseActionDescription {
   event {
     name = Events.eAccessDenied
@@ -59,6 +64,7 @@ aRaiseAccessDeniedRule = new Csml.RaiseActionDescription {
   }
 }
 
+// Raise if access was granted
 aRaiseAccessGranted = new Csml.RaiseActionDescription {
   event {
     name = Events.eAccessGranted
@@ -72,10 +78,13 @@ aRaiseAccessGranted = new Csml.RaiseActionDescription {
   }
 }
 
+// Raise to auto relock door
 aRaiseAutoRelock = new Csml.RaiseActionDescription { event { name = "autoRelock"; channel = "internal" } }
 
+// Raise to return to locked state
 aRaiseReturnToLock = new Csml.RaiseActionDescription { event { name = "returnToLock"; channel = "internal" } }
 
+// Raise to signify forced entry attempt
 aRaiseForcedEntry = new Csml.RaiseActionDescription {
   event {
     name = Events.eForcedEntry

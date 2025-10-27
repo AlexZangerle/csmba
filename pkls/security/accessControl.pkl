@@ -1,13 +1,12 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/guards.pkl" as Guards
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/actions.pkl" as Actions
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/guards.pkl" as Guards
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
-/// This module defines the state machine for a single access-controlled door.
-/// One instance runs per door, managing locks and authentication.
+/// This module defines the accessControlSM for a single access-controlled door.
 class accessControlSM extends Csml.StateMachineDescription {
   name = "accessControl"
   localContext = Context.accessControlContext
@@ -26,7 +25,6 @@ class accessControlSM extends Csml.StateMachineDescription {
 local const init: Csml.StateDescription = new {
   name = "init"
   initial = true
-  // Ensure the door is locked on startup
   entry {
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stGetDoorRouteType
@@ -47,30 +45,25 @@ local const init: Csml.StateDescription = new {
   on { new { event = "doorTypeDetermined" target = locked.name } }
 }
 
-/// Default secure state. Door is locked. Listens for access attempts and overrides.
+/// Default locked state, listens for access attempts and overrides.
 local const locked: Csml.StateDescription = new {
   name = "locked"
   on {
-    // --- Normal Access Attempt ---
     new {
       event = Events.eAuthenticationRequest
-      // Only react if the request is for this specific door
       guards { Guards.isCurrentDoor }
       target = authenticating.name
     }
-
-    // --- Overrides & Alarms ---
     new { event = Events.eFireAlarm target = emergencyUnlock.name }
     new { event = Events.eGasLeakDetected guards { Guards.checkIsEvacuationRoute } target = emergencyUnlock.name }
     new { event = Events.eUnlockAllEvacuationRoutes guards { Guards.checkIsEvacuationRoute } target = emergencyUnlock.name }
     new {
-      event = Events.eLockdownZone // Can receive lockdown command even when locked
+      event = Events.eLockdownZone
       guards { Guards.isCurrentZone }
-      // Action: Potentially log that lockdown is being enforced, but stay in Locked state.
     }
     new { event = Events.eDoorForcedOpen target = forcedOpenAlarm.name }
-    new { event = Events.ePhysicalTamper target = forcedOpenAlarm.name } // Treat tamper like forced open for alert
-    new { event = Events.eForceUnlockRequest target = unlocked.name } // Manual override
+    new { event = Events.ePhysicalTamper target = forcedOpenAlarm.name }
+    new { event = Events.eForceUnlockRequest target = unlocked.name }
   }
 }
 
@@ -87,27 +80,23 @@ local const authenticating: Csml.StateDescription = new {
         new { reference = Vars.vAuthenticationStatus }
       }
       done { new { name = "authComplete" channel = "internal" } }
-      // Add onError handling here if service fails
     }
   }
   on {
     new {
       event = "authComplete"
       guards { Guards.authSuccessful }
-      target = checkingRules.name // Authentication succeeded, now check rules
+      target = checkingRules.name
     }
     new {
       event = "authComplete"
       guards { Guards.authFailed }
       actions {
-        // Raise Access Denied event immediately for failed auth
         Actions.aRaiseAccessDeniedAuth
       }
-      target = accessDenied.name // Auth failed
+      target = accessDenied.name
     }
-    // --- Overrides during authentication ---
     new { event = Events.eFireAlarm target = emergencyUnlock.name }
-    // ... other overrides ...
   }
 }
 
@@ -115,8 +104,6 @@ local const authenticating: Csml.StateDescription = new {
 local const checkingRules: Csml.StateDescription = new {
   name = "checkingRules"
   entry {
-    // Here we assume vCurrentScheduleMode is up-to-date.
-    // A more robust implementation might call stGetScheduleMode here first.
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stCheckAccessRule
       input {
@@ -136,20 +123,17 @@ local const checkingRules: Csml.StateDescription = new {
       actions {
         Actions.aRaiseAccessGranted
       }
-      target = unlocked.name // Rules allow access
+      target = unlocked.name
     }
     new {
       event = "rulesChecked"
       guards { Guards.denyAccess }
       actions {
-        // Raise Access Denied event for rule failure
         Actions.aRaiseAccessDeniedRule
       }
-      target = accessDenied.name // Rules deny access
+      target = accessDenied.name
     }
-    // --- Overrides during rule check ---
     new { event = Events.eFireAlarm target = emergencyUnlock.name }
-    // ... other overrides ...
   }
 }
 
@@ -157,8 +141,6 @@ local const checkingRules: Csml.StateDescription = new {
 local const unlocked: Csml.StateDescription = new {
   name = "unlocked"
   entry {
-    // --- FIX: Remove the RaiseActionDescription from here ---
-    // 1. Send unlock command
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stControlDoorLock
       input {
@@ -167,7 +149,6 @@ local const unlocked: Csml.StateDescription = new {
       }
     }
   }
-  // 2. Automatically re-lock after a short period
   after {
     new Csml.TimeoutActionDescription {
       name = "autoRelockTimer"
@@ -177,23 +158,20 @@ local const unlocked: Csml.StateDescription = new {
   }
   on {
     new { event = "autoRelock" target = locked.name }
-
-    // --- Overrides & Alarms ---
     new { event = Events.eFireAlarm target = emergencyUnlock.name }
     new {
       event = Events.eLockdownZone
       guards { Guards.isCurrentZone }
-      target = locked.name // Force lock immediately
+      target = locked.name
     }
-    new { event = Events.eDoorForcedOpen target = forcedOpenAlarm.name } // Can still be forced while unlocked
+    new { event = Events.eDoorForcedOpen target = forcedOpenAlarm.name }
     new { event = Events.ePhysicalTamper target = forcedOpenAlarm.name }
   }
 }
 
-/// Access was denied (failed auth or policy). Briefly show status, then re-lock.
+/// Access was denied, briefly show status, then re-lock.
 local const accessDenied: Csml.StateDescription = new {
   name = "accessDenied"
-  // Entry: Could potentially flash an indicator light via a service call
   after {
     new Csml.TimeoutActionDescription {
       name = "deniedDelay"
@@ -203,12 +181,11 @@ local const accessDenied: Csml.StateDescription = new {
   }
   on {
     new { event = "returnToLock" target = locked.name }
-    // Critical overrides still apply
     new { event = Events.eFireAlarm target = emergencyUnlock.name }
   }
 }
 
-/// Highest priority state during safety emergencies. Forces door unlocked.
+/// Highest priority state, forces door unlocked.
 local const emergencyUnlock: Csml.StateDescription = new {
   name = "emergencyUnlock"
   entry {
@@ -221,7 +198,6 @@ local const emergencyUnlock: Csml.StateDescription = new {
     }
   }
   on {
-    // Wait for the safety all-clear event
     new { event = Events.eDisarmFireAlarm target = locked.name }
     new { event = Events.eGasPurged target = locked.name }
   }
@@ -231,9 +207,7 @@ local const emergencyUnlock: Csml.StateDescription = new {
 local const forcedOpenAlarm: Csml.StateDescription = new {
   name = "forcedOpenAlarm"
   entry {
-    // Raise critical alert to the Security Manager
     Actions.aRaiseForcedEntry
-    // Try to re-lock the door, though it might fail if physically broken
     new Csml.InvokeActionDescription {
       serviceType = ServiceTypes.stControlDoorLock
       input {
@@ -243,9 +217,7 @@ local const forcedOpenAlarm: Csml.StateDescription = new {
     }
   }
   on {
-    // Needs a manual reset event from security personnel to clear the alarm
     new { event = Events.eClearSecurityAlert target = locked.name }
-    // Safety overrides still function
     new { event = Events.eFireAlarm target = emergencyUnlock.name }
   }
 }
