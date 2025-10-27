@@ -12,7 +12,7 @@ securityManagerContext = new Csml.ContextDescription {
 
 accessControlContext = new Csml.ContextDescription {
   variables {
-    new { name = Vars.vDoorId; value = "''" }
+    new { name = Vars.vDoorId; value = "'testDoor'" }
     new { name = Vars.vZoneId; value = "'testZone'" }
     new { name = Vars.vIsEvacuationRoute; value = "false" }
     new { name = Vars.vUserId; value = "''" }
