@@ -103,6 +103,11 @@ local const fetchingGridStatus: Csml.StateDescription = new {
     }
     new {
       event = Events.eEnergyCheckComplete
+      guards {
+        Guards.priceUnderMax
+        Guards.gridNormal
+        Guards.isBusinessHours
+      }
       target = normal.name
     }
     new { event = Events.eFireAlarm; target = normal.name }
