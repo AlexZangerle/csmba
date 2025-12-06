@@ -12,5 +12,9 @@ blindLockContext = new Csml.ContextDescription {
       name = Vars.vZoneId
       value = "'testZone'"
     }
+    new {
+      name = Vars.vOutdoorTemp
+      value = "'0'"
+    }
   }
 }

@@ -16,3 +16,10 @@ aBlindUnlock = new Csml.AssignActionDescription {
     value = "false"
   }
 }
+
+aRaiseDetectOutsideTemp = new Csml.RaiseActionDescription {
+  event {
+    name = Events.eStartDetectingOutsideTemp
+    channel = "internal"
+  }
+}

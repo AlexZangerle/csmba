@@ -8,7 +8,7 @@ vOccupancyDetected = "occupancyDetected"
 vIsLocked = "isLocked"
 
 // Variable containing the current outside temperature
-vTemperature = "temperature"
+vOutdoorTemp = "temperature"
 
 // Variable containing the current building energy mode (Boolean)
 vEnergySaving = "energySaving"
