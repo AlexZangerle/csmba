@@ -31,6 +31,9 @@ vUserBlindLevel = new Csml.ContextVariableDescription {
 // Variable containing the result from fire detection (String - none/fire/smoke)
 vFireDetectionResult = "fireDetectionResult"
 
+// Variable containing the room Id in which the emergency is happening (String)
+vEmergencyInRoom = "emergencyInRoom"
+
 // Variable to show if fire alarm is currently active (Boolean)
 vFireAlarm = "fireAlarm"
 

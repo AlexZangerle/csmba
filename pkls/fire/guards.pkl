@@ -11,3 +11,7 @@ fireDetectedGuard = new Csml.GuardDescription {
 smokeDetectedGuard = new Csml.GuardDescription {
     expression = "\(Vars.vFireDetectionResult) == 'smoke'"
 }
+
+roomInEmergencyGuard = new Csml.GuardDescription {
+    expression = "\(Vars.vEmergencyInRoom) != 'none'"
+}

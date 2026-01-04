@@ -12,6 +12,9 @@ stTurnUserLevel = "turnUserLevelService"
 // Service to turn the lights to dim
 stDim = "dimService"
 
+// Service to turn set the lights corresponding to evacuation protocol
+stEvacuationLights = "evacuationLightsService"
+
 // Service to open the blinds halfway
 stBlindsHalf = "blindsHalfService"
 

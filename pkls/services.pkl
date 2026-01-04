@@ -328,6 +328,15 @@ bindings {
     endPoint = "/getIndoorTemp"
     method = "POST"
   }
+  new HttpServiceImplementationBinding {
+    name = "evacuationLightsService" // Service called by securityManagerSM
+    `local` = false
+    scheme = "http"
+    host = "localhost"
+    port = 8005
+    endPoint = "/evacuationLights"
+    method = "POST"
+  }
   // Optional: Police notification service binding
   // new HttpServiceImplementationBinding {
   //   name = "notifyPoliceService"

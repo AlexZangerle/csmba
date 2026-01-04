@@ -16,6 +16,12 @@ aRaiseStartDetectingFire = new Csml.RaiseActionDescription{
 aRaiseFireAlarm = new Csml.RaiseActionDescription{
     event {
         name = Events.eFireAlarm
+        data {
+            new {
+                name = Vars.emergencyInRoom
+                value = Vars.emergencyInRoom
+            }
+        }
         channel = "global"
     }
 }

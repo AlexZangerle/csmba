@@ -1,9 +1,9 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/actions.pkl" as Actions
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains the definition for the room occupancy SM
 
@@ -14,7 +14,6 @@ class roomOccupancySM extends Csml.StateMachineDescription {
   localContext = Context.occupancyLocalContext
   stateMachines {
     new occupancyMonitor {}
-    new occupancyChildTest {}
   }
   states {
     rInit
@@ -25,7 +24,7 @@ class roomOccupancySM extends Csml.StateMachineDescription {
 }
 
 // The occupancyMonitor sm monitors the room occupancy SM.
-// It starts a timer when the detection process begins.
+// It starts a timer when the detection process begins (now triggered by sensor data).
 // Should the detection process not finish before the timer runs out, maintenance is required.
 class occupancyMonitor extends Csml.StateMachineDescription {
   name = "OccupancyMonitoring"
@@ -34,38 +33,6 @@ class occupancyMonitor extends Csml.StateMachineDescription {
     omIdle
     omMonitoring
     omMaintenance
-  }
-}
-
-class occupancyChildTest extends Csml.StateMachineDescription {
-  name = "testChild"
-  states {
-    tcInit
-    tcRun
-    tcRun1
-    tcRun2
-    tcRun3
-    tcRun4
-    tcRun5
-    tcRun6
-    tcRun7
-    tcRun8
-    tcRun9
-    tcRun10
-    tcRun11
-    tcRun12
-    tcRun13
-    tcRun14
-    tcRun15
-    tcRun16
-    tcFinal
-    tcFinal1
-    tcFinal2
-    tcFinal3
-    tcFinal4
-    tcFinal5
-    tcFinal6
-    tcFinal7
   }
 }
 
@@ -80,30 +47,33 @@ local const rInit: Csml.StateDescription = new {
   }
 }
 
-// The detection process is initiated every 30 seconds
+// State: Vacant
+// Waits for external sensor data event
 local const rVacant: Csml.StateDescription = new {
   name = "vacant"
   entry {
-    new Csml.AssignActionDescription{
+    new Csml.AssignActionDescription {
       variable {
         name = Vars.vCurrentOccupancy
         value = "'vacant'"
       }
     }
   }
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "detectOccupancy"
-      delay = "30000"
-      action = Actions.aRaiseStartDetectingOccupancy
-    }
-  }
+  // Polling timer removed
   on {
     new {
-      event = Events.eStartDetectingOccupancy
+      // Trigger: External script sends image data
+      event = "sensorOccupancyReceived"
       actions {
         new Csml.InvokeActionDescription {
           serviceType = ServiceTypes.stDetectOccupancy
+          // Input: Pass the payload from the event to the service
+          input {
+            new {
+              name = "imageData"
+              value = "$imageData"
+            }
+          }
           output {
             new {
               reference = Vars.vOccupancyDetected
@@ -145,30 +115,31 @@ local const rVacant: Csml.StateDescription = new {
   }
 }
 
-// The detection process is initiated every 30 seconds
+// State: Occupied
+// Waits for external sensor data event
 local const rOccupied: Csml.StateDescription = new {
   name = "occupied"
   entry {
-    new Csml.AssignActionDescription{
+    new Csml.AssignActionDescription {
       variable {
         name = Vars.vCurrentOccupancy
         value = "'occupied'"
       }
     }
   }
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "detectOccupancy"
-      delay = "30000"
-      action = Actions.aRaiseStartDetectingOccupancy
-    }
-  }
+  // Polling timer removed
   on {
     new {
-      event = Events.eStartDetectingOccupancy
+      event = "sensorDataReceived"
       actions {
         new Csml.InvokeActionDescription {
           serviceType = ServiceTypes.stDetectOccupancy
+          input {
+            new {
+              name = "imageData"
+              value = "$imageData"
+            }
+          }
           output {
             new {
               reference = Vars.vOccupancyDetected
@@ -208,12 +179,11 @@ local const rOccupied: Csml.StateDescription = new {
       }
       target = rTransient.name
     }
-    // Energy saving prevents the lights from fully turning on (except manually)
-    // Transition to transient to dim lights
+    // Energy saving logic
     new {
       event = Events.eActivateEnergySaving
       target = rTransient.name
-      actions{
+      actions {
         new Csml.AssignActionDescription {
           variable {
             name = Vars.vEnergySaving
@@ -226,30 +196,31 @@ local const rOccupied: Csml.StateDescription = new {
   }
 }
 
-// The detection process is initiated every 30 seconds
+// State: Transient
+// Waits for external sensor data event
 local const rTransient: Csml.StateDescription = new {
   name = "transient"
   entry {
-    new Csml.AssignActionDescription{
+    new Csml.AssignActionDescription {
       variable {
         name = Vars.vCurrentOccupancy
         value = "'transient'"
       }
     }
   }
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "detectOccupancy"
-      delay = "30000"
-      action = Actions.aRaiseStartDetectingOccupancy
-    }
-  }
+  // Polling timer removed
   on {
     new {
-      event = Events.eStartDetectingOccupancy
+      event = "sensorDataReceived"
       actions {
         new Csml.InvokeActionDescription {
           serviceType = ServiceTypes.stDetectOccupancy
+          input {
+            new {
+              name = "imageData"
+              value = "$imageData"
+            }
+          }
           output {
             new {
               reference = Vars.vOccupancyDetected
@@ -264,8 +235,7 @@ local const rTransient: Csml.StateDescription = new {
         }
       }
     }
-    // During grace period - transition to vacant if no occupancy is detected again
-    // transition to occupied if occupancy is detected
+    // Logic for returning to Occupied or Vacant
     new {
       event = Events.eDetectionComplete
       guards {
@@ -293,6 +263,8 @@ local const rTransient: Csml.StateDescription = new {
   }
 }
 
+// --- Monitoring State Machine ---
+
 local const omInit: Csml.StateDescription = new {
   name = "init"
   initial = true
@@ -303,11 +275,12 @@ local const omInit: Csml.StateDescription = new {
   }
 }
 
-local const omIdle: Csml.StateDescription = new{
+local const omIdle: Csml.StateDescription = new {
   name = "idle"
   on {
     new {
-      event = Events.eStartDetectingOccupancy
+      // Changed from internal timer event to external sensor event
+      event = "sensorDataReceived"
       target = omMonitoring.name
     }
   }
@@ -341,259 +314,10 @@ local const omMaintenance: Csml.StateDescription = new {
       serviceType = ServiceTypes.stMaintenance
     }
   }
-  on{
-    new{
+  on {
+    new {
       event = Events.eMaintenanceDone
       target = omIdle.name
     }
   }
-}
-
-local const tcInit: Csml.StateDescription = new {
-  name = "init"
-  initial = true
-  always {
-    new {
-      target = tcRun.name
-    }
-  }
-}
-
-local const tcRun: Csml.StateDescription = new {
-  name = "run"
-  always {
-    new {
-      target = tcRun1.name
-    }
-  }
-//   after {
-//     new Csml.TimeoutActionDescription {
-//       name = "checkGasLeak"
-//       delay = "30000"
-//       action = Actions.aRaiseStartGasLeakDetection
-//     }
-//   }
-//   on {
-//     new {
-//       event = Events.eStartGasLeakDetection
-//       actions {
-//         new Csml.InvokeActionDescription {
-//           serviceType = ServiceTypes.stCheckGasLeak
-//           output {
-//             new {
-//               reference = Vars.vGasLeakLocation
-//             }
-//           }
-//           done {
-//             new {
-//               name = Events.eGasLeakDetectionComplete
-//               channel = "internal"
-//             }
-//           }
-//         }
-//       }
-//     }
-//   }
-}
-local const tcRun1: Csml.StateDescription = new {
-  name = "run1"
-  always {
-    new {
-      target = tcRun2.name
-    }
-  }
-}
-local const tcRun2: Csml.StateDescription = new {
-  name = "run2"
-  always {
-    new {
-      target = tcRun3.name
-    }
-  }
-}
-local const tcRun3: Csml.StateDescription = new {
-  name = "run3"
-  always {
-    new {
-      target = tcRun4.name
-    }
-  }
-}
-local const tcRun4: Csml.StateDescription = new {
-  name = "run4"
-  always {
-    new {
-      target = tcRun5.name
-    }
-  }
-}
-local const tcRun5: Csml.StateDescription = new {
-  name = "run5"
-  always {
-    new {
-      target = tcRun6.name
-    }
-  }
-}
-local const tcRun6: Csml.StateDescription = new {
-  name = "run6"
-  always {
-    new {
-      target = tcRun7.name
-    }
-  }
-}
-local const tcRun7: Csml.StateDescription = new {
-  name = "run7"
-  always {
-    new {
-      target = tcRun8.name
-    }
-  }
-}
-local const tcRun8: Csml.StateDescription = new {
-  name = "run8"
-  always {
-    new {
-      target = tcRun9.name
-    }
-  }
-}
-local const tcRun9: Csml.StateDescription = new {
-  name = "run9"
-  always {
-    new {
-      target = tcRun10.name
-    }
-  }
-}
-local const tcRun10: Csml.StateDescription = new {
-  name = "run10"
-  always {
-    new {
-      target = tcRun11.name
-    }
-  }
-  on {
-    new {
-      event = "final1"
-      target = tcFinal1.name
-    }
-  }
-}
-local const tcRun11: Csml.StateDescription = new {
-  name = "run11"
-  always {
-    new {
-      target = tcRun12.name
-    }
-  }
-  on {
-    new {
-      event = "final1"
-      target = tcFinal2.name
-    }
-  }
-}
-local const tcRun12: Csml.StateDescription = new {
-  name = "run12"
-  always {
-    new {
-      target = tcRun13.name
-    }
-  }
-  on {
-    new {
-      event = "final1"
-      target = tcFinal3.name
-    }
-  }
-}
-local const tcRun13: Csml.StateDescription = new {
-  name = "run13"
-  always {
-    new {
-      target = tcRun14.name
-    }
-  }
-  on {
-    new {
-      event = "final1"
-      target = tcFinal4.name
-    }
-  }
-}
-local const tcRun14: Csml.StateDescription = new {
-  name = "run14"
-  always {
-    new {
-      target = tcRun15.name
-    }
-  }
-  on {
-    new {
-      event = "final1"
-      target = tcFinal6.name
-    }
-  }
-}
-local const tcRun15: Csml.StateDescription = new {
-  name = "run15"
-  always {
-    new {
-      target = tcRun16.name
-    }
-  }
-  on {
-    new {
-      event = "final1"
-      target = tcFinal7.name
-    }
-  }
-}
-local const tcRun16: Csml.StateDescription = new {
-  name = "run16"
-  always {
-    new {
-      target = tcFinal.name
-    }
-  }
-  on {
-    new {
-      event = "final1"
-      target = tcFinal5.name
-    }
-  }
-}
-local const tcFinal: Csml.StateDescription = new {
-  name = "final"
-  terminal = true
-}
-local const tcFinal1: Csml.StateDescription = new {
-  name = "final1"
-  terminal = true
-}
-local const tcFinal2: Csml.StateDescription = new {
-  name = "final2"
-  terminal = true
-}
-local const tcFinal3: Csml.StateDescription = new {
-  name = "final3"
-  terminal = true
-}
-local const tcFinal4: Csml.StateDescription = new {
-  name = "final4"
-  terminal = true
-}
-local const tcFinal5: Csml.StateDescription = new {
-  name = "final5"
-  terminal = true
-}
-local const tcFinal6: Csml.StateDescription = new {
-  name = "final6"
-  terminal = true
-}
-local const tcFinal7: Csml.StateDescription = new {
-  name = "final7"
-  terminal = true
 }

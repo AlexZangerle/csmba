@@ -78,6 +78,9 @@ local const fDetecting: Csml.StateDescription = new {
                         new {
                             reference = Vars.vFireDetectionResult
                         }
+                        new {
+                            reference = Vars.vEmergencyInRoom
+                        }
                     }
                     done {
                         new {
@@ -94,6 +97,7 @@ local const fDetecting: Csml.StateDescription = new {
             event = Events.eFireDetectionComplete
             guards {
                 Guards.fireDetectedGuard
+                Guards.roomInEmergencyGuard
             }
             target = fFireAlarm.name
         }

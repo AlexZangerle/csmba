@@ -9,5 +9,9 @@ fireDetectionContext = new Csml.ContextDescription {
             name = Vars.vFireDetectionResult
             value = "'none'"
         }
+        new {
+            name = Vars.vEmergencyInRoom
+            value = "'none'"
+        }
     }
 }

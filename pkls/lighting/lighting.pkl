@@ -147,6 +147,16 @@ local const userLevel: Csml.StateDescription = new {
   }
 }
 
+local const fire: Csml.StateDescription = new {
+  name = "fire"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stEvacuationLights
+      input { new { name = "roomId" value = "$emergencyInRoom" } }
+    }
+  }
+}
+
 // Flashing lights states in case of intrusion
 local const flashingAlarm_Off: Csml.StateDescription = new {
   name = "flashingAlarm_Off"
