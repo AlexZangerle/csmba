@@ -320,8 +320,5 @@ local const omMaintenance: Csml.StateDescription = new {
       target = omIdle.name
     }
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> origin/main
+
