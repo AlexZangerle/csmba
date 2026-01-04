@@ -130,7 +130,7 @@ local const rOccupied: Csml.StateDescription = new {
   // Polling timer removed
   on {
     new {
-      event = "sensorDataReceived"
+      event = "sensorOccupancyReceived"
       actions {
         new Csml.InvokeActionDescription {
           serviceType = ServiceTypes.stDetectOccupancy
@@ -211,7 +211,7 @@ local const rTransient: Csml.StateDescription = new {
   // Polling timer removed
   on {
     new {
-      event = "sensorDataReceived"
+      event = "sensorOccupancyReceived"
       actions {
         new Csml.InvokeActionDescription {
           serviceType = ServiceTypes.stDetectOccupancy
@@ -280,7 +280,7 @@ local const omIdle: Csml.StateDescription = new {
   on {
     new {
       // Changed from internal timer event to external sensor event
-      event = "sensorDataReceived"
+      event = "sensorOccupancyReceived"
       target = omMonitoring.name
     }
   }
@@ -320,4 +320,8 @@ local const omMaintenance: Csml.StateDescription = new {
       target = omIdle.name
     }
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/main
