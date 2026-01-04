@@ -9,7 +9,11 @@ eOccupancyVacant = "eOccupancyVacant"
 // Raised the first time no occupancy is detected in a previously occupied room
 eOccupancyTransient = "occupancyTransient"
 
-// Raised by the sensor when outside temperature is low 
+eStartDetectingOutsideTemp = "outsideTempStart"
+
+eOutsideDetectionComplete = "outsideDetectionComplete"
+
+// Raised by the sensor when outside temperature is low
 eTempLow = "tempLow"
 
 // Raised by the sensor when outside temperature is medium 

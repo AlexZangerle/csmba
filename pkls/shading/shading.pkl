@@ -38,9 +38,35 @@ local const half: Csml.StateDescription = new {
       serviceType = ServiceTypes.stBlindsHalf
     }
   }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "detectOutsideTemp"
+      delay = "60000"
+      action = Actions.aRaiseDetectOutsideTemp
+    }
+  }
   on {
-    new { event = Events.eTempLow; guards { Guards.isLockedGuard }; target = fullyOpen.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
-    new { event = Events.eTempHigh; guards { Guards.isLockedGuard }; target = close.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new {
+      event = Events.eStartDetectingOccupancy
+      actions {
+        new Csml.InvokeActionDescription {
+          serviceType = ServiceTypes.stGetOutdoorTemp
+          output {
+            new {
+              reference = Vars.vOutdoorTemp
+            }
+          }
+          done {
+            new {
+              name = Events.eOutsideDetectionComplete
+              channel = "internal"
+            }
+          }
+        }
+      }
+    }
+    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isColdGuard }; target = fullyOpen.name }
+    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isHotGuard }; target = close.name }
     new { event = Events.eActivateBlindsUserLevel; target = userLevel.name }
     new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
     new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
@@ -60,9 +86,35 @@ local const fullyOpen: Csml.StateDescription = new {
       serviceType = ServiceTypes.stBlindsOpen
     }
   }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "detectOutsideTemp"
+      delay = "60000"
+      action = Actions.aRaiseDetectOutsideTemp
+    }
+  }
   on {
-    new { event = Events.eTempMedium; guards { Guards.isLockedGuard }; target = half.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
-    new { event = Events.eTempHigh; guards { Guards.isLockedGuard }; target = close.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new {
+      event = Events.eStartDetectingOccupancy
+      actions {
+        new Csml.InvokeActionDescription {
+          serviceType = ServiceTypes.stGetOutdoorTemp
+          output {
+            new {
+              reference = Vars.vOutdoorTemp
+            }
+          }
+          done {
+            new {
+              name = Events.eOutsideDetectionComplete
+              channel = "internal"
+            }
+          }
+        }
+      }
+    }
+    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isMediumGuard }; target = half.name }
+    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isHotGuard }; target = close.name }
     new { event = Events.eActivateBlindsUserLevel; target = userLevel.name }
     new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
     new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
@@ -82,9 +134,35 @@ local const close: Csml.StateDescription = new {
       serviceType = ServiceTypes.stBlindsClose
     }
   }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "detectOutsideTemp"
+      delay = "60000"
+      action = Actions.aRaiseDetectOutsideTemp
+    }
+  }
   on {
-    new { event = Events.eTempMedium; guards { Guards.isLockedGuard }; target = half.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
-    new { event = Events.eTempLow; guards { Guards.isLockedGuard }; target = fullyOpen.name; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new {
+      event = Events.eStartDetectingOccupancy
+      actions {
+        new Csml.InvokeActionDescription {
+          serviceType = ServiceTypes.stGetOutdoorTemp
+          output {
+            new {
+              reference = Vars.vOutdoorTemp
+            }
+          }
+          done {
+            new {
+              name = Events.eOutsideDetectionComplete
+              channel = "internal"
+            }
+          }
+        }
+      }
+    }
+    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isMediumGuard }; target = half.name }
+    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isColdGuard }; target = fullyOpen.name }
     new { event = Events.eActivateBlindsUserLevel; target = userLevel.name }
     new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
     new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
@@ -113,10 +191,33 @@ local const userLevel: Csml.StateDescription = new {
     new Csml.AssignActionDescription { variable { name = Vars.vUserBlindLevel.name; value = "if ($blindLevel != -1) $blindLevel else blindLevel" } }
     new Csml.InvokeActionDescription { serviceType = ServiceTypes.stBlindsUserLevel; input { new { name = "blindLevel"; value = "blindLevel" } } }
   }
+  after {
+    new Csml.TimeoutActionDescription {
+      name = "detectOutsideTemp"
+      delay = "60000"
+      action = Actions.aRaiseDetectOutsideTemp
+    }
+  }
   on {
-    new { event = Events.eTempLow; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
-    new { event = Events.eTempMedium; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
-    new { event = Events.eTempHigh; actions { new Csml.AssignActionDescription { variable { name = Vars.vTemperature; value = "$temp" } } } }
+    new {
+      event = Events.eStartDetectingOccupancy
+      actions {
+        new Csml.InvokeActionDescription {
+          serviceType = ServiceTypes.stGetOutdoorTemp
+          output {
+            new {
+              reference = Vars.vOutdoorTemp
+            }
+          }
+          done {
+            new {
+              name = Events.eOutsideDetectionComplete
+              channel = "internal"
+            }
+          }
+        }
+      }
+    }
     new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
     new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
     new { event = Events.eDeactivateBlindsUserLevel; guards { Guards.isColdGuard }; target = fullyOpen.name }

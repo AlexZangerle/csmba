@@ -10,15 +10,15 @@ isLockedGuard = new Csml.GuardDescription {
 
 // Guards to determine if the current temperature is hot/medium/cold
 isHotGuard = new Csml.GuardDescription {
-  expression = "\(Vars.vTemperature) >= 22"
+  expression = "\(Vars.vOutdoorTemp) >= 22"
 }
 
 isMediumGuard = new Csml.GuardDescription {
-  expression = "\(Vars.vTemperature) >= 15 && \(Vars.vTemperature) < 22"
+  expression = "\(Vars.vOutdoorTemp) >= 15 && \(Vars.vOutdoorTemp) < 22"
 }
 
 isColdGuard = new Csml.GuardDescription {
-  expression = "\(Vars.vTemperature) < 15"
+  expression = "\(Vars.vOutdoorTemp) < 15"
 }
 // Guards to determine if there currently is a fire alarm / smoke alert
 noFireAlarm = new Csml.GuardDescription {
