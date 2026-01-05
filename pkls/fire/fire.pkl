@@ -1,199 +1,203 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/context.pkl" as Context
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/guards.pkl" as Guards
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 
 // This module contains the definition for the fireDetection SM
 
 //The fireDetectionSM invokes a service on a timeout to detect fire/smoke.
 // If fire/smoke is detected, transitions to fireAlarm/smokeAlert state and triggers the corresponding action.
 class fireDetectionSM extends Csml.StateMachineDescription {
-    name = "fire"
-    stateMachines {
+  name = "fire"
+  stateMachines {
     new fireDoorSM {}
-    }
-    localContext = Context.fireDetectionContext
-    states {
-        fInit
-        fDetecting
-        fFireAlarm
-        fSmokeAlert
-    }
+  }
+  localContext = Context.fireDetectionContext
+  states {
+    fInit
+    fDetecting
+    fFireAlarm
+    fSmokeAlert
+  }
 }
 
 // The fireDoor SM closes based on fireAlarm events received
 // After the alarm has beend disarmed it opens
-class fireDoorSM extends Csml.StateMachineDescription  {
-    name = "fireDoor"
-    states{
-        fdInit
-        fdOpen
-        fdClose
-    }
+class fireDoorSM extends Csml.StateMachineDescription {
+  name = "fireDoor"
+  states {
+    fdInit
+    fdOpen
+    fdClose
+  }
 }
 
 // Always transitions to detecting state
 local const fInit: Csml.StateDescription = new {
-    name = "init"
-    initial = true
-    always {
-        new {
-            target = fDetecting.name
-        }
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = fDetecting.name
     }
+  }
 }
 
 // This state invokes the service for fire/smoke detection every 20 seconds
 local const fDetecting: Csml.StateDescription = new {
-    name = "detecting"
-    after {
-        new Csml.TimeoutActionDescription {
-            name = "detectFire"
-            delay = "20000"
-            action = Actions.aRaiseStartDetectingFire
+  name = "detecting"
+  on {
+    new {
+      event = Events.eSensorFireDataReceived
+      actions {
+        new Csml.InvokeActionDescription {
+          serviceType = ServiceTypes.stDetectFire
+          // 2. Pass the Image Data to the Service
+          input {
+            new {
+              name = "imageData"
+              value = "$imageData"
+            }
+            new {
+              name = "zoneId"
+              value = "$zoneId"
+            }
+          }
+          output {
+            new {
+              reference = Vars.vFireDetectionResult
+            }
+            new {
+              reference = Vars.vEmergencyInRoom
+            }
+          }
+          done {
+            new {
+              name = Events.eFireDetectionComplete
+              channel = "internal"
+            }
+          }
         }
+      }
     }
-    on {
-        new {
-            event = Events.eStartDetectingFire
-            actions {
-                new Csml.InvokeActionDescription {
-                    serviceType = ServiceTypes.stDetectFire
-                    output {
-                        new {
-                            reference = Vars.vFireDetectionResult
-                        }
-                        new {
-                            reference = Vars.vEmergencyInRoom
-                        }
-                    }
-                    done {
-                        new {
-                            name = Events.eFireDetectionComplete
-                            channel = "internal"
-                        }
-                    }
-                }
-            }
-        }
-        // Transitions to fireAlarm/smokeAlert state if service has detected either
-        // If both fire&smoke are detected fire takes priority
-        new{
-            event = Events.eFireDetectionComplete
-            guards {
-                Guards.fireDetectedGuard
-                Guards.roomInEmergencyGuard
-            }
-            target = fFireAlarm.name
-        }
-        new{
-            event = Events.eFireDetectionComplete
-            guards{
-                Guards.smokeDetectedGuard
-            }
-            target = fSmokeAlert.name
-        }
+
+    // Transitions remain the same
+    new {
+      event = Events.eFireDetectionComplete
+      guards {
+        Guards.fireDetectedGuard
+        Guards.roomInEmergencyGuard
+      }
+      target = fFireAlarm.name
     }
+    new {
+      event = Events.eFireDetectionComplete
+      guards {
+        Guards.smokeDetectedGuard
+      }
+      target = fSmokeAlert.name
+    }
+  }
 }
 
 //FireAlarm state sets the VFireAlarm variable to true and raises a global fireAlarm event
 local const fFireAlarm: Csml.StateDescription = new {
-    name = "fireAlarm"
-    entry {
+  name = "fireAlarm"
+  entry {
+    new Csml.AssignActionDescription {
+      variable {
+        name = Vars.vFireAlarm
+        value = "true"
+      }
+    }
+    Actions.aRaiseFireAlarm
+  }
+  on {
+    new {
+      event = Events.eDisarmFireAlarm
+      actions {
         new Csml.AssignActionDescription {
-        variable {
+          variable {
             name = Vars.vFireAlarm
-            value = "true"
-            }
+            value = "false"
+          }
         }
-        Actions.aRaiseFireAlarm
+      }
+      target = fDetecting.name
     }
-    on {
-        new {
-            event = Events.eDisarmFireAlarm
-            actions {
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vFireAlarm
-                        value = "false"
-                    }
-                }
-            }
-            target = fDetecting.name
-        }
-    }
+  }
 }
 
 //SmokeAlert state sets the vSmokeAlert variable to true and raises a global smokeAlert event
 local const fSmokeAlert: Csml.StateDescription = new {
-    name = "smokeAlert"
-    entry {
+  name = "smokeAlert"
+  entry {
+    new Csml.AssignActionDescription {
+      variable {
+        name = Vars.vSmokeAlert
+        value = "true"
+      }
+    }
+    Actions.aRaiseSmokeAlert
+  }
+  on {
+    new {
+      event = Events.eDisarmSmokeAlert
+      actions {
         new Csml.AssignActionDescription {
-        variable {
+          variable {
             name = Vars.vSmokeAlert
-            value = "true"
-            }
+            value = "false"
+          }
         }
-        Actions.aRaiseSmokeAlert
+      }
+      target = fDetecting.name
     }
-    on {
-        new {
-            event = Events.eDisarmSmokeAlert
-            actions {
-                new Csml.AssignActionDescription {
-                    variable {
-                        name = Vars.vSmokeAlert
-                        value = "false"
-                    }
-                }
-            }
-            target = fDetecting.name
-        }
-    }
+  }
 }
 
 // Fire door always starts open
 local const fdInit: Csml.StateDescription = new {
-    name = "init"
-    initial = true
-    always {
-        new {
-            target = fdOpen.name
-        }
+  name = "init"
+  initial = true
+  always {
+    new {
+      target = fdOpen.name
     }
+  }
 }
 
 local const fdOpen: Csml.StateDescription = new {
-    name = "open"
-    entry {
-        new Csml.InvokeActionDescription {
-                serviceType = ServiceTypes.stOpenFireDoor
-            }
-        }
-    on {
-        // After a fire alarm has been triggered, closes the fireDoor
-        new{
-            event = Events.eFireAlarm
-            target = fdClose.name
-        }
+  name = "open"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stOpenFireDoor
     }
+  }
+  on {
+    // After a fire alarm has been triggered, closes the fireDoor
+    new {
+      event = Events.eFireAlarm
+      target = fdClose.name
+    }
+  }
 }
 
 local const fdClose: Csml.StateDescription = new {
-    name = "close"
-    entry {
-        new Csml.InvokeActionDescription {
-                serviceType = ServiceTypes.stCloseFireDoor
-            }
-        }
-    on {
-        // After alarm has been manually disarmed, opens fireDoor
-        new{
-            event = Events.eDisarmFireAlarm
-            target = fdOpen.name
-        }
+  name = "close"
+  entry {
+    new Csml.InvokeActionDescription {
+      serviceType = ServiceTypes.stCloseFireDoor
     }
+  }
+  on {
+    // After alarm has been manually disarmed, opens fireDoor
+    new {
+      event = Events.eDisarmFireAlarm
+      target = fdOpen.name
+    }
+  }
 }
