@@ -58,7 +58,7 @@ eStartDetectingFire = "startDetectingFire"
 // Raised internally to signify the end of fire detection
 eFireDetectionComplete = "fireDetectionComplete"
 
-eSensorFireDataReceived = "fireSensorReceived"
+eSensorFireDataReceived = "sensorFireDataReceived"
 
 // Raised internally on detection of fire
 eFireDetected = "fireDetected"
