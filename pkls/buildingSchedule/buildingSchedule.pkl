@@ -4,127 +4,134 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingS
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 /// This module defines the buildingScheduleSM
-class buildingScheduleSM extends Csml.StateMachineDescription {
-  name = "buildingSchedule"
-  localContext = Context.scheduleContext
+sm = new csml.StateMachine {
+  transient = Context.scheduleContext
   states {
-    init
-    evaluating
-    businessHours
-    afterHours
-    weekendClosed
-    emergencyOverride
+    ["init"] = init
+    ["evaluating"] = evaluating
+    ["businessHours"] = businessHours
+    ["afterHours"] = afterHours
+    ["weekendCloseed"] = weekendClosed
+    ["emergencyOverride"] = emergencyOverride
   }
 }
 
-local const init: Csml.StateDescription = new {
-  name = "init"
-  initial = true
+local const init: csml.Initial = new {
   always {
-    new {
-      target = evaluating.name
-    }
+    new csml.Transition { to = "evaluating"}
   }
 }
 
 /// The central state calling the time service and routing to the corresponding operational mode.
-local const evaluating: Csml.StateDescription = new {
-  name = "evaluating"
+local const evaluating: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stGetScheduleMode
-      output { new { reference = Vars.vCurrentScheduleMode } }
-      done { new { name = Events.eScheduleCheckComplete channel = "internal" } }
+    new csml.Invoke {
+      type = ServiceTypes.stGetScheduleMode
+      raises { new csml.Internal { topic = Events.eScheduleCheckComplete}}
     }
   }
   on {
-    new {
-      event = Events.eScheduleCheckComplete
-      guards { Guards.isBusinessHours }
-      target = businessHours.name
+    [Events.eScheduleCheckComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = $currentSchedule"}
+        new csml.Raise { event = new csml.Global { topic = Events.eCheckIsWeekend }}
+      }
     }
-    new {
-      event = Events.eScheduleCheckComplete
-      guards { Guards.isAfterHours }
-      target = afterHours.name
+    [Events.eCheckIsWeekend] = new csml.Transition {
+      to = "weekendClosed"
+      iif = Guards.isWeekend
+      or = "evaluateSchedule"
     }
-    new {
-      event = Events.eScheduleCheckComplete
-      guards { Guards.isWeekend }
-      target = weekendClosed.name
+  }
+}
+
+local const evaluateSchedule: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "businessHours"
+      iif = Guards.isBusinessHours
+      or = "afterHours"
     }
   }
 }
 
 /// The state signifying that the building is currently in its normal operating hours
 /// Re-checks every 15 minutes
-local const businessHours: Csml.StateDescription = new {
-  name = "businessHours"
+local const businessHours: csml.State = new {
   entry {
     Actions.aRaiseEnterBusinessHours
   }
   after {
-    new Csml.TimeoutActionDescription {
-      name = "scheduleCheck"
-      delay = "900000" // 15 minutes
-      action = Actions.aRaiseStartScheduleCheck
+    ["scheduleCheck"] = new csml.Timeout {
+      delay = "900"
+      do { Actions.aRaiseStartScheduleCheck }
     }
   }
   on {
-    new { event = Events.eStartScheduleCheck target = evaluating.name }
-    new { event = Events.eFireAlarm target = emergencyOverride.name }
+    [Events.eStartScheduleCheck] = new csml.Transition {
+      to = "evaluating"
+    }
+    [Events.eFireAlarm] = new csml.Transition {
+      to = "emergencyOverride"
+    }
   }
 }
 
 
 /// State to signify the building is currently between businessHours on a weekday
-local const afterHours: Csml.StateDescription = new {
-  name = "afterHours"
+local const afterHours: csml.State = new {
   entry {
     Actions.aRaiseEnterAfterHours
   }
   after {
-    new Csml.TimeoutActionDescription {
-      name = "scheduleCheck"
-      delay = "900000"
-      action = Actions.aRaiseStartScheduleCheck
+    ["scheduleCheck"] = new csml.Timeout {
+      delay = "900"
+      do { Actions.aRaiseStartScheduleCheck }
     }
   }
   on {
-    new { event = Events.eStartScheduleCheck target = evaluating.name }
-    new { event = Events.eFireAlarm target = emergencyOverride.name }
+    [Events.eStartScheduleCheck] = new csml.Transition {
+      to = "evaluating"
+    }
+    [Events.eFireAlarm] = new csml.Transition {
+      to = "emergencyOverride"
+    }
   }
 }
 
 /// State to signify it is currently weekend
 /// Less frequent schedule check
-local const weekendClosed: Csml.StateDescription = new {
-  name = "weekendClosed"
+local const weekendClosed: csml.State = new {
   entry {
     Actions.aRaiseEnterWeekend
   }
   after {
-    new Csml.TimeoutActionDescription {
-      name = "scheduleCheck"
-      delay = "7200000" // 2 hours
-      action = Actions.aRaiseStartScheduleCheck
+    ["scheduleCheck"] = new csml.Timeout {
+      delay = "900"
+      do { Actions.aRaiseStartScheduleCheck }
     }
   }
   on {
-    new { event = Events.eStartScheduleCheck target = evaluating.name }
-    new { event = Events.eFireAlarm target = emergencyOverride.name }
+    [Events.eStartScheduleCheck] = new csml.Transition {
+      to = "evaluating"
+    }
+    [Events.eFireAlarm] = new csml.Transition {
+      to = "emergencyOverride"
+    }
   }
 }
 
 /// State signifying the building is currently in an emergency
-local const emergencyOverride: Csml.StateDescription = new {
-  name = "emergencyOverride"
+local const emergencyOverride: csml.State = new {
   on {
-    // When the alarm is disarmed, re-evaluate to return to the correct state.
-    new { event = Events.eDisarmFireAlarm target = evaluating.name }
-    new { event = Events.eGasPurged target = evaluating.name }
+    [Events.eDisarmFireAlarm] = new csml.Transition {
+      to = "evaluating"
+    }
+    [Events.eGasPurged] = new csml.Transition {
+      to = "evaluating"
+    }
   }
 }

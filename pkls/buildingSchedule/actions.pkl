@@ -1,55 +1,54 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 
 // This module contains actions for the buildingScheduleSM and roomScheduleSM
 
 // Raise to signal entry of business hours
-aRaiseEnterBusinessHours = new Csml.RaiseActionDescription { event { name = Events.eEnterBusinessHours channel = "global" } }
+aRaiseEnterBusinessHours = new csml.Raise { event = new csml.Global { topic = Events.eEnterBusinessHours} }
 
 // Raise to start a schedule check
-aRaiseStartScheduleCheck = new Csml.RaiseActionDescription { event { name = Events.eStartScheduleCheck channel = "internal" } }
+aRaiseStartScheduleCheck = new csml.Raise { event = new csml.Internal { topic = Events.eStartScheduleCheck} }
 
 // Raise to signal entry of after hours
-aRaiseEnterAfterHours = new Csml.RaiseActionDescription { event { name = Events.eEnterAfterHoursMode channel = "global" } }
+aRaiseEnterAfterHours = new csml.Raise { event = new csml.Global { topic = Events.eEnterAfterHoursMode} }
 
 // Raise to signal entry of weekend
-aRaiseEnterWeekend = new Csml.RaiseActionDescription { event { name = Events.eEnterWeekend channel = "global" } }
+aRaiseEnterWeekend = new csml.Raise { event = new csml.Global { topic = Events.eEnterWeekend} }
 
 // Raise to signify activation of zone
-aRaiseZoneActive = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eZoneActive
-    data { new { name = "zoneId" value = Vars.vZoneId } }
-    channel = "global"
+aRaiseZoneActive = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eZoneActive
+    data { ["zoneId"] = Vars.vZoneId }
   }
 }
+
 
 // Raise to signify deactivation of zone
-aRaiseZoneInactive = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eZoneInactive
-    data { new { name = "zoneId" value = Vars.vZoneId } }
-    channel = "global"
+aRaiseZoneInactive = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eZoneInactive
+    data { ["zoneId"] = Vars.vZoneId }
   }
 }
 
+
 // Raise to signify the zone entering a warning state
-aRaiseZoneWarning = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eZoneWarning
-    data { new { name = "zoneId" value = Vars.vZoneId } }
-    channel = "global"
+aRaiseZoneWarning = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eZoneWarning
+    data { ["zoneId"] = Vars.vZoneId }
   }
 }
 
 // Raise to put room to inactive
-aRaiseShutdownRoom = new Csml.RaiseActionDescription {
-  event { name = Events.eShutdownRoom; channel = "internal" }
+aRaiseShutdownRoom = new csml.Raise {
+  event = new csml.Internal { topic = Events.eShutdownRoom }
 }
 
 // Raise to recheck override
-aRaiseRecheckOverride = new Csml.RaiseActionDescription {
-  event { name = Events.eRecheckOverride; channel = "internal" }
+aRaiseRecheckOverride = new csml.Raise {
+  event = new csml.Internal { topic = Events.eRecheckOverride }
 }

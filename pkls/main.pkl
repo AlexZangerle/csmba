@@ -1,5 +1,5 @@
-amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/*.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl?v=1" as Vars
@@ -17,53 +17,16 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/accessControl.pkl" as accessControl
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/buildingSchedule.pkl" as buildingSchedule
 
-name = "Building System"
-version = "3.0.0"
-
+version = "4.0.0"
 stateMachines {
-    new lighting.lightingSM {}
-    new shading.shadingSM {}
-    new roomOccupancy.roomOccupancySM {}
-    new fire.fireDetectionSM {}
-    new tempSafety.temperatureSafetySM {}
-    new electricalSafety.electricalSafetySM {}
-    new gasSafety.gasSafetySM {}
-    new energyManagement.energyManagementSM {}
-    new hvac.hvacSM {}
-    new buildingSchedule.buildingScheduleSM {}
-    new roomSchedule.roomScheduleSM {}
-    new securityManager.securityManagerSM {}
-    new accessControl.accessControlSM {}
+  ["buildingSchedule"] = buildingSchedule.sm
 }
-persistentContext {
-  variables {
-    new {
-        name = Vars.vEnergySaving
-        value = "false"
-    }
-    new {
-        name = Vars.vCurrentOccupancy
-        value = "'vacant'"
-    }
-    new {
-        name = Vars.vFireAlarm
-        value = "false"
-    }
-    new {
-        name = Vars.vSmokeAlert
-        value = "false"
-    }
-    new {
-        name = Vars.vTempThreshold
-        value = "'60'"
-    }
-    new {
-      name = Vars.vMaxEnergyPrice
-      value = "'45.0'"
-    }
-    new {
-      name = Vars.vDesiredTemp
-      value = "'21.0'"
-    }
-  }
+persistent {
+  [Vars.vEnergySaving] = "false"
+  [Vars.vCurrentOccupancy] = "'vacant'"
+  [Vars.vFireAlarm] = "false"
+  [Vars.vSmokeAlert] = "false"
+  [Vars.vTempThreshold] = "'60'"
+  [Vars.vMaxEnergyPrice] = "'45.0'"
+  [Vars.vDesiredTemp] = "'21.0'"
 }

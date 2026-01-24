@@ -144,6 +144,7 @@ eIndoorTempCheckComplete = "indoorTempCheckComplete"
 
 eScheduleCheckComplete = "scheduleCheckComplete"
 
+eCheckIsWeekend = "isWeekend"
 eEnterBusinessHours = "enterBusinessHours"
 eEnterAfterHoursMode = "enterAfterHours"
 eEnterWeekend = "enterWeekend"
