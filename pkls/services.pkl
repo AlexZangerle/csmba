@@ -316,7 +316,7 @@ bindings {
     scheme = "http"
     host = "localhost"
     port = 8005
-    endPoint = "/getDoorRouteType"
+    endPoint = "/setHVAC"
     method = "POST"
   }
   new HttpServiceImplementationBinding {
@@ -335,6 +335,15 @@ bindings {
     host = "localhost"
     port = 8005
     endPoint = "/evacuationLights"
+    method = "POST"
+  }
+  new HttpServiceImplementationBinding {
+    name = "getOutdoorTemp" // Service called by securityManagerSM
+    `local` = false
+    scheme = "http"
+    host = "localhost"
+    port = 8005
+    endPoint = "/getOutdoorTemp"
     method = "POST"
   }
   // Optional: Police notification service binding

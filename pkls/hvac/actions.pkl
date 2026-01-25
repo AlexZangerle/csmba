@@ -1,12 +1,11 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "../events.pkl" as Events
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 // This module contains actions for the hvac SM
 
 
 // Raise to start an indoor temperature check
-aRaiseIndoorTempCheck = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eStartIndoorTempCheck
-    channel = "internal"
+aRaiseIndoorTempCheck = new csml.Raise {
+  event = new csml.Internal {
+    topic = Events.eStartIndoorTempCheck
   }
 }

@@ -3,23 +3,35 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/ref
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/*.pkl" as Events
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl?v=1" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/electricalSafety/electricalSafety.pkl" as electricalSafety
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/gasSafety.pkl" as gasSafety
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/tempSafety.pkl" as tempSafety
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/shading.pkl?v=1" as shading
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/lighting.pkl" as lighting
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/roomOccupancy.pkl?v=1" as roomOccupancy
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/energyManagement/energyManagement.pkl?v=1" as energyManagement
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/fire/fire.pkl" as fire
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/hvac.pkl" as hvac
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/roomSchedule.pkl" as roomSchedule
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/securityManager.pkl" as securityManager
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/accessControl.pkl" as accessControl
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/buildingSchedule.pkl" as buildingSchedule
+import "electricalSafety/electricalSafety.pkl"
+import "gasSafety/gasSafety.pkl"
+import "tempSafety/tempSafety.pkl"
+import "shading/shading.pkl"
+import "lighting/lighting.pkl"
+import "roomOccupancy/roomOccupancy.pkl"
+import "energyManagement/energyManagement.pkl"
+import "fire/fire.pkl"
+import "hvac/hvac.pkl"
+import "buildingSchedule/roomSchedule.pkl"
+import "security/securityManager.pkl"
+import "security/accessControl.pkl"
+import "buildingSchedule/buildingSchedule.pkl"
 
 version = "4.0.0"
 stateMachines {
   ["buildingSchedule"] = buildingSchedule.sm
+  ["roomSchedule"] = roomSchedule.sm
+  ["electricalSafety"] = electricalSafety.sm
+  ["energyManagement"] = energyManagement.sm
+  ["fire"] = fire.sm
+  ["gasSafety"] = gasSafety.sm
+  ["hvac"] = hvac.sm
+  ["lighting"] = lighting.sm
+  ["roomOccupancy"] = roomOccupancy.sm
+  ["securityManager"] = securityManager.sm
+  ["accessControl"] = accessControl.sm
+  ["shading"] = shading.sm
+  ["tempSafety"] = tempSafety.sm
 }
 persistent {
   [Vars.vEnergySaving] = "false"

@@ -46,6 +46,12 @@ eActivateBlindsUserLevel = "userLevelBlinds"
 // Raised manually to set blinds based on temperature
 eDeactivateBlindsUserLevel = "temperatureBlinds"
 
+eSettingBlindsHalfComplete = "settingHalfComplete"
+
+eSettingBlindsOpenComplete = "settingOpenComplete"
+
+eSettingBlindsCloseComplete = "settingCloseComplete"
+
 // Raised to put the system into energy saving mode
 eActivateEnergySaving = "energySavingMode"
 
@@ -98,6 +104,8 @@ eStartArcFaultDetection = "startArcFaultDetection"
 
 // Raised internally to signify end of arc fault detection
 eArcFaultDetectionComplete = "arcFaultDetectionComplete"
+
+eCheckArcFault = "checkArcFault"
 
 // Raised once arc fault has been detected at some location
 eArcFaultDetected = "arcFaultDetected"

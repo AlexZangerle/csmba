@@ -1,253 +1,374 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/actions.pkl" as Actions
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/shading/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
+import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
+import "actions.pkl" as Actions
+import "context.pkl" as Context
+import "guards.pkl" as Guards
 
 // This module contains the definition for the shadingSM
-class shadingSM extends Csml.StateMachineDescription {
-  name = "shading"
-  localContext = Context.blindLockContext
+sm = new csml.StateMachine {
+  transient = Context.blindLockContext
   states {
-    init
-    half
-    fullyOpen
-    close
-    userLevel
-    emergency
+    ["init"] = init
+    ["half"] = half
+    ["halfLoop"] = halfLoop
+    ["fullyOpen"] = fullyOpen
+    ["fullyOpenLoop"] = fullyOpenLoop
+    ["close"] = close
+    ["closeLoop"] = closeLoop
+    ["userLevel"] = userLevel
+    ["userLevelLoop"] = userLevelLoop
+    ["emergency"] = emergency
+    // Helper logic states
+    ["checkCold"] = checkCold
+    ["checkHot"] = checkHot
+    ["checkColdOpen"] = checkColdOpen
+    ["checkHotOpen"] = checkHotOpen
+    ["checkColdClose"] = checkColdClose
+    ["checkHotClose"] = checkHotClose
+    ["checkUserDeactivation"] = checkUserDeactivation
+    ["checkUserDeactivationHot"] = checkUserDeactivationHot
   }
 }
 
-local const init: Csml.StateDescription = new {
-  name = "init"
-  initial = true
+local const init: csml.Initial = new {
   always {
-    new {
-      target = half.name
-    }
+    new csml.Transition { to = "half" }
   }
 }
 
-// Default active state, blinds partially closed.
-local const half: Csml.StateDescription = new {
-  name = "half"
+// -------------------- HALF OPEN --------------------
+
+local const half: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stBlindsHalf
-    }
-  }
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "detectOutsideTemp"
-      delay = "60000"
-      action = Actions.aRaiseDetectOutsideTemp
+    new csml.Invoke {
+      type = ServiceTypes.stBlindsHalf
+      // Explicitly raise completion to unblock
+      raises { new csml.Internal { topic = "blindsMoved" } }
     }
   }
   on {
-    new {
-      event = Events.eStartDetectingOccupancy
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stGetOutdoorTemp
-          output {
-            new {
-              reference = Vars.vOutdoorTemp
-            }
-          }
-          done {
-            new {
-              name = Events.eOutsideDetectionComplete
-              channel = "internal"
-            }
-          }
+    // Wait for blinds to finish moving before entering loop
+    ["blindsMoved"] = new csml.Transition { to = "halfLoop" }
+  }
+}
+
+local const halfLoop: csml.State = new {
+  after {
+    ["detectOutsideTemp"] = new csml.Timeout {
+      delay = "60000"
+      // Raises INTERNAL event, ensuring no conflict with Occupancy
+      do = new csml.Raise { event = new csml.Internal { topic = "startOutdoorCheck" } }
+    }
+  }
+  on {
+    // Listen for the local internal event
+    ["startOutdoorCheck"] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stGetOutdoorTemp
+          raises { new csml.Internal { topic = Events.eOutsideDetectionComplete } }
         }
       }
     }
-    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isColdGuard }; target = fullyOpen.name }
-    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isHotGuard }; target = close.name }
-    new { event = Events.eActivateBlindsUserLevel; target = userLevel.name }
-    new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
-    new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
-    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = close.name }
-    new { event = Events.eFireAlarm; target = emergency.name }
-    new { event = Events.eSmokeAlert; target = emergency.name }
-    new { event = Events.eGasLeakDetected; target = emergency.name }
-    new { event = Events.eLockdownZone; guards { Guards.isMyZone }; target = close.name }
+    // 1. Assign Data
+    [Events.eOutsideDetectionComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vOutdoorTemp) = $outdoorTemp" }
+        new csml.Raise { event = new csml.Internal { topic = "processTemp" } }
+      }
+    }
+    // 2. Logic Check
+    ["processTemp"] = new csml.Transition {
+      to = "checkCold"
+      iif = Guards.isLockedGuard
+      or = "halfLoop" // Stay if locked
+    }
+
+    // External Events
+    [Events.eActivateBlindsUserLevel] = new csml.Transition {
+      to = "userLevel"
+      do { new csml.Eval { expression = "\(Vars.vUserBlindLevel) = $blindLevel" } }
+    }
+    [Events.eLockBlinds] = new csml.Transition { do { Actions.aBlindLock } }
+    [Events.eUnlockBlinds] = new csml.Transition { do { Actions.aBlindUnlock } }
+
+    [Events.eZoneInactive] = new csml.Transition { to = "close"; iif = Guards.isMyZone }
+    [Events.eLockdownZone] = new csml.Transition { to = "close"; iif = Guards.isMyZone }
+
+    [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
+    [Events.eSmokeAlert] = new csml.Transition { to = "emergency" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
   }
 }
 
-// Blinds fully open.
-local const fullyOpen: Csml.StateDescription = new {
-  name = "fullyOpen"
-  entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stBlindsOpen
+// Logic: Half -> Cold? -> Hot?
+local const checkCold: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "fullyOpen"
+      iif = Guards.isColdGuard
+      or = "checkHot"
     }
   }
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "detectOutsideTemp"
-      delay = "60000"
-      action = Actions.aRaiseDetectOutsideTemp
+}
+local const checkHot: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "close"
+      iif = Guards.isHotGuard
+      or = "halfLoop" // Stay at half
+    }
+  }
+}
+
+// -------------------- FULLY OPEN --------------------
+
+local const fullyOpen: csml.State = new {
+  entry {
+    new csml.Invoke {
+      type = ServiceTypes.stBlindsOpen
+      raises { new csml.Internal { topic = "blindsMoved" } }
     }
   }
   on {
-    new {
-      event = Events.eStartDetectingOccupancy
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stGetOutdoorTemp
-          output {
-            new {
-              reference = Vars.vOutdoorTemp
-            }
-          }
-          done {
-            new {
-              name = Events.eOutsideDetectionComplete
-              channel = "internal"
-            }
-          }
+    ["blindsMoved"] = new csml.Transition { to = "fullyOpenLoop" }
+  }
+}
+
+local const fullyOpenLoop: csml.State = new {
+  after {
+    ["detectOutsideTemp"] = new csml.Timeout {
+      delay = "60000"
+      do = new csml.Raise { event = new csml.Internal { topic = "startOutdoorCheck" } }
+    }
+  }
+  on {
+    ["startOutdoorCheck"] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stGetOutdoorTemp
+          raises { new csml.Internal { topic = Events.eOutsideDetectionComplete } }
         }
       }
     }
-    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isMediumGuard }; target = half.name }
-    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isHotGuard }; target = close.name }
-    new { event = Events.eActivateBlindsUserLevel; target = userLevel.name }
-    new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
-    new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
-    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = close.name }
-    new { event = Events.eFireAlarm; target = emergency.name }
-    new { event = Events.eSmokeAlert; target = emergency.name }
-    new { event = Events.eGasLeakDetected; target = emergency.name }
-    new { event = Events.eLockdownZone; guards { Guards.isMyZone }; target = close.name }
+    [Events.eOutsideDetectionComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vOutdoorTemp) = $outdoorTemp" }
+        new csml.Raise { event = new csml.Internal { topic = "processTemp" } }
+      }
+    }
+    ["processTemp"] = new csml.Transition {
+      to = "checkColdOpen"
+      iif = Guards.isLockedGuard
+      or = "fullyOpenLoop"
+    }
+
+    [Events.eActivateBlindsUserLevel] = new csml.Transition {
+      to = "userLevel"
+      do { new csml.Eval { expression = "\(Vars.vUserBlindLevel) = $blindLevel" } }
+    }
+    [Events.eLockBlinds] = new csml.Transition { do { Actions.aBlindLock } }
+    [Events.eUnlockBlinds] = new csml.Transition { do { Actions.aBlindUnlock } }
+
+    [Events.eZoneInactive] = new csml.Transition { to = "close"; iif = Guards.isMyZone }
+    [Events.eLockdownZone] = new csml.Transition { to = "close"; iif = Guards.isMyZone }
+
+    [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
+    [Events.eSmokeAlert] = new csml.Transition { to = "emergency" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
   }
 }
 
-// Blinds fully closed
-local const close: Csml.StateDescription = new {
-  name = "close"
-  entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stBlindsClose
+// Logic: Open -> Medium? -> Hot?
+local const checkColdOpen: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "half"
+      iif = Guards.isMediumGuard
+      or = "checkHotOpen"
     }
   }
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "detectOutsideTemp"
-      delay = "60000"
-      action = Actions.aRaiseDetectOutsideTemp
+}
+local const checkHotOpen: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "close"
+      iif = Guards.isHotGuard
+      or = "fullyOpenLoop" // Stay open
+    }
+  }
+}
+
+// -------------------- CLOSE --------------------
+
+local const close: csml.State = new {
+  entry {
+    new csml.Invoke {
+      type = ServiceTypes.stBlindsClose
+      raises { new csml.Internal { topic = "blindsMoved" } }
     }
   }
   on {
-    new {
-      event = Events.eStartDetectingOccupancy
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stGetOutdoorTemp
-          output {
-            new {
-              reference = Vars.vOutdoorTemp
-            }
-          }
-          done {
-            new {
-              name = Events.eOutsideDetectionComplete
-              channel = "internal"
-            }
-          }
+    ["blindsMoved"] = new csml.Transition { to = "closeLoop" }
+  }
+}
+
+local const closeLoop: csml.State = new {
+  after {
+    ["detectOutsideTemp"] = new csml.Timeout {
+      delay = "60000"
+      do = new csml.Raise { event = new csml.Internal { topic = "startOutdoorCheck" } }
+    }
+  }
+  on {
+    ["startOutdoorCheck"] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stGetOutdoorTemp
+          raises { new csml.Internal { topic = Events.eOutsideDetectionComplete } }
         }
       }
     }
-    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isMediumGuard }; target = half.name }
-    new { event = Events.eOutsideDetectionComplete; guards { Guards.isLockedGuard Guards.isColdGuard }; target = fullyOpen.name }
-    new { event = Events.eActivateBlindsUserLevel; target = userLevel.name }
-    new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
-    new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
-    new {
-      event = Events.eZoneActive
-      guards { Guards.isMyZone }
-      target = half.name
+    [Events.eOutsideDetectionComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vOutdoorTemp) = $outdoorTemp" }
+        new csml.Raise { event = new csml.Internal { topic = "processTemp" } }
+      }
     }
-    new { event = Events.eFireAlarm; target = emergency.name }
-    new { event = Events.eSmokeAlert; target = emergency.name }
-    new { event = Events.eGasLeakDetected; target = emergency.name }
-    new {
-      event = Events.eClearSecurityAlert
-      guards { Guards.isMyZone }
-      target = half.name
+    ["processTemp"] = new csml.Transition {
+      to = "checkColdClose"
+      iif = Guards.isLockedGuard
+      or = "closeLoop"
+    }
+
+    [Events.eActivateBlindsUserLevel] = new csml.Transition {
+      to = "userLevel"
+      do { new csml.Eval { expression = "\(Vars.vUserBlindLevel) = $blindLevel" } }
+    }
+    [Events.eLockBlinds] = new csml.Transition { do { Actions.aBlindLock } }
+    [Events.eUnlockBlinds] = new csml.Transition { do { Actions.aBlindUnlock } }
+
+    [Events.eZoneActive] = new csml.Transition { to = "half"; iif = Guards.isMyZone }
+    [Events.eClearSecurityAlert] = new csml.Transition { to = "half"; iif = Guards.isMyZone }
+
+    [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
+    [Events.eSmokeAlert] = new csml.Transition { to = "emergency" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
+  }
+}
+
+// Logic: Close -> Medium? -> Cold?
+local const checkColdClose: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "half"
+      iif = Guards.isMediumGuard
+      or = "checkHotClose"
+    }
+  }
+}
+local const checkHotClose: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "fullyOpen"
+      iif = Guards.isColdGuard
+      or = "closeLoop" // Stay closed
     }
   }
 }
 
-// Blinds at manual user level.
-local const userLevel: Csml.StateDescription = new {
-  name = "userLevel"
-  localContext = Context.blindLockContext
-  staticContext { variables { Vars.vUserBlindLevel } }
-  entry {
-    new Csml.AssignActionDescription { variable { name = Vars.vUserBlindLevel.name; value = "if ($blindLevel != -1) $blindLevel else blindLevel" } }
-    new Csml.InvokeActionDescription { serviceType = ServiceTypes.stBlindsUserLevel; input { new { name = "blindLevel"; value = "blindLevel" } } }
+// -------------------- USER LEVEL --------------------
+
+local const userLevel: csml.State = new {
+  static {
+    [Vars.vUserBlindLevel] = "'0'"
   }
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "detectOutsideTemp"
-      delay = "60000"
-      action = Actions.aRaiseDetectOutsideTemp
+  entry {
+    new csml.Invoke {
+      type = ServiceTypes.stBlindsUserLevel
+      input { ["blindLevel"] = Vars.vUserBlindLevel }
+      raises { new csml.Internal { topic = "blindsMoved" } }
     }
   }
   on {
-    new {
-      event = Events.eStartDetectingOccupancy
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stGetOutdoorTemp
-          output {
-            new {
-              reference = Vars.vOutdoorTemp
-            }
-          }
-          done {
-            new {
-              name = Events.eOutsideDetectionComplete
-              channel = "internal"
-            }
-          }
+    ["blindsMoved"] = new csml.Transition { to = "userLevelLoop" }
+  }
+}
+
+local const userLevelLoop: csml.State = new {
+  entry {
+    new csml.Raise { event = new csml.Internal { topic = "startOutdoorCheck" } }
+  }
+  after {
+    ["detectOutsideTemp"] = new csml.Timeout {
+      delay = "60000"
+      do = new csml.Raise { event = new csml.Internal { topic = "startOutdoorCheck" } }
+    }
+  }
+  on {
+    // Only updating data for background monitoring, not auto-transitioning
+    ["startOutdoorCheck"] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stGetOutdoorTemp
+          raises { new csml.Internal { topic = Events.eOutsideDetectionComplete } }
         }
       }
     }
-    new { event = Events.eLockBlinds; actions { Actions.aBlindLock } }
-    new { event = Events.eUnlockBlinds; actions { Actions.aBlindUnlock } }
-    new { event = Events.eDeactivateBlindsUserLevel; guards { Guards.isColdGuard }; target = fullyOpen.name }
-    new { event = Events.eDeactivateBlindsUserLevel; guards { Guards.isMediumGuard }; target = half.name }
-    new { event = Events.eDeactivateBlindsUserLevel; guards { Guards.isHotGuard }; target = close.name }
-    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = close.name }
-    new { event = Events.eFireAlarm; target = emergency.name }
-    new { event = Events.eSmokeAlert; target = emergency.name }
-    new { event = Events.eGasLeakDetected; target = emergency.name }
-    new { event = Events.eLockdownZone; guards { Guards.isMyZone }; target = close.name }
+    [Events.eOutsideDetectionComplete] = new csml.Transition {
+      do { new csml.Eval { expression = "\(Vars.vOutdoorTemp) = $outdoorTemp" } }
+    }
+
+    [Events.eLockBlinds] = new csml.Transition { do { Actions.aBlindLock } }
+    [Events.eUnlockBlinds] = new csml.Transition { do { Actions.aBlindUnlock } }
+
+    // Deactivation -> Check Temp to decide where to go
+    [Events.eDeactivateBlindsUserLevel] = new csml.Transition { to = "checkUserDeactivation" }
+
+    [Events.eZoneInactive] = new csml.Transition { to = "close"; iif = Guards.isMyZone }
+    [Events.eLockdownZone] = new csml.Transition { to = "close"; iif = Guards.isMyZone }
+
+    [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
+    [Events.eSmokeAlert] = new csml.Transition { to = "emergency" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
   }
 }
 
-// Emergency state: Blinds fully open for safety/access.
-local const emergency: Csml.StateDescription = new {
-  name = "emergency"
+local const checkUserDeactivation: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "fullyOpen"
+      iif = Guards.isColdGuard
+      or = "checkUserDeactivationHot"
+    }
+  }
+}
+local const checkUserDeactivationHot: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "close"
+      iif = Guards.isHotGuard
+      or = "half" // Default: Medium
+    }
+  }
+}
+
+// -------------------- EMERGENCY --------------------
+
+local const emergency: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stBlindsUserLevel
-      input { new { name = "blindLevel"; value = "'100'" } }
+    new csml.Invoke {
+      type = ServiceTypes.stBlindsUserLevel
+      input { ["blindLevel"] = "'100'" }
+      raises { new csml.Internal { topic = "emergencyBlindsComplete" } }
     }
   }
   on {
-    new {
-      event = Events.eDisarmFireAlarm
-      target = half.name
-    }
-    new {
-      event = Events.eGasPurged
-      target = half.name
-    }
+    [Events.eDisarmFireAlarm] = new csml.Transition { to = "half" }
+    [Events.eGasPurged] = new csml.Transition { to = "half" }
   }
 }

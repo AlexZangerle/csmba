@@ -1,17 +1,9 @@
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../variables.pkl" as Vars
 // This module contains all contexts for the fireDetection SM
 
-fireDetectionContext = new Csml.ContextDescription {
-    variables {
-        new {
-            name = Vars.vFireDetectionResult
-            value = "'none'"
-        }
-        new {
-            name = Vars.vEmergencyInRoom
-            value = "'none'"
-        }
-    }
+fireDetectionContext = new Mapping {
+    [Vars.vFireDetectionResult] = "'none'"
+    [Vars.vEmergencyInRoom] = "'none'"
 }

@@ -1,149 +1,173 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/actions.pkl" as Actions
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/security/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "../events.pkl" as Events
+import "actions.pkl" as Actions
+import "context.pkl" as Context
+import "guards.pkl" as Guards
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 /// This module defines the central securityManagerSM for the building.
-class securityManagerSM extends Csml.StateMachineDescription {
-  name = "securityManager"
-  localContext = Context.securityManagerContext
+sm = new csml.StateMachine {
+  transient = Context.securityManagerContext
   states {
-    init
-    secure
-    elevatedRisk
-    intrusionAlert
-    emergencyResponseActive
+    ["init"] = init
+    ["secure"] = secure
+    ["checkAccessLimits_Secure"] = checkAccessLimits_Secure
+    ["elevatedRisk"] = elevatedRisk
+    ["checkAccessLimits_Elevated"] = checkAccessLimits_Elevated
+    ["intrusionAlert"] = intrusionAlert
+    ["emergencyResponseActive"] = emergencyResponseActive
   }
 }
 
-local const init: Csml.StateDescription = new {
-  name = "init"
-  initial = true
-  always { new { target = secure.name } }
+local const init: csml.Initial = new {
+  always {
+    new csml.Transition { to = "secure" }
+  }
 }
 
 /// Secure state, monitors for suspicious activity.
-local const secure: Csml.StateDescription = new {
-  name = "secure"
+local const secure: csml.State = new {
   entry {
-    new Csml.AssignActionDescription { variable { name = Vars.vFailedAttemptsCount value = "'0'" } }
-    new Csml.AssignActionDescription { variable { name = Vars.vAlertDetails value = "''" } }
+    // Reset counters and details on entry
+    new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = 0" }
+    new csml.Eval { expression = "\(Vars.vAlertDetails) = ''" }
   }
   on {
-    new {
-      event = Events.eForcedEntry
-      actions {
-        new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails value = "'Forced entry detected at door ' + $doorId + ' in zone ' + $zone" }
-        }
+    // 1. Direct Intrusion Events
+    [Events.eForcedEntry] = new csml.Transition {
+      to = "intrusionAlert"
+      do {
+        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Forced entry detected at door ' + $doorId + ' in zone ' + $zone" }
       }
-      target = intrusionAlert.name
     }
-    new {
-      event = Events.eTamperDetected
-      actions {
-        new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails value = "'Tamper detected on device ' + $deviceId + ' at ' + $location" }
-        }
+    [Events.eTamperDetected] = new csml.Transition {
+      to = "intrusionAlert"
+      do {
+        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Tamper detected on device ' + $deviceId + ' at ' + $location" }
       }
-      target = intrusionAlert.name
     }
-    new {
-      event = Events.eManualSecurityAlert
-      actions {
-        new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails value = "'Manual alert triggered: ' + $reason" }
-        }
+    [Events.eManualSecurityAlert] = new csml.Transition {
+      to = "intrusionAlert"
+
+    }
+
+    // 2. Access Denied Logic (Assign -> Check)
+    [Events.eAccessDenied] = new csml.Transition {
+      do {
+        // Increment Count
+        new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
+        // Set Details
+        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
+        // Trigger Check
+        new csml.Raise { event = new csml.Internal { topic = "checkSoftLimit" } }
       }
-      target = intrusionAlert.name
     }
-    new {
-      event = Events.eAccessDenied
-      actions {
-        new Csml.AssignActionDescription {
-          variable { name = Vars.vFailedAttemptsCount value = "\(Vars.vFailedAttemptsCount) + 1" }
-        }
-        new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails value = "'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
-        }
-      }
-      guards { Guards.failedAttemptSoftlimitReached }
-      target = elevatedRisk.name
+
+    // 3. Logic State Routing
+    ["checkSoftLimit"] = new csml.Transition {
+      to = "checkAccessLimits_Secure"
     }
-    new { event = Events.eFireAlarm target = emergencyResponseActive.name }
-    new { event = Events.eGasLeakDetected target = emergencyResponseActive.name }
+
+    // 4. Safety Overrides
+    [Events.eFireAlarm] = new csml.Transition { to = "emergencyResponseActive" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergencyResponseActive" }
+  }
+}
+
+// Logic state to evaluate Soft Limit
+local const checkAccessLimits_Secure: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "elevatedRisk"
+      iif = Guards.failedAttemptSoftlimitReached
+      or = "secure" // Return to secure (continue counting)
+    }
   }
 }
 
 /// Minor suspicious activity detected
-local const elevatedRisk: Csml.StateDescription = new {
-  name = "elevatedRisk"
+local const elevatedRisk: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stNotifySecurityPersonnel
-      input { new { name = "message" value = Vars.vAlertDetails } }
+    // Notify Personnel
+    new csml.Invoke {
+      type = ServiceTypes.stNotifySecurityPersonnel
+      input { ["message"] = Vars.vAlertDetails }
     }
     Actions.aRaiseSecurityBreach
   }
   after {
-    new Csml.TimeoutActionDescription {
-      name = "riskDecayTimer"
+    ["riskDecayTimer"] = new csml.Timeout {
       delay = "1800000" // 30 minutes
-      action = new Csml.RaiseActionDescription { event { name = "decayRisk" channel = "internal" } }
+      do = new csml.Raise { event = new csml.Internal { topic = "decayRisk" } }
     }
   }
   on {
-    new { event = "decayRisk" target = secure.name }
-    new {
-      event = Events.eAccessDenied
-      actions {
-        new Csml.AssignActionDescription { variable { name = Vars.vFailedAttemptsCount value = "\(Vars.vFailedAttemptsCount) + 1" } }
-        new Csml.AssignActionDescription {
-          variable { name = Vars.vAlertDetails value = "'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
-        }
-      }
-      guards { Guards.failedAttemptHardlimitReached }
-      target = intrusionAlert.name
+    ["decayRisk"] = new csml.Transition {
+      to = "secure"
     }
-    new { event = Events.eForcedEntry target = intrusionAlert.name }
-    new { event = Events.eTamperDetected target = intrusionAlert.name }
-    new { event = Events.eManualSecurityAlert target = intrusionAlert.name }
-    new { event = Events.eFireAlarm target = emergencyResponseActive.name }
-    new { event = Events.eGasLeakDetected target = emergencyResponseActive.name }
-    new { event = Events.eClearSecurityAlert target = secure.name }
+
+    // Escalation Logic (Access Denied)
+    [Events.eAccessDenied] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
+        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
+        new csml.Raise { event = new csml.Internal { topic = "checkHardLimit" } }
+      }
+    }
+
+    ["checkHardLimit"] = new csml.Transition {
+      to = "checkAccessLimits_Elevated"
+    }
+
+    // Immediate Escalations
+    [Events.eForcedEntry] = new csml.Transition { to = "intrusionAlert" }
+    [Events.eTamperDetected] = new csml.Transition { to = "intrusionAlert" }
+    [Events.eManualSecurityAlert] = new csml.Transition { to = "intrusionAlert" }
+
+    // Reset/Safety
+    [Events.eClearSecurityAlert] = new csml.Transition { to = "secure" }
+    [Events.eFireAlarm] = new csml.Transition { to = "emergencyResponseActive" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergencyResponseActive" }
+  }
+}
+
+// Logic state to evaluate Hard Limit
+local const checkAccessLimits_Elevated: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "intrusionAlert"
+      iif = Guards.failedAttemptHardlimitReached
+      or = "elevatedRisk" // Return to elevated (resetting timer by re-entry)
+    }
   }
 }
 
 /// High-severity event detected. Trigger alarms and lockdown.
-local const intrusionAlert: Csml.StateDescription = new {
-  name = "intrusionAlert"
+local const intrusionAlert: csml.State = new {
   entry {
     Actions.aRaiseServereSecurityBreach
     Actions.aRaiseFlashLights
     Actions.aRaiseBuildingAlarm
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stNotifySecurityPersonnel
-      input { new { name = "message" value = "'INTRUSION ALERT: ' + \(Vars.vAlertDetails)" } }
+    new csml.Invoke {
+      type = ServiceTypes.stNotifySecurityPersonnel
+      input { ["message"] = "'INTRUSION ALERT:' + \(Vars.vAlertDetails)" }
     }
   }
   on {
-    new { event = Events.eFireAlarm target = emergencyResponseActive.name }
-    new { event = Events.eGasLeakDetected target = emergencyResponseActive.name }
-    new { event = Events.eClearSecurityAlert target = secure.name }
+    [Events.eClearSecurityAlert] = new csml.Transition { to = "secure" }
+    [Events.eFireAlarm] = new csml.Transition { to = "emergencyResponseActive" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergencyResponseActive" }
   }
 }
 
 /// Security heeds to safety
-local const emergencyResponseActive: Csml.StateDescription = new {
-  name = "emergencyResponseActive"
+local const emergencyResponseActive: csml.State = new {
   entry {
     Actions.aRaiseUnlockEvacuationRoutes
   }
   on {
-    new { event = Events.eDisarmFireAlarm target = secure.name }
-    new { event = Events.eGasPurged target = secure.name }
+    [Events.eDisarmFireAlarm] = new csml.Transition { to = "secure" }
+    [Events.eGasPurged] = new csml.Transition { to = "secure" }
   }
 }

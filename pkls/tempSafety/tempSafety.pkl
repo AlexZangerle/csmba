@@ -1,101 +1,103 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/tempSafety/actions.pkl" as Actions
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
+import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
+import "actions.pkl" as Actions
+import "context.pkl" as Context
+import "guards.pkl" as Guards
 
 // This module contains the definition for the fireSafety SM
-
-//temperatureSafety is one of three SMs that act as fire prevention system
-//temperatureSafety detects temperature of critical equipment in a room
-//If that temperature exceeds a predefined threshold a warning is published.
-class temperatureSafetySM extends Csml.StateMachineDescription {
-    name = "temperatureSafety"
-    localContext = Context.fireSafetyContext
-    states{
-        init
-        normal
-        highRisk
-    }
+sm = new csml.StateMachine {
+  transient = Context.fireSafetyContext
+  states {
+    ["init"] = init
+    ["normal"] = normal
+    ["normalLoop"] = normalLoop
+    ["checkTemp"] = checkTemp
+    ["highRisk"] = highRisk
+    ["highRiskWait"] = highRiskWait
+  }
 }
 
-local const init: Csml.StateDescription = new {
-    name = "init"
-    initial = true
-    always {
-        new {
-            target = normal.name
-        }
-    }
-}
-// Always starts in normal state
-// Gets current room temperature every 30 seconds
-// Checks temperature against threshold and transitions to highRisk if necessary
-local const normal: Csml.StateDescription = new {
-    name = "normal"
-    after {
-        new Csml.TimeoutActionDescription {
-            name = "pullRoomTemp"
-            delay = "30000"
-            action = Actions.aRaiseGetRoomTemp
-        }
-    }
-    on {
-        new{
-            event = Events.eTempReadingComplete
-            guards {
-                Guards.exceedTempThreshold
-            }
-            target = highRisk.name
-        }
-        new {
-            event = Events.eStartTempReading
-            actions {
-                new Csml.InvokeActionDescription {
-                serviceType = ServiceTypes.stTempSafety
-                input {
-                    new {
-                        name = "roomId"
-                        value = "roomId"
-                    }
-                }
-                output {
-                    new {
-                        reference = Vars.vRoomTemp
-                    }
-                }
-                done {
-                    new {
-                        name = Events.eTempReadingComplete
-                        channel = "internal"
-                    }
-                }
-            }
-            }
-        }
-    }
+local const init: csml.Initial = new {
+  always {
+    new csml.Transition { to = "normal" }
+  }
 }
 
-// High risk state invokes the high risk service to publish a warning with the corresponding roomID.
-local const highRisk: Csml.StateDescription = new {
-    name = "highRisk"
-    entry {
-        new Csml.InvokeActionDescription {
-                serviceType = ServiceTypes.stTempHighRisk
-                input {
-                    new {
-                        name = "roomId"
-                        value = "roomId"
-                    }
-                }
-            }    
+// -------------------- NORMAL MONITORING --------------------
+
+local const normal: csml.State = new {
+  // Pass-through start state
+  always { new csml.Transition { to = "normalLoop" } }
+}
+
+local const normalLoop: csml.State = new {
+  // Periodic check every 30s
+  after {
+    ["pullRoomTemp"] = new csml.Timeout {
+      delay = "30000"
+      // Use internal event to isolate loop
+      do = new csml.Raise { event = new csml.Internal { topic = "startTempCheck" } }
     }
-    on {
-        new {
-            event = Events.eTempRiskCleared
-            target = normal.name
+  }
+  on {
+    // 1. Invoke Service
+    ["startTempCheck"] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stTempSafety
+          // Pass roomId from context. Assuming 'roomId' is the variable name in context.
+          input { ["roomId"] = Vars.vRoomId }
+          raises { new csml.Internal { topic = Events.eTempReadingComplete } }
         }
+      }
     }
+    // 2. Assign Data
+    [Events.eTempReadingComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vRoomTemp) = $roomTemp" }
+        new csml.Raise { event = new csml.Internal { topic = "checkThreshold" } }
+      }
+    }
+    // 3. Logic Check
+    ["checkThreshold"] = new csml.Transition {
+      to = "checkTemp"
+    }
+  }
+}
+
+// Logic Branching
+local const checkTemp: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "highRisk"
+      iif = Guards.exceedTempThreshold
+      or = "normalLoop" // Safe, return to loop
+    }
+  }
+}
+
+// -------------------- HIGH RISK --------------------
+
+local const highRisk: csml.State = new {
+  entry {
+    new csml.Invoke {
+      type = ServiceTypes.stTempHighRisk
+      input { ["roomId"] = "roomId" }
+      // Raise completion to prevent blocking
+      raises { new csml.Internal { topic = "warningSent" } }
+    }
+  }
+  on {
+    ["warningSent"] = new csml.Transition { to = "highRiskWait" }
+  }
+}
+
+local const highRiskWait: csml.State = new {
+  on {
+    [Events.eTempRiskCleared] = new csml.Transition { to = "normal" }
+  }
 }

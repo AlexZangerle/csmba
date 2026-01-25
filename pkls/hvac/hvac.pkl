@@ -1,249 +1,243 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/actions.pkl" as Actions
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/hvac/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../events.pkl" as Events
+import "actions.pkl" as Actions
+import "context.pkl" as Context
+import "guards.pkl" as Guards
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
 
 // This module contains the definition for the HVAC SM
-
-class hvacSM extends Csml.StateMachineDescription {
-  name = "hvac"
-  localContext = Context.hvacContext
+sm = new csml.StateMachine {
+  transient = Context.hvacContext
   states {
-    init
-    off
-    fanOnly
-    heating
-    cooling
-    emergency
+    ["init"] = init
+    ["off"] = off
+    ["fanOnly"] = fanOnly
+    ["fanOnlyLoop"] = fanOnlyLoop
+    ["checkCoolingFan"] = checkCoolingFan
+    ["heating"] = heating
+    ["heatingLoop"] = heatingLoop
+    ["checkOverheat"] = checkOverheat
+    ["cooling"] = cooling
+    ["coolingLoop"] = coolingLoop
+    ["checkOvercool"] = checkOvercool
+    ["emergency"] = emergency
   }
 }
 
-local const init: Csml.StateDescription = new {
-  name = "init"
-  initial = true
+local const init: csml.Initial = new {
   always {
-    new {
-      target = off.name
-    }
+    new csml.Transition { to = "off" }
   }
 }
 
 // Default state when zone inactive or vacant.
-local const off: Csml.StateDescription = new {
-  name = "off"
+local const off: csml.State = new {
   entry {
-    // Ensure HVAC unit is off when entering
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stSetHVAC
-      input { new { name = "mode"; value = "'off'" } }
+    new csml.Invoke {
+      type = ServiceTypes.stSetHVAC
+      input { ["mode"] = "'off'" }
     }
   }
   on {
-    new {
-      event = Events.eOccupancyDetected
-      target = fanOnly.name
-    }
-    new {
-      // Zone becomes active -> transition to fanOnly to start evaluating HVAC needs
-      event = Events.eZoneActive
-      guards { Guards.isMyZone }
-      target = fanOnly.name
-    }
-    new { event = Events.eFireAlarm; target = emergency.name }
-    new { event = Events.eGasLeakDetected; target = emergency.name }
+    [Events.eOccupancyDetected] = new csml.Transition { to = "fanOnly" }
+    [Events.eZoneActive] = new csml.Transition { to = "fanOnly"; iif = Guards.isMyZone }
+    // Safety
+    [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
   }
 }
 
-// Monitoring state, only circulates air and decides whether to heat or cool.
-local const fanOnly: Csml.StateDescription = new {
-  name = "fanOnly"
+// -------------------- FAN ONLY --------------------
+
+// Start State: Sets mode and triggers first check
+local const fanOnly: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stSetHVAC
-      input { new { name = "mode"; value = "'fan'" } }
-    }
+    new csml.Invoke { type = ServiceTypes.stSetHVAC input { ["mode"] = "'fan'" } }
     Actions.aRaiseIndoorTempCheck
   }
+  always {
+    new csml.Transition { to = "fanOnlyLoop" }
+  }
+}
+
+// Loop State: Handles periodic checks. Safe to re-enter (No Entry Action).
+local const fanOnlyLoop: csml.State = new {
   after {
-    new Csml.TimeoutActionDescription {
-      name = "periodicTempCheck"
-      delay = "300000" // Check every 5 minutes
-      action = Actions.aRaiseIndoorTempCheck
+    ["periodicTempCheck"] = new csml.Timeout {
+      delay = "300000" // 5 min
+      do = Actions.aRaiseIndoorTempCheck
     }
   }
   on {
-    new {
-      event = Events.eStartIndoorTempCheck
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stGetIndoorTemp
-          output { new { reference = Vars.vIndoorTemp } }
-          done { new { name = Events.eIndoorTempCheckComplete; channel = "internal" } }
+    [Events.eStartIndoorTempCheck] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stGetIndoorTemp
+          raises { new csml.Internal { topic = Events.eIndoorTempCheckComplete } }
         }
       }
     }
-    new {
-      event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomToCold }
-      target = heating.name
+    // 1. Assign Data
+    [Events.eIndoorTempCheckComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
+        new csml.Raise { event = new csml.Internal { topic = "checkHeating" } }
+      }
     }
-    new {
-      event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomToHot }
-      target = cooling.name
+
+    // 2. Logic Chain
+    ["checkHeating"] = new csml.Transition {
+      to = "heating"
+      iif = Guards.roomToCold
+      or = "checkCoolingFan" // Go to helper state for next check
     }
-    new {
-      event = Events.eOccupancyVacant
-      target = off.name
-    }
-    new {
-      event = Events.eZoneWarning
-      guards { Guards.isMyZone }
-    }
-    new {
-      event = Events.eZoneInactive
-      guards { Guards.isMyZone }
-      target = off.name
-    }
-    new { event = Events.eFireAlarm; target = emergency.name }
-    new { event = Events.eGasLeakDetected; target = emergency.name }
+
+    // External Exits
+    [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
+    [Events.eZoneInactive] = new csml.Transition { to = "off"; iif = Guards.isMyZone }
+    [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
   }
 }
 
-// Active heating state.
-local const heating: Csml.StateDescription = new {
-  name = "heating"
-  entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stSetHVAC
-      input { new { name = "mode"; value = "'heat'" } }
+// Helper: Check Cooling or Return to Loop
+local const checkCoolingFan: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "cooling"
+      iif = Guards.roomToHot
+      or = "fanOnlyLoop" // Stay in Fan mode (Safe return)
     }
+  }
+}
+
+// -------------------- HEATING --------------------
+
+// Start State
+local const heating: csml.State = new {
+  entry {
+    new csml.Invoke { type = ServiceTypes.stSetHVAC input { ["mode"] = "'heat'" } }
     Actions.aRaiseIndoorTempCheck
   }
+  always { new csml.Transition { to = "heatingLoop" } }
+}
+
+// Loop State
+local const heatingLoop: csml.State = new {
   after {
-    new Csml.TimeoutActionDescription {
-      name = "periodicTempCheck"
-      delay = "600000" // Check every 10 minutes while actively heating
-      action = Actions.aRaiseIndoorTempCheck
+    ["periodicTempCheck"] = new csml.Timeout {
+      delay = "600000" // 10 min
+      do = Actions.aRaiseIndoorTempCheck
     }
   }
   on {
-    new {
-      event = Events.eStartIndoorTempCheck
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stGetIndoorTemp
-          output { new { reference = Vars.vIndoorTemp } }
-          done { new { name = Events.eIndoorTempCheckComplete; channel = "internal" } }
+    [Events.eStartIndoorTempCheck] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stGetIndoorTemp
+          raises { new csml.Internal { topic = Events.eIndoorTempCheckComplete } }
         }
       }
     }
-    new {
-      event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomComfortable }
-      target = fanOnly.name
+    [Events.eIndoorTempCheckComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
+        new csml.Raise { event = new csml.Internal { topic = "checkComfort" } }
+      }
     }
-    new {
-      event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomToHot }
-      target = cooling.name
+
+    ["checkComfort"] = new csml.Transition {
+      to = "fanOnly"
+      iif = Guards.roomComfortable
+      or = "checkOverheat"
     }
-    new {
-      event = Events.eOccupancyVacant
-      target = off.name
-    }
-    new {
-      event = Events.eZoneWarning
-      guards { Guards.isMyZone }
-      target = fanOnly.name
-    }
-    new {
-      event = Events.eZoneInactive
-      guards { Guards.isMyZone }
-      target = off.name
-    }
-    new { event = Events.eFireAlarm; target = emergency.name }
-    new { event = Events.eGasLeakDetected; target = emergency.name }
+
+    [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
+    [Events.eZoneInactive] = new csml.Transition { to = "off"; iif = Guards.isMyZone }
+    [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
   }
 }
 
-// Active cooling state.
-local const cooling: Csml.StateDescription = new {
-  name = "cooling"
-  entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stSetHVAC
-      input { new { name = "mode"; value = "'cool'" } }
+// Helper: Check Overshoot or Return to Loop
+local const checkOverheat: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "cooling"
+      iif = Guards.roomToHot
+      or = "heatingLoop" // Keep heating
     }
+  }
+}
+
+// -------------------- COOLING --------------------
+
+// Start State
+local const cooling: csml.State = new {
+  entry {
+    new csml.Invoke { type = ServiceTypes.stSetHVAC input { ["mode"] = "'cool'" } }
     Actions.aRaiseIndoorTempCheck
   }
+  always { new csml.Transition { to = "coolingLoop" } }
+}
+
+// Loop State
+local const coolingLoop: csml.State = new {
   after {
-    new Csml.TimeoutActionDescription {
-      name = "periodicTempCheck"
-      delay = "600000" // Check every 10 minutes while actively cooling
-      action = Actions.aRaiseIndoorTempCheck
+    ["periodicTempCheck"] = new csml.Timeout {
+      delay = "600000" // 10 min
+      do = Actions.aRaiseIndoorTempCheck
     }
   }
   on {
-    new {
-      event = Events.eStartIndoorTempCheck
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stGetIndoorTemp
-          output { new { reference = Vars.vIndoorTemp } }
-          done { new { name = Events.eIndoorTempCheckComplete; channel = "internal" } }
+    [Events.eStartIndoorTempCheck] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stGetIndoorTemp
+          raises { new csml.Internal { topic = Events.eIndoorTempCheckComplete } }
         }
       }
     }
-    new {
-      event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomComfortable }
-      target = fanOnly.name
+    [Events.eIndoorTempCheckComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
+        new csml.Raise { event = new csml.Internal { topic = "checkComfort" } }
+      }
     }
-    new {
-      event = Events.eIndoorTempCheckComplete
-      guards { Guards.roomToCold }
-      target = heating.name
+
+    ["checkComfort"] = new csml.Transition {
+      to = "fanOnly"
+      iif = Guards.roomComfortable
+      or = "checkOvercool"
     }
-    new {
-      event = Events.eOccupancyVacant
-      target = off.name
-    }
-    new {
-      event = Events.eZoneWarning
-      guards { Guards.isMyZone }
-      target = fanOnly.name
-    }
-    new {
-      event = Events.eZoneInactive
-      guards { Guards.isMyZone }
-      target = off.name
-    }
-    new { event = Events.eFireAlarm; target = emergency.name }
-    new { event = Events.eGasLeakDetected; target = emergency.name }
+
+    [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
+    [Events.eZoneInactive] = new csml.Transition { to = "off"; iif = Guards.isMyZone }
+    [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
+    [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
   }
 }
 
-// Emergency State
-local const emergency: Csml.StateDescription = new {
-  name = "emergency"
-  entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stSetHVAC
-      input { new { name = "mode"; value = "'off'" } }
+// Helper: Check Overshoot or Return to Loop
+local const checkOvercool: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "heating"
+      iif = Guards.roomToCold
+      or = "coolingLoop" // Keep cooling
     }
   }
+}
+
+// -------------------- EMERGENCY --------------------
+
+local const emergency: csml.State = new {
+  entry {
+    new csml.Invoke { type = ServiceTypes.stSetHVAC input { ["mode"] = "'off'" } }
+  }
   on {
-    new {
-      event = Events.eDisarmFireAlarm
-      target = off.name
-    }
-    new {
-      event = Events.eGasPurged
-      target = off.name
-    }
+    [Events.eDisarmFireAlarm] = new csml.Transition { to = "off" }
+    [Events.eGasPurged] = new csml.Transition { to = "off" }
   }
 }

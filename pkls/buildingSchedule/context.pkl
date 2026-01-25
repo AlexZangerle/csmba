@@ -3,22 +3,12 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/ref
 
 // This module contains all contexts for the buildingSchedule SM and roomScheduleSM
 // buildingScheduleContext includes the currentScheduleMode
-scheduleContext = new Csml.ContextDescription {
-  variables {
-    new {
-      name = Vars.vCurrentScheduleMode
-      value = "''"
-    }
-  }
+scheduleContext = new Mapping {
+  [Vars.vCurrentScheduleMode] = "''"
 }
 
 // roomScheduleContext contains the zoneId of the corresponding room
-roomContext = new Csml.ContextDescription {
-  variables {
-    new {
-      name = Vars.vZoneId
-      value = "'testZone'"
-    }
-  }
+roomContext = new Mapping {
+  [Vars.vZoneId] = "'testZone'"
 }
 

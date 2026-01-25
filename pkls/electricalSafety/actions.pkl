@@ -1,29 +1,24 @@
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../events.pkl" as Events
+import "../variables.pkl" as Vars
 // This module contains actions for the eletricalSafety SM
 
 
 // Raise to start arc fault detection
-aRaiseStartArcFaultDetection = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eStartArcFaultDetection
-        channel = "internal"
+aRaiseStartArcFaultDetection = new csml.Raise {
+    event = new csml.Internal {
+        topic = Events.eStartArcFaultDetection
     }
 }
 
 // Raise if an arc fault has been detected 
 // Includes location of arcFault as payload
-aRaiseArcFaultDetected = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eArcFaultDetected
+aRaiseArcFaultDetected = new csml.Raise {
+    event = new csml.Global{
+        topic = Events.eArcFaultDetected
         data {
-            new {
-                name = "arcFaultLocation"
-                value = Vars.vArcFaultLocation
-            }
+             ["arcFaultLocation"] = Vars.vArcFaultLocation
         }
-        channel = "global"
     }
 }

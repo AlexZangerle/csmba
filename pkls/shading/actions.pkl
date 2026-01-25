@@ -1,25 +1,18 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "../variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl"
 // This module contains actions for the shading SM
 
-aBlindLock = new Csml.AssignActionDescription {
-  variable {
-    name = Vars.vIsLocked
-    value = "true"
-  }
+aBlindLock = new csml.Eval {
+  expression = "\(Vars.vIsLocked) = true"
 }
 
-aBlindUnlock = new Csml.AssignActionDescription {
-  variable {
-    name = Vars.vIsLocked
-    value = "false"
-  }
+aBlindUnlock = new csml.Eval {
+  expression = "\(Vars.vIsLocked) = false"
 }
 
-aRaiseDetectOutsideTemp = new Csml.RaiseActionDescription {
-  event {
-    name = events.eStartDetectingOutsideTemp
-    channel = "internal"
+aRaiseDetectOutsideTemp = new csml.Raise {
+  event = new csml.Internal {
+    topic = events.eStartDetectingOutsideTemp
   }
 }

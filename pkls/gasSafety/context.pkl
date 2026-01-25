@@ -1,13 +1,8 @@
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../variables.pkl" as Vars
 // This module contains all contexts for the gasSafety SM
 
-gasSafetyContext = new Csml.ContextDescription {
-    variables {
-        new {
-            name = Vars.vGasLeakLocation
-            value = "'none'"
-        }
-    }
+gasSafetyContext = new Mapping {
+    [Vars.vGasLeakLocation] =  "'none'"
 }

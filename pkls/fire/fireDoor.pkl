@@ -1,0 +1,52 @@
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
+import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
+
+
+// The fireDoor SM closes based on fireAlarm events received
+// After the alarm has been disarmed it opens
+sm = new csml.StateMachine {
+  // Define a minimal context or import one if needed
+  states {
+    ["init"] = init
+    ["open"] = openDoor
+    ["close"] = close
+  }
+}
+
+// Fire door always starts open
+local const init: csml.Initial = new {
+  always {
+    new csml.Transition { to = "open" }
+  }
+}
+
+local const openDoor: csml.State = new {
+  entry {
+    new csml.Invoke {
+      type = ServiceTypes.stOpenFireDoor
+    }
+  }
+  on {
+    // After a fire alarm has been triggered, closes the fireDoor
+    [Events.eFireAlarm] = new csml.Transition {
+      to = "close"
+    }
+  }
+}
+
+local const close: csml.State = new {
+  entry {
+    new csml.Invoke {
+      type = ServiceTypes.stCloseFireDoor
+    }
+  }
+  on {
+    // After alarm has been manually disarmed, opens fireDoor
+    [Events.eDisarmFireAlarm] = new csml.Transition {
+      to = "open"
+    }
+  }
+}

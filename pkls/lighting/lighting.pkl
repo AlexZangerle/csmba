@@ -1,208 +1,232 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/lighting/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
+import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
+import "context.pkl" as Context
+import "guards.pkl" as Guards
 
 // This module contains the definition for the lighting SM
-
-class lightingSM extends Csml.StateMachineDescription {
-  name = "lighting"
-  localContext = Context.lightingContext
+sm = new csml.StateMachine {
+  transient = Context.lightingContext
   states {
-    init
-    off
-    turnOn
-    dim
-    userLevel
-    flashingAlarm_Off
-    flashingAlarm_On
+    ["init"] = init
+    ["off"] = offState // Mapped to avoid keyword conflict
+    ["on"] = turnOn
+    ["dim"] = dim
+    ["userLevel"] = userLevel
+    ["fire"] = fire
+    ["flashingAlarm_Off"] = flashingAlarm_Off
+    ["flashingAlarm_On"] = flashingAlarm_On
   }
 }
 
 // Initially always transitions to off
-local const init: Csml.StateDescription = new {
-  name = "init"
-  initial = true
+local const init: csml.Initial = new {
   always {
-    new {
-      target = off.name
-    }
+    new csml.Transition { to = "off" }
   }
 }
 
 // Lights off - default state when inactive or vacant.
-local const off: Csml.StateDescription = new {
-  name = "off"
+local const offState: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stTurnOff
+    new csml.Invoke {
+      type = ServiceTypes.stTurnOff
     }
   }
   on {
-    new {
-      event = Events.eOccupancyDetected
-      guards { Guards.energySavingInactive }
-      target = turnOn.name
+    [Events.eOccupancyDetected] = new csml.Transition {
+      to = "on"
+      iif = Guards.energySavingInactive
+      or = "dim" // If energy saving is active, go to dim instead
     }
-    new {
-      event = Events.eOccupancyDetected
-      guards { Guards.energySavingActive }
-      target = dim.name
+
+    [Events.eActivateLightUserLevel] = new csml.Transition {
+      to = "userLevel"
+      // Capture the level from the event payload
+      do { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
-    new {
-      event = Events.eActivateLightUserLevel
-      target = userLevel.name
+
+    [Events.eAccessGranted] = new csml.Transition {
+      to = "on"
+      iif = Guards.isMyZone
     }
-    new {
-      event = Events.eZoneActive
-      guards { Guards.isMyZone }
+
+    // Security Alarm Override
+    [Events.eFlashAllLights] = new csml.Transition {
+      to = "flashingAlarm_Off"
     }
-    new {
-      event = Events.eAccessGranted
-      guards { Guards.isMyZone }
-      target = turnOn.name
+
+    // Fire Evacuation Override
+    [Events.eFireAlarm] = new csml.Transition {
+      to = "fire"
     }
-    new {
-      event = Events.eZoneWarning
-      guards { Guards.isMyZone }
+
+    // Context Updates
+    [Events.eActivateEnergySaving] = new csml.Transition {
+      do { new csml.Eval { expression = "\(Vars.vEnergySaving) = true" } }
     }
-    new {
-      event = Events.eFlashAllLights
-      target = flashingAlarm_Off.name
-    }
-    new {
-      event = Events.eActivateEnergySaving
-      actions { new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "true" } } }
-    }
-    new {
-      event = Events.eDeactivateEnergySaving
-      actions { new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "false" } } }
+    [Events.eDeactivateEnergySaving] = new csml.Transition {
+      do { new csml.Eval { expression = "\(Vars.vEnergySaving) = false" } }
     }
   }
 }
 
 // Lights on - zone is active and occupied.
-local const turnOn: Csml.StateDescription = new {
-  name = "on"
+local const turnOn: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stTurnOn
+    new csml.Invoke {
+      type = ServiceTypes.stTurnOn
     }
   }
   on {
-    new { event = Events.eOccupancyTransient; target = dim.name }
-    new { event = Events.eOccupancyVacant; target = off.name }
-    new { event = Events.eActivateLightUserLevel target = userLevel.name }
-    new { event = Events.eZoneWarning; guards { Guards.isMyZone }; target = dim.name }
-    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name }
-    new { event = Events.eFlashAllLights target = flashingAlarm_Off.name }
+    [Events.eOccupancyTransient] = new csml.Transition { to = "dim" }
+    [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
+
+    [Events.eActivateLightUserLevel] = new csml.Transition {
+      to = "userLevel"
+      do { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
+    }
+
+    [Events.eZoneWarning] = new csml.Transition {
+      to = "dim"
+      iif = Guards.isMyZone
+    }
+    [Events.eZoneInactive] = new csml.Transition {
+      to = "off"
+      iif = Guards.isMyZone
+    }
+
+    [Events.eFlashAllLights] = new csml.Transition { to = "flashingAlarm_Off" }
+    [Events.eFireAlarm] = new csml.Transition { to = "fire" }
   }
 }
 
 // Lights dim - grace period, warning, or energy saving.
-local const dim: Csml.StateDescription = new {
-  name = "dim"
+local const dim: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stDim
+    new csml.Invoke {
+      type = ServiceTypes.stDim
     }
   }
   on {
-    new { event = Events.eOccupancyDetected; guards { Guards.energySavingInactive }; target = turnOn.name }
-    new { event = Events.eOccupancyDetected; guards { Guards.energySavingActive } }
-    new { event = Events.eOccupancyVacant; target = off.name }
-    new { event = Events.eActivateLightUserLevel target = userLevel.name }
-    new { event = Events.eZoneActive; guards { Guards.isMyZone }; target = turnOn.name }
-    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name }
-    new { event = Events.eFlashAllLights target = flashingAlarm_Off.name }
-    new { event = Events.eActivateEnergySaving; actions { new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "true" } } } }
-    new { event = Events.eDeactivateEnergySaving; actions { new Csml.AssignActionDescription { variable { name = Vars.vEnergySaving; value = "false" } } } }
+    [Events.eOccupancyDetected] = new csml.Transition {
+      to = "on"
+      iif = Guards.energySavingInactive
+      // Implicit else: stay in dim if energy saving is active
+    }
+
+    [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
+
+    [Events.eActivateLightUserLevel] = new csml.Transition {
+      to = "userLevel"
+      do { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
+    }
+
+    [Events.eZoneActive] = new csml.Transition {
+      to = "on"
+      iif = Guards.isMyZone
+    }
+    [Events.eZoneInactive] = new csml.Transition {
+      to = "off"
+      iif = Guards.isMyZone
+    }
+
+    [Events.eFlashAllLights] = new csml.Transition { to = "flashingAlarm_Off" }
+    [Events.eFireAlarm] = new csml.Transition { to = "fire" }
+
+    // Context Updates
+    [Events.eActivateEnergySaving] = new csml.Transition {
+      do { new csml.Eval { expression = "\(Vars.vEnergySaving) = true" } }
+    }
+    [Events.eDeactivateEnergySaving] = new csml.Transition {
+      do { new csml.Eval { expression = "\(Vars.vEnergySaving) = false" } }
+    }
   }
 }
 
 // Lights at manual level - user override.
-local const userLevel: Csml.StateDescription = new {
-  name = "userLevel"
-  localContext = Context.lightingContext
-  staticContext { variables { Vars.vUserLightLevel } }
+local const userLevel: csml.State = new {
+  static {
+    [Vars.vUserLightLevel] = "'0'"
+  }
   entry {
-    new Csml.AssignActionDescription {
-      variable {
-        name = Vars.vUserLightLevel.name
-        value = "if ($lightLevel != null && $lightLevel != -1) $lightLevel else lightLevel"
-      }
-    }
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stTurnUserLevel
-      input { new { name = "lightLevel"; value = "lightLevel" } }
+    new csml.Invoke {
+      type = ServiceTypes.stTurnUserLevel
+      input { ["lightLevel"] = Vars.vUserLightLevel }
     }
   }
   on {
-    new { event = Events.eDeactivateLightUserLevel target = off.name }
-    new { event = Events.eZoneWarning; guards { Guards.isMyZone }; target = dim.name }
-    new { event = Events.eZoneInactive; guards { Guards.isMyZone }; target = off.name }
-    new { event = Events.eFlashAllLights target = flashingAlarm_Off.name }
+    [Events.eDeactivateLightUserLevel] = new csml.Transition { to = "off" }
+
+    [Events.eZoneWarning] = new csml.Transition {
+      to = "dim"
+      iif = Guards.isMyZone
+    }
+    [Events.eZoneInactive] = new csml.Transition {
+      to = "off"
+      iif = Guards.isMyZone
+    }
+
+    [Events.eFlashAllLights] = new csml.Transition { to = "flashingAlarm_Off" }
+    [Events.eFireAlarm] = new csml.Transition { to = "fire" }
   }
 }
 
-local const fire: Csml.StateDescription = new {
-  name = "fire"
+// Fire Mode: Turns on emergency lights or directs path
+local const fire: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stEvacuationLights
-      input { new { name = "roomId" value = "$emergencyInRoom" } }
+    new csml.Invoke {
+      type = ServiceTypes.stEvacuationLights
+      input { ["roomId"] = "$emergencyInRoom" }
+    }
+  }
+  on {
+    [Events.eDisarmFireAlarm] = new csml.Transition {
+      to = "off"
     }
   }
 }
 
 // Flashing lights states in case of intrusion
-local const flashingAlarm_Off: Csml.StateDescription = new {
-  name = "flashingAlarm_Off"
+local const flashingAlarm_Off: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription { serviceType = ServiceTypes.stTurnOff }
+    new csml.Invoke { type = ServiceTypes.stTurnOff }
   }
   after {
-    new Csml.TimeoutActionDescription {
-      name = "flashOffPeriodTimer"
+    ["flashOffPeriodTimer"] = new csml.Timeout {
       delay = "1000"
-      action = new Csml.RaiseActionDescription { event { name = "flashOn"; channel = "internal" } }
+      do = new csml.Raise { event = new csml.Internal { topic = "flashOn" } }
     }
   }
   on {
-    new {
-      event = "flashOn"
-      target = flashingAlarm_On.name
+    ["flashOn"] = new csml.Transition {
+      to = "flashingAlarm_On"
     }
-    new {
-      event = Events.eClearSecurityAlert
-      target = off.name
+    [Events.eClearSecurityAlert] = new csml.Transition {
+      to = "off"
     }
   }
 }
 
-local const flashingAlarm_On: Csml.StateDescription = new {
-  name = "flashingAlarm_On"
+local const flashingAlarm_On: csml.State = new {
   entry {
-    new Csml.InvokeActionDescription { serviceType = ServiceTypes.stTurnOn }
+    new csml.Invoke { type = ServiceTypes.stTurnOn }
   }
   after {
-    new Csml.TimeoutActionDescription {
-      name = "flashOnPeriodTimer"
+    ["flashOnPeriodTimer"] = new csml.Timeout {
       delay = "500"
-      action = new Csml.RaiseActionDescription { event { name = "flashOff"; channel = "internal" } }
+      do = new csml.Raise { event = new csml.Internal { topic = "flashOff" } }
     }
   }
   on {
-    new {
-      event = "flashOff"
-      target = flashingAlarm_Off.name
+    ["flashOff"] = new csml.Transition {
+      to = "flashingAlarm_Off"
     }
-    new {
-      event = Events.eClearSecurityAlert
-      target = off.name
+    [Events.eClearSecurityAlert] = new csml.Transition {
+      to = "off"
     }
   }
 }
-

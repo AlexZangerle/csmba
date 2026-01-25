@@ -1,9 +1,9 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/actions.pkl" as Actions
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/buildingSchedule/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
+import "actions.pkl" as Actions
+import "context.pkl" as Context
+import "guards.pkl" as Guards
+import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 /// This module defines the buildingScheduleSM
@@ -12,9 +12,10 @@ sm = new csml.StateMachine {
   states {
     ["init"] = init
     ["evaluating"] = evaluating
+    ["evaluateSchedule"] = evaluateSchedule
     ["businessHours"] = businessHours
     ["afterHours"] = afterHours
-    ["weekendCloseed"] = weekendClosed
+    ["weekendClosed"] = weekendClosed
     ["emergencyOverride"] = emergencyOverride
   }
 }
@@ -66,8 +67,8 @@ local const businessHours: csml.State = new {
   }
   after {
     ["scheduleCheck"] = new csml.Timeout {
-      delay = "900"
-      do { Actions.aRaiseStartScheduleCheck }
+      delay = "900000"
+      do = Actions.aRaiseStartScheduleCheck
     }
   }
   on {
@@ -88,8 +89,8 @@ local const afterHours: csml.State = new {
   }
   after {
     ["scheduleCheck"] = new csml.Timeout {
-      delay = "900"
-      do { Actions.aRaiseStartScheduleCheck }
+      delay = "900000"
+      do = Actions.aRaiseStartScheduleCheck
     }
   }
   on {
@@ -110,8 +111,8 @@ local const weekendClosed: csml.State = new {
   }
   after {
     ["scheduleCheck"] = new csml.Timeout {
-      delay = "900"
-      do { Actions.aRaiseStartScheduleCheck }
+      delay = "900000"
+      do = Actions.aRaiseStartScheduleCheck
     }
   }
   on {

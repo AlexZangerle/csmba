@@ -1,114 +1,79 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/actions.pkl" as Actions
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/roomOccupancy/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "../events.pkl" as Events
+import "actions.pkl" as Actions
+import "context.pkl" as Context
+import "guards.pkl" as Guards
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
+import "occupancyMonitor.pkl"
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 // This module contains the definition for the room occupancy SM
-
-// The room occupancy SM contains four states: vacant, occupied transient + and initialization state
-// It also contains a nested state machine to monitor the detection process time
-class roomOccupancySM extends Csml.StateMachineDescription {
-  name = "roomOccupancy"
-  localContext = Context.occupancyLocalContext
+sm = new csml.StateMachine {
+  transient = Context.occupancyLocalContext
   stateMachines {
-    new occupancyMonitor {}
+    ["occupancyMonitor"] = occupancyMonitor.sm
   }
   states {
-    rInit
-    rVacant
-    rOccupied
-    rTransient
-  }
-}
-
-// The occupancyMonitor sm monitors the room occupancy SM.
-// It starts a timer when the detection process begins (now triggered by sensor data).
-// Should the detection process not finish before the timer runs out, maintenance is required.
-class occupancyMonitor extends Csml.StateMachineDescription {
-  name = "OccupancyMonitoring"
-  states {
-    omInit
-    omIdle
-    omMonitoring
-    omMaintenance
+    ["init"] = init
+    ["vacant"] = vacant
+    ["stayVacant"] = stayVacant
+    ["occupied"] = occupied
+    ["transient"] = transientState
   }
 }
 
 // Initially the SM will always transition to vacant
-local const rInit: Csml.StateDescription = new {
-  name = "init"
-  initial = true
+local const init: csml.Initial = new {
   always {
-    new {
-      target = rVacant.name
-    }
+    new csml.Transition { to = "vacant" }
   }
 }
 
 // State: Vacant
 // Waits for external sensor data event
-local const rVacant: Csml.StateDescription = new {
-  name = "vacant"
+local const vacant: csml.State = new {
   entry {
-    new Csml.AssignActionDescription {
-      variable {
-        name = Vars.vCurrentOccupancy
-        value = "'vacant'"
-      }
-    }
+    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'vacant'" }
   }
-  // Polling timer removed
   on {
-    new {
-      // Trigger: External script sends image data
-      event = "sensorOccupancyReceived"
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stDetectOccupancy
+    // Trigger: External script sends image data
+    ["sensorOccupancyReceived"] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stDetectOccupancy
           // Input: Pass the payload from the event to the service
-          input {
-            new {
-              name = "imageData"
-              value = "$imageData"
-            }
-          }
-          output {
-            new {
-              reference = Vars.vOccupancyDetected
-            }
-          }
-          done {
-            new {
-              name = Events.eDetectionComplete
-              channel = "internal"
-            }
-          }
+          input { ["imageData"] = "$imageData" }
+          raises { new csml.Internal { topic = Events.eDetectionComplete } }
         }
       }
     }
 
-    new {
-      event = Events.eDetectionComplete
-      guards {
-        new Csml.GuardDescription {
-          expression = Vars.vOccupancyDetected
-        }
+    // 1. Assign Data
+    [Events.eDetectionComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
       }
-      actions {
+    }
+
+    // 2. Logic Check
+    ["processDetection"] = new csml.Transition {
+      to = "occupied"
+      iif = Guards.occupancyDetected
+      do {
         Actions.aRaiseOccupancyDetected
       }
-      target = rOccupied.name
+      or = "vacant"
     }
-    new {
-      event = Events.eDetectionComplete
-      guards {
-        new Csml.GuardDescription {
-          expression = "!\(Vars.vOccupancyDetected)"
-        }
-      }
-      actions {
+  }
+}
+
+// Pseudo-state to handle 'else' logic (stay vacant)
+local const stayVacant: csml.State = new {
+  always {
+    new csml.Transition {
+      to = "vacant"
+      do {
         Actions.aRaiseOccupancyVacant
       }
     }
@@ -116,209 +81,83 @@ local const rVacant: Csml.StateDescription = new {
 }
 
 // State: Occupied
-// Waits for external sensor data event
-local const rOccupied: Csml.StateDescription = new {
-  name = "occupied"
+local const occupied: csml.State = new {
   entry {
-    new Csml.AssignActionDescription {
-      variable {
-        name = Vars.vCurrentOccupancy
-        value = "'occupied'"
-      }
-    }
+    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'occupied'" }
   }
-  // Polling timer removed
   on {
-    new {
-      event = "sensorOccupancyReceived"
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stDetectOccupancy
-          input {
-            new {
-              name = "imageData"
-              value = "$imageData"
-            }
-          }
-          output {
-            new {
-              reference = Vars.vOccupancyDetected
-            }
-          }
-          done {
-            new {
-              name = Events.eDetectionComplete
-              channel = "internal"
-            }
-          }
+    ["sensorOccupancyReceived"] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stDetectOccupancy
+          input { ["imageData"] = "$imageData" }
+          raises { new csml.Internal { topic = Events.eDetectionComplete } }
         }
       }
     }
-    new {
-      event = Events.eDetectionComplete
-      guards {
-        new Csml.GuardDescription {
-          expression = Vars.vOccupancyDetected
-        }
+
+    // 1. Assign Data
+    [Events.eDetectionComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
       }
-      actions {
+    }
+
+    // 2. Logic Check
+    ["processDetection"] = new csml.Transition {
+      to = "occupied" // Stay occupied
+      iif = Guards.occupancyDetected
+      do {
         Actions.aRaiseOccupancyDetected
       }
+      or = "transient" // Grace period
     }
-    // Transition to transient once no occupancy is detected
-    // This acts as a vacancy grace period
-    new {
-      event = Events.eDetectionComplete
-      guards {
-        new Csml.GuardDescription {
-          expression = "!\(Vars.vOccupancyDetected)"
-        }
-      }
-      actions {
-        Actions.aRaiseOccupancyTransient
-      }
-      target = rTransient.name
-    }
+
     // Energy saving logic
-    new {
-      event = Events.eActivateEnergySaving
-      target = rTransient.name
-      actions {
-        new Csml.AssignActionDescription {
-          variable {
-            name = Vars.vEnergySaving
-            value = "true"
-          }
-        }
+    [Events.eActivateEnergySaving] = new csml.Transition {
+      to = "transient"
+      do {
+        new csml.Eval { expression = "\(Vars.vEnergySaving) = true" }
         Actions.aRaiseOccupancyTransient
       }
     }
   }
 }
 
-// State: Transient
-// Waits for external sensor data event
-local const rTransient: Csml.StateDescription = new {
-  name = "transient"
+// State: Transient (Grace Period)
+local const transientState: csml.State = new {
   entry {
-    new Csml.AssignActionDescription {
-      variable {
-        name = Vars.vCurrentOccupancy
-        value = "'transient'"
-      }
-    }
+    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'transient'" }
+    Actions.aRaiseOccupancyTransient
   }
-  // Polling timer removed
   on {
-    new {
-      event = "sensorOccupancyReceived"
-      actions {
-        new Csml.InvokeActionDescription {
-          serviceType = ServiceTypes.stDetectOccupancy
-          input {
-            new {
-              name = "imageData"
-              value = "$imageData"
-            }
-          }
-          output {
-            new {
-              reference = Vars.vOccupancyDetected
-            }
-          }
-          done {
-            new {
-              name = Events.eDetectionComplete
-              channel = "internal"
-            }
-          }
+    ["sensorOccupancyReceived"] = new csml.Transition {
+      do {
+        new csml.Invoke {
+          type = ServiceTypes.stDetectOccupancy
+          input { ["imageData"] = "$imageData" }
+          raises { new csml.Internal { topic = Events.eDetectionComplete } }
         }
       }
     }
-    // Logic for returning to Occupied or Vacant
-    new {
-      event = Events.eDetectionComplete
-      guards {
-        new Csml.GuardDescription {
-          expression = Vars.vOccupancyDetected
-        }
+
+    // 1. Assign Data
+    [Events.eDetectionComplete] = new csml.Transition {
+      do {
+        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
       }
-      actions {
+    }
+
+    // 2. Logic Check
+    ["processDetection"] = new csml.Transition {
+      to = "occupied"
+      iif = Guards.occupancyDetected
+      do  {
         Actions.aRaiseOccupancyDetected
       }
-      target = rOccupied.name
-    }
-    new {
-      event = Events.eDetectionComplete
-      guards {
-        new Csml.GuardDescription {
-          expression = "!\(Vars.vOccupancyDetected)"
-        }
-      }
-      actions {
-        Actions.aRaiseOccupancyVacant
-      }
-      target = rVacant.name
+      or = "vacant" // Actually left
     }
   }
 }
-
-// --- Monitoring State Machine ---
-
-local const omInit: Csml.StateDescription = new {
-  name = "init"
-  initial = true
-  always {
-    new {
-      target = omIdle.name
-    }
-  }
-}
-
-local const omIdle: Csml.StateDescription = new {
-  name = "idle"
-  on {
-    new {
-      // Changed from internal timer event to external sensor event
-      event = "sensorOccupancyReceived"
-      target = omMonitoring.name
-    }
-  }
-}
-
-local const omMonitoring: Csml.StateDescription = new {
-  name = "monitoring"
-  after {
-    new Csml.TimeoutActionDescription {
-      name = "serviceTimeout"
-      delay = "5000"
-      action = Actions.aRaiseMaintenance
-    }
-  }
-  on {
-    new {
-      event = Events.eMaintenanceRequired
-      target = omMaintenance.name
-    }
-    new {
-      event = Events.eDetectionComplete
-      target = omIdle.name
-    }
-  }
-}
-
-local const omMaintenance: Csml.StateDescription = new {
-  name = "maintenance"
-  entry {
-    new Csml.InvokeActionDescription {
-      serviceType = ServiceTypes.stMaintenance
-    }
-  }
-  on {
-    new {
-      event = Events.eMaintenanceDone
-      target = omIdle.name
-    }
-  }
-}
-

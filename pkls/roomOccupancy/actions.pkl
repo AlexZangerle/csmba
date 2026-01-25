@@ -1,52 +1,46 @@
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
+import "../events.pkl" as Events
 // This module contains actions for the room occupancy SM
 
 // Raise action to start detecting occupancy
-aRaiseStartDetectingOccupancy = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eStartDetectingOccupancy
-        channel = "internal"
-    }
+aRaiseStartDetectingOccupancy = new csml.Raise {
+  event = new csml.Internal {
+    topic = Events.eStartDetectingOccupancy
+  }
 }
 
 // Raise action when occupancy detection results in occupied
-aRaiseOccupancyDetected = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eOccupancyDetected
-        channel = "global"
-    }
+aRaiseOccupancyDetected = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eOccupancyDetected
+  }
 }
 
 // Raise action when occupancy detection results in vacant
-aRaiseOccupancyVacant = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eOccupancyVacant
-        channel = "global"
-    }
+aRaiseOccupancyVacant = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eOccupancyVacant
+  }
 }
 
 // Raise action when occupancy detection results in transient
-aRaiseOccupancyTransient = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eOccupancyTransient
-        channel = "global"
-    }
+aRaiseOccupancyTransient = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eOccupancyTransient
+  }
 }
 
 // Raise action when occupancy detection took unusually long
-aRaiseMaintenance = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eMaintenanceRequired
-        channel = "global"
-    }
-
+aRaiseMaintenance = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eMaintenanceRequired
+  }
 }
 
-aRaiseStartGasLeakDetection = new Csml.RaiseActionDescription {
-    event {
-        name = Events.eStartGasLeakDetection
-        channel = "internal"
-    }
+aRaiseStartGasLeakDetection = new csml.Raise {
+  event = new csml.Internal {
+    topic = Events.eStartGasLeakDetection
+  }
 }

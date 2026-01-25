@@ -1,97 +1,101 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
+import "../events.pkl" as Events
+import "../variables.pkl" as Vars
 // This module contains actions for the accessControlSM and securityManagerSM
 
 // Raise to signify elevated security breach
-aRaiseSecurityBreach = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eSecurityBreachNotification
-    channel = "global"
+aRaiseSecurityBreach = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eSecurityBreachNotification
     data {
-      new { name = "level"; value = "'Elevated'" }
-      new { name = "details"; value = Vars.vAlertDetails }
+      ["level"] = "'Elevated'"
+      ["details"] = Vars.vAlertDetails
     }
   }
 }
 
 // Raise to signify high security breach
-aRaiseServereSecurityBreach = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eSecurityBreachNotification
-    channel = "global"
+aRaiseServereSecurityBreach = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eSecurityBreachNotification
     data {
-      new { name = "level"; value = "'High'" }
-      new { name = "details"; value = Vars.vAlertDetails }
+      ["level"] = "'High'"
+      ["details"] = Vars.vAlertDetails
     }
   }
 }
 
 // Raise to start flashing lights
-aRaiseFlashLights = new Csml.RaiseActionDescription { event { name = Events.eFlashAllLights; channel = "global" } }
+aRaiseFlashLights = new csml.Raise { event = new csml.Global { topic = Events.eFlashAllLights } }
 
 // Raise to start the building alarm
-aRaiseBuildingAlarm = new Csml.RaiseActionDescription { event { name = Events.eActivateBuildingAlarm; channel = "global" } }
+aRaiseBuildingAlarm = new csml.Raise {
+  event = new csml.Global { topic = Events.eActivateBuildingAlarm }
+}
 
 // Raise to unlock evacuation routes
-aRaiseUnlockEvacuationRoutes = new Csml.RaiseActionDescription { event { name = Events.eUnlockAllEvacuationRoutes; channel = "global" } }
+aRaiseUnlockEvacuationRoutes = new csml.Raise {
+  event = new csml.Global { topic = Events.eUnlockAllEvacuationRoutes }
+}
 
 // Raise if access was denied based on authentication
-aRaiseAccessDeniedAuth = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eAccessDenied
-    channel = "global"
+aRaiseAccessDeniedAuth = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eAccessDenied
     data {
-      new { name = "doorId"; value = Vars.vDoorId }
-      new { name = "zoneId"; value = Vars.vZoneId }
-      new { name = "user"; value = "'Unknown'" }
-      new { name = "reason"; value = "'Authentication Failed'" }
+      ["doorId"] = Vars.vDoorId
+      ["zoneId"] = Vars.vZoneId
+      ["user"] = "'unknown'"
+      ["reason"] = "'Authentication Failed'"
     }
   }
 }
 
 // Raise if access was denied based on rule
-aRaiseAccessDeniedRule = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eAccessDenied
-    channel = "global"
+aRaiseAccessDeniedRule = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eAccessDenied
     data {
-      new { name = "doorId"; value = Vars.vDoorId }
-      new { name = "zoneId"; value = Vars.vZoneId }
-      new { name = "user"; value = "'Unknown'" }
-      new { name = "reason"; value = "'Authentication Failed'" }
+      ["doorId"] = Vars.vDoorId
+      ["zoneId"] = Vars.vZoneId
+      ["user"] = "'unknown'"
+      ["reason"] = "'Authentication Failed'"
     }
   }
 }
 
 // Raise if access was granted
-aRaiseAccessGranted = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eAccessGranted
-    channel = "global"
+aRaiseAccessGranted = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eAccessGranted
     data {
-      new { name = "doorId"; value = Vars.vDoorId }
-      new { name = "zoneId"; value = Vars.vZoneId }
-      new { name = "user"; value = Vars.vUserId }
-      new { name = "role"; value = Vars.vUserRole }
+      ["doorId"] = Vars.vDoorId
+      ["zoneId"] = Vars.vZoneId
+      ["user"] = "'unknown'"
+      ["role"] = Vars.vUserRole
     }
   }
 }
 
 // Raise to auto relock door
-aRaiseAutoRelock = new Csml.RaiseActionDescription { event { name = "autoRelock"; channel = "internal" } }
+aRaiseAutoRelock = new csml.Raise {
+  event = new csml.Internal{ topic = "autoRelock"}
+}
 
 // Raise to return to locked state
-aRaiseReturnToLock = new Csml.RaiseActionDescription { event { name = "returnToLock"; channel = "internal" } }
+aRaiseReturnToLock = new csml.Raise {
+  event = new csml.Internal { topic = "returnToLock" }
+}
 
 // Raise to signify forced entry attempt
-aRaiseForcedEntry = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eForcedEntry
-    channel = "global"
+aRaiseForcedEntry = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eForcedEntry
     data {
-      new { name = "doorId"; value = Vars.vDoorId }
-      new { name = "zone"; value = Vars.vZoneId }
+      ["doorId"] = Vars.vDoorId
+      ["zoneId"] = Vars.vZoneId
     }
   }
 }

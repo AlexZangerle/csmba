@@ -1,0 +1,63 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../events.pkl" as Events
+import "actions.pkl" as Actions
+import "../serviceTypes.pkl" as ServiceTypes
+// Import context if needed, or rely on parent context inheritance if supported in your version
+
+// The occupancyMonitor sm monitors the room occupancy SM.
+// It starts a timer when the detection process begins.
+sm = new csml.StateMachine {
+  states {
+    ["init"] = init
+    ["idle"] = idle
+    ["monitoring"] = monitoring
+    ["maintenance"] = maintenance
+  }
+}
+
+local const init: csml.Initial = new {
+  always {
+    new csml.Transition { to = "idle" }
+  }
+}
+
+local const idle: csml.State = new {
+  on {
+    // When the main SM gets sensor data, we start monitoring the service duration
+    ["sensorOccupancyReceived"] = new csml.Transition {
+      to = "monitoring"
+    }
+  }
+}
+
+local const monitoring: csml.State = new {
+  after {
+    ["serviceTimeout"] = new csml.Timeout {
+      delay = "5000"
+      do = Actions.aRaiseMaintenance
+    }
+  }
+  on {
+    [Events.eMaintenanceRequired] = new csml.Transition {
+      to = "maintenance"
+    }
+    // If detection completes before timeout, go back to idle
+    [Events.eDetectionComplete] = new csml.Transition {
+      to = "idle"
+    }
+  }
+}
+
+local const maintenance: csml.State = new {
+  entry {
+    new csml.Invoke {
+      type = ServiceTypes.stMaintenance
+    }
+  }
+  on {
+    // Manual intervention or service recovery
+    [Events.eMaintenanceDone] = new csml.Transition {
+      to = "idle"
+    }
+  }
+}

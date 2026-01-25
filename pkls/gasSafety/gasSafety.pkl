@@ -1,112 +1,95 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/serviceTypes.pkl" as ServiceTypes
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/guards.pkl" as Guards
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/context.pkl" as Context
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/gasSafety/actions.pkl" as Actions
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
+import "guards.pkl" as Guards
+import "context.pkl" as Context
+import "actions.pkl" as Actions
 
 // This module contains the definition for the gasSafety SM
-
-//gasSafety is the third part of the fire prevention system
-//gasSafety detects gas leak across multiple rooms
-//If a gas leak is detected, the location of that gas leak and a warning is published
-class gasSafetySM extends Csml.StateMachineDescription {
-    name = "gasSafety"
-    localContext = Context.gasSafetyContext
+// gasSafety is the third part of the fire prevention system
+// gasSafety detects gas leak across multiple rooms
+// If a gas leak is detected, the location of that gas leak and a warning is published
+sm = new csml.StateMachine {
+    transient = Context.gasSafetyContext
     states {
-        init
-        monitoring
-        gasLeak
-        acknowledged
+        ["init"] = init
+        ["monitoring"] = monitoring
+        ["gasLeak"] = gasLeak
+        ["acknowledged"] = acknowledged
     }
 }
 
-local const init: Csml.StateDescription = new {
-    name = "init"
-    initial = true
+local const init: csml.Initial = new {
     always {
-        new {
-            target = monitoring.name
-        }
+        new csml.Transition { to = "monitoring" }
     }
 }
 
 // Always starts in monitoring state
 // Invokes gas detection service every 30 seconds
-local const monitoring: Csml.StateDescription = new {
-    name = "monitoring"
+local const monitoring: csml.State = new {
     after {
-        new Csml.TimeoutActionDescription {
-            name = "checkGasLeak"
+        ["checkGasLeak"] = new csml.Timeout {
             delay = "30000"
-            action = Actions.aRaiseStartGasLeakDetection
+            do = Actions.aRaiseStartGasLeakDetection
         }
     }
     on {
-        new {
-            event = Events.eStartGasLeakDetection
-            actions {
-                new Csml.InvokeActionDescription {
-                serviceType = ServiceTypes.stCheckGasLeak
-                output {
-                    new {
-                        reference = Vars.vGasLeakLocation
-                    }
+        [Events.eStartGasLeakDetection] = new csml.Transition {
+            do {
+                new csml.Invoke {
+                    type = ServiceTypes.stCheckGasLeak
+                    raises { new csml.Internal { topic = Events.eGasLeakDetectionComplete } }
                 }
-                done {
-                    new {
-                        name = Events.eGasLeakDetectionComplete
-                        channel = "internal"
-                    }
-                }
-            }   
             }
         }
-        // Once gas leak has been detected, transition to gasLeak state
-        new {
-            event = Events.eGasLeakDetectionComplete
-            guards {
-                Guards.foundGasLeak
+        // 1. Receive Data -> Assign to Context
+        [Events.eGasLeakDetectionComplete] = new csml.Transition {
+            do {
+                // Capture the output from the service event payload ($gasLeakLocation)
+                new csml.Eval { expression = "\(Vars.vGasLeakLocation) = $gasLeakLocation" }
+                // Trigger the logic check
+                new csml.Raise { event = new csml.Internal { topic = "checkGasResult" } }
             }
-            target = gasLeak.name
+        }
+        // 2. Context Set -> Check Guard
+        ["checkGasResult"] = new csml.Transition {
+            to = "gasLeak"
+            iif = Guards.foundGasLeak
+            // Implicit else: stay in monitoring
         }
     }
 }
 
 // Invokes close valve service and raises global gas leak event
-local const gasLeak: Csml.StateDescription = new {
-    name = "gasLeak"
+local const gasLeak: csml.State = new {
     entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stCloseGasValve
+        new csml.Invoke {
+            type = ServiceTypes.stCloseGasValve
+            // Pass the captured location to the service
             input {
-                new {
-                    name = "gasLeakLocation"
-                    value = Vars.vGasLeakLocation
-                }
+                ["gasLeakLocation"] = Vars.vGasLeakLocation
             }
         }
         Actions.aRaiseGasLeakDetected
     }
     on {
-        new {
-            event = Events.eGasPurged
-            target = acknowledged.name
+        [Events.eGasPurged] = new csml.Transition {
+            to = "acknowledged"
         }
     }
 }
 
-local const acknowledged: Csml.StateDescription = new {
-    name = "acknowledged"
+local const acknowledged: csml.State = new {
     entry {
-        new Csml.InvokeActionDescription {
-            serviceType = ServiceTypes.stGasLeakPurged
+        new csml.Invoke {
+            type = ServiceTypes.stGasLeakPurged
         }
     }
     always {
-        new {
-            target = monitoring.name
+        new csml.Transition {
+            to = "monitoring"
         }
     }
 }

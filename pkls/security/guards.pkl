@@ -1,49 +1,40 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "../variables.pkl" as Vars
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 // This module contains all guards for accessControlSM and securityManagerSM
 
 // Guard to check if soft limit has been reached for failed attempts
-failedAttemptSoftlimitReached = new Csml.GuardDescription {
-  expression = "\(Vars.vFailedAttemptsCount) >= 3"
-}
+failedAttemptSoftlimitReached =  "\(Vars.vFailedAttemptsCount) >= 3"
+
 
 // Guard to check if hard limit has been reached for failed attempts
-failedAttemptHardlimitReached = new Csml.GuardDescription {
-  expression = "\(Vars.vFailedAttemptsCount) >= 5"
-}
+failedAttemptHardlimitReached = "\(Vars.vFailedAttemptsCount) >= 5"
+
 
 // Guard to check if event concerns this door
-isCurrentDoor = new Csml.GuardDescription {
-  expression = "$doorId == \(Vars.vDoorId)"
-}
+isCurrentDoor = "$doorId == \(Vars.vDoorId)"
+
 
 // Guard to check if door is part of an evacuation route
-checkIsEvacuationRoute = new Csml.GuardDescription {
-  expression = Vars.vIsEvacuationRoute
-}
+checkIsEvacuationRoute =  Vars.vIsEvacuationRoute
+
 
 // Guard to check if event concerns the current zone
-isCurrentZone = new Csml.GuardDescription {
-  expression = "$zoneId == \(Vars.vZoneId)"
-}
+isCurrentZone = "$zoneId == \(Vars.vZoneId)"
+
 
 // Guard to check if authentication was successful
-authSuccessful = new Csml.GuardDescription {
-  expression = "\(Vars.vAuthenticationStatus) == 'Success'"
-}
+authSuccessful = "\(Vars.vAuthenticationStatus) == 'Success'"
+
 
 // Guard to check if authentication was unsuccessful
-authFailed = new Csml.GuardDescription {
-  expression = "\(Vars.vAuthenticationStatus) != 'Success'"
-}
+authFailed = "\(Vars.vAuthenticationStatus) != 'Success'"
+
 
 // Guard to check if access has been granted
-allowAccess = new Csml.GuardDescription {
-  expression = "\(Vars.vAccessDecision) == 'Allow'"
-}
+allowAccess = "\(Vars.vAccessDecision) == 'Allow'"
+
 
 // Guard to check if access has been denied
-denyAccess = new Csml.GuardDescription {
-  expression = "\(Vars.vAccessDecision) != 'Allow'"
-}
+denyAccess = "\(Vars.vAccessDecision) != 'Allow'"
+

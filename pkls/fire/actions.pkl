@@ -1,34 +1,28 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
+import "../events.pkl" as Events
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../variables.pkl" as Vars
 // This module contains actions for the fireDetection SM
 
 
 // Raise to start detecting fire
-aRaiseStartDetectingFire = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eStartDetectingFire
-    channel = "internal"
+aRaiseStartDetectingFire = new csml.Raise {
+  event = new csml.Internal {
+    topic = Events.eStartDetectingFire
   }
 }
 
 // Raised to trigger fire alarm or smoke alert
-aRaiseFireAlarm = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eFireAlarm
+aRaiseFireAlarm = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eFireAlarm
     data {
-      new {
-        name = Vars.vEmergencyInRoom
-        value = Vars.vEmergencyInRoom
-      }
+      [Vars.vEmergencyInRoom] = Vars.vEmergencyInRoom
     }
-    channel = "global"
   }
 }
 
-aRaiseSmokeAlert = new Csml.RaiseActionDescription {
-  event {
-    name = Events.eSmokeAlert
-    channel = "global"
+aRaiseSmokeAlert = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eSmokeAlert
   }
 }

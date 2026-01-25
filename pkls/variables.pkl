@@ -17,16 +17,10 @@ vEnergySaving = "energySaving"
 vCurrentOccupancy = "currentOccupancy"
 
 // Variable containing the light level set by user (int - 0-100)
-vUserLightLevel = new Csml.ContextVariableDescription {
-  name = "lightLevel"
-  value = "'0'"
-}
+vUserLightLevel = "lightLevel"
 
 // Variable containing the blind level set by user (int - 0-100)
-vUserBlindLevel = new Csml.ContextVariableDescription {
-  name = "blindLevel"
-  value = "'0'"
-}
+vUserBlindLevel = "blindLevel"
 
 // Variable containing the result from fire detection (String - none/fire/smoke)
 vFireDetectionResult = "fireDetectionResult"
@@ -44,10 +38,8 @@ vSmokeAlert = "smokeAlert"
 vTempThreshold = "tempThreshold"
 
 // Variable containing the current roomID (int)
-vRoomId = new Csml.ContextVariableDescription {
-  name = "roomId"
-  value = "'0'"
-}
+vRoomId = "roomId"
+
 
 // Variable containing the temperature of critical equipment in vRoomId (int)
 vRoomTemp = "roomTemp"

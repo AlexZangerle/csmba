@@ -1,8 +1,4 @@
 import "../variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-// This module contains all contexts for the lighting SM
 
-// lightingContext has the current zone
-lightingContext = new Mapping {
-  [Vars.vZoneId] = "'testZone'"
-}
+occupancyDetected = "\(Vars.vOccupancyDetected)"
