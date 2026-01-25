@@ -29,12 +29,10 @@ local const init: csml.Initial = new {
 /// Secure state, monitors for suspicious activity.
 local const secure: csml.State = new {
   entry {
-    // Reset counters and details on entry
     new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = 0" }
     new csml.Eval { expression = "\(Vars.vAlertDetails) = ''" }
   }
   on {
-    // 1. Direct Intrusion Events
     [Events.eForcedEntry] = new csml.Transition {
       to = "intrusionAlert"
       do {
@@ -51,25 +49,16 @@ local const secure: csml.State = new {
       to = "intrusionAlert"
 
     }
-
-    // 2. Access Denied Logic (Assign -> Check)
     [Events.eAccessDenied] = new csml.Transition {
       do {
-        // Increment Count
         new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
-        // Set Details
         new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
-        // Trigger Check
         new csml.Raise { event = new csml.Internal { topic = "checkSoftLimit" } }
       }
     }
-
-    // 3. Logic State Routing
     ["checkSoftLimit"] = new csml.Transition {
       to = "checkAccessLimits_Secure"
     }
-
-    // 4. Safety Overrides
     [Events.eFireAlarm] = new csml.Transition { to = "emergencyResponseActive" }
     [Events.eGasLeakDetected] = new csml.Transition { to = "emergencyResponseActive" }
   }
@@ -81,7 +70,7 @@ local const checkAccessLimits_Secure: csml.State = new {
     new csml.Transition {
       to = "elevatedRisk"
       iif = Guards.failedAttemptSoftlimitReached
-      or = "secure" // Return to secure (continue counting)
+      or = "secure"
     }
   }
 }
@@ -89,7 +78,6 @@ local const checkAccessLimits_Secure: csml.State = new {
 /// Minor suspicious activity detected
 local const elevatedRisk: csml.State = new {
   entry {
-    // Notify Personnel
     new csml.Invoke {
       type = ServiceTypes.stNotifySecurityPersonnel
       input { ["message"] = Vars.vAlertDetails }
@@ -98,7 +86,7 @@ local const elevatedRisk: csml.State = new {
   }
   after {
     ["riskDecayTimer"] = new csml.Timeout {
-      delay = "1800000" // 30 minutes
+      delay = "1800000"
       do = new csml.Raise { event = new csml.Internal { topic = "decayRisk" } }
     }
   }
@@ -106,8 +94,6 @@ local const elevatedRisk: csml.State = new {
     ["decayRisk"] = new csml.Transition {
       to = "secure"
     }
-
-    // Escalation Logic (Access Denied)
     [Events.eAccessDenied] = new csml.Transition {
       do {
         new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
@@ -119,13 +105,9 @@ local const elevatedRisk: csml.State = new {
     ["checkHardLimit"] = new csml.Transition {
       to = "checkAccessLimits_Elevated"
     }
-
-    // Immediate Escalations
     [Events.eForcedEntry] = new csml.Transition { to = "intrusionAlert" }
     [Events.eTamperDetected] = new csml.Transition { to = "intrusionAlert" }
     [Events.eManualSecurityAlert] = new csml.Transition { to = "intrusionAlert" }
-
-    // Reset/Safety
     [Events.eClearSecurityAlert] = new csml.Transition { to = "secure" }
     [Events.eFireAlarm] = new csml.Transition { to = "emergencyResponseActive" }
     [Events.eGasLeakDetected] = new csml.Transition { to = "emergencyResponseActive" }
@@ -138,7 +120,7 @@ local const checkAccessLimits_Elevated: csml.State = new {
     new csml.Transition {
       to = "intrusionAlert"
       iif = Guards.failedAttemptHardlimitReached
-      or = "elevatedRisk" // Return to elevated (resetting timer by re-entry)
+      or = "elevatedRisk"
     }
   }
 }

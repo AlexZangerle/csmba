@@ -44,20 +44,15 @@ local const monitoring: csml.State = new {
                 }
             }
         }
-        // 1. Receive Data -> Assign to Context
         [Events.eGasLeakDetectionComplete] = new csml.Transition {
             do {
-                // Capture the output from the service event payload ($gasLeakLocation)
                 new csml.Eval { expression = "\(Vars.vGasLeakLocation) = $gasLeakLocation" }
-                // Trigger the logic check
                 new csml.Raise { event = new csml.Internal { topic = "checkGasResult" } }
             }
         }
-        // 2. Context Set -> Check Guard
         ["checkGasResult"] = new csml.Transition {
             to = "gasLeak"
             iif = Guards.foundGasLeak
-            // Implicit else: stay in monitoring
         }
     }
 }
@@ -67,7 +62,6 @@ local const gasLeak: csml.State = new {
     entry {
         new csml.Invoke {
             type = ServiceTypes.stCloseGasValve
-            // Pass the captured location to the service
             input {
                 ["gasLeakLocation"] = Vars.vGasLeakLocation
             }

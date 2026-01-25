@@ -37,14 +37,13 @@ local const initializing: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stGetDoorRouteType
-      input { ["doorId"] = Vars.vDoorId } // Pass context variable
+      input { ["doorId"] = Vars.vDoorId }
       raises { new csml.Internal { topic = "doorTypeDetermined" } }
     }
   }
   on {
     ["doorTypeDetermined"] = new csml.Transition {
       do {
-        // Assign result to context (needed for Guards.checkIsEvacuationRoute)
         new csml.Eval { expression = "\(Vars.vIsEvacuationRoute) = $isEvacuationRoute" }
       }
       to = "locked"
@@ -59,8 +58,6 @@ local const locked: csml.State = new {
       to = "authenticating"
       iif = Guards.isCurrentDoor
     }
-
-    // Safety & Overrides
     [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
     [Events.eGasLeakDetected] = new csml.Transition {
       to = "emergencyUnlock"
@@ -72,8 +69,6 @@ local const locked: csml.State = new {
     }
 
     [Events.eLockdownZone] = new csml.Transition {
-      // Lockdown logic: Stay locked, or explicitly ensure lock?
-      // Source implies staying locked is sufficient.
       iif = Guards.isCurrentZone
     }
 
@@ -88,13 +83,11 @@ local const authenticating: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stAuthenticateUser
-      // Use the variable we captured in the transition
       input { ["cardId"] = "$cardId" }
       raises { new csml.Internal { topic = "authComplete" } }
     }
   }
   on {
-    // 1. Assign Data
     ["authComplete"] = new csml.Transition {
       do {
         new csml.Eval { expression = "\(Vars.vUserId) = $userId" }
@@ -103,12 +96,9 @@ local const authenticating: csml.State = new {
         new csml.Raise { event = new csml.Internal { topic = "checkAuth" } }
       }
     }
-
-    // 2. Logic Check
     ["checkAuth"] = new csml.Transition {
       to = "checkAuthResult"
     }
-
     [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
   }
 }
@@ -120,7 +110,6 @@ local const checkAuthResult: csml.State = new {
       to = "checkingRules"
       iif = Guards.authSuccessful
       or = "accessDenied"
-      // If denied, trigger the specific action
       do { Actions.aRaiseAccessDeniedAuth }
     }
   }
@@ -140,19 +129,15 @@ local const checkingRules: csml.State = new {
     }
   }
   on {
-    // 1. Assign Data
     ["rulesChecked"] = new csml.Transition {
       do {
         new csml.Eval { expression = "\(Vars.vAccessDecision) = $accessDecision" }
         new csml.Raise { event = new csml.Internal { topic = "checkRules" } }
       }
     }
-
-    // 2. Logic Check
     ["checkRules"] = new csml.Transition {
       to = "checkRuleResult"
     }
-
     [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
   }
 }
@@ -185,7 +170,7 @@ local const unlocked: csml.State = new {
   }
   after {
     ["autoRelockTimer"] = new csml.Timeout {
-      delay = "10000" // 10 seconds
+      delay = "10000"
       do = Actions.aRaiseAutoRelock
     }
   }
@@ -207,7 +192,7 @@ local const unlocked: csml.State = new {
 local const accessDenied: csml.State = new {
   after {
     ["deniedDelay"] = new csml.Timeout {
-      delay = "3000" // 3 seconds
+      delay = "3000"
       do = Actions.aRaiseReturnToLock
     }
   }

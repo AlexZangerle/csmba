@@ -27,67 +27,57 @@ local const init: csml.Initial = new {
   }
 }
 
-// -------------------- NORMAL MONITORING --------------------
-
+/// Always start in monitoroing
 local const normal: csml.State = new {
-  // Pass-through start state
   always { new csml.Transition { to = "normalLoop" } }
 }
 
+/// Loop to re-evaluate
 local const normalLoop: csml.State = new {
-  // Periodic check every 30s
   after {
     ["pullRoomTemp"] = new csml.Timeout {
       delay = "30000"
-      // Use internal event to isolate loop
       do = new csml.Raise { event = new csml.Internal { topic = "startTempCheck" } }
     }
   }
   on {
-    // 1. Invoke Service
     ["startTempCheck"] = new csml.Transition {
       do {
         new csml.Invoke {
           type = ServiceTypes.stTempSafety
-          // Pass roomId from context. Assuming 'roomId' is the variable name in context.
           input { ["roomId"] = Vars.vRoomId }
           raises { new csml.Internal { topic = Events.eTempReadingComplete } }
         }
       }
     }
-    // 2. Assign Data
     [Events.eTempReadingComplete] = new csml.Transition {
       do {
         new csml.Eval { expression = "\(Vars.vRoomTemp) = $roomTemp" }
         new csml.Raise { event = new csml.Internal { topic = "checkThreshold" } }
       }
     }
-    // 3. Logic Check
     ["checkThreshold"] = new csml.Transition {
       to = "checkTemp"
     }
   }
 }
 
-// Logic Branching
 local const checkTemp: csml.State = new {
   always {
     new csml.Transition {
       to = "highRisk"
       iif = Guards.exceedTempThreshold
-      or = "normalLoop" // Safe, return to loop
+      or = "normalLoop"
     }
   }
 }
 
-// -------------------- HIGH RISK --------------------
-
+/// Riase high risk event
 local const highRisk: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stTempHighRisk
       input { ["roomId"] = "roomId" }
-      // Raise completion to prevent blocking
       raises { new csml.Internal { topic = "warningSent" } }
     }
   }
@@ -96,6 +86,7 @@ local const highRisk: csml.State = new {
   }
 }
 
+/// Wait for manual clearance and return to evaluating
 local const highRiskWait: csml.State = new {
   on {
     [Events.eTempRiskCleared] = new csml.Transition { to = "normal" }

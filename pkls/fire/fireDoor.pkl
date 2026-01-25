@@ -8,7 +8,6 @@ import "../serviceTypes.pkl" as ServiceTypes
 // The fireDoor SM closes based on fireAlarm events received
 // After the alarm has been disarmed it opens
 sm = new csml.StateMachine {
-  // Define a minimal context or import one if needed
   states {
     ["init"] = init
     ["open"] = openDoor
@@ -30,7 +29,6 @@ local const openDoor: csml.State = new {
     }
   }
   on {
-    // After a fire alarm has been triggered, closes the fireDoor
     [Events.eFireAlarm] = new csml.Transition {
       to = "close"
     }
@@ -44,7 +42,6 @@ local const close: csml.State = new {
     }
   }
   on {
-    // After alarm has been manually disarmed, opens fireDoor
     [Events.eDisarmFireAlarm] = new csml.Transition {
       to = "open"
     }

@@ -70,11 +70,9 @@ local const arcFault: csml.State = new {
     Actions.aRaiseArcFaultDetected
   }
   on {
-    // Transitions to ack state if electrical fault has been manually reset
     [Events.eResetElectricalFault] = new csml.Transition {
       to = "acknowledged"
     }
-    // Critical Safety Override
     [Events.eGasLeakDetected] = new csml.Transition {
       to = "gas"
     }

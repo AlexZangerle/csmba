@@ -42,13 +42,10 @@ local const off: csml.State = new {
   on {
     [Events.eOccupancyDetected] = new csml.Transition { to = "fanOnly" }
     [Events.eZoneActive] = new csml.Transition { to = "fanOnly"; iif = Guards.isMyZone }
-    // Safety
     [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
     [Events.eGasLeakDetected] = new csml.Transition { to = "emergency" }
   }
 }
-
-// -------------------- FAN ONLY --------------------
 
 // Start State: Sets mode and triggers first check
 local const fanOnly: csml.State = new {
@@ -61,7 +58,7 @@ local const fanOnly: csml.State = new {
   }
 }
 
-// Loop State: Handles periodic checks. Safe to re-enter (No Entry Action).
+// Loop State: Handles periodic checks.
 local const fanOnlyLoop: csml.State = new {
   after {
     ["periodicTempCheck"] = new csml.Timeout {
@@ -78,22 +75,17 @@ local const fanOnlyLoop: csml.State = new {
         }
       }
     }
-    // 1. Assign Data
     [Events.eIndoorTempCheckComplete] = new csml.Transition {
       do {
         new csml.Eval { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
         new csml.Raise { event = new csml.Internal { topic = "checkHeating" } }
       }
     }
-
-    // 2. Logic Chain
     ["checkHeating"] = new csml.Transition {
       to = "heating"
       iif = Guards.roomToCold
-      or = "checkCoolingFan" // Go to helper state for next check
+      or = "checkCoolingFan"
     }
-
-    // External Exits
     [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
     [Events.eZoneInactive] = new csml.Transition { to = "off"; iif = Guards.isMyZone }
     [Events.eFireAlarm] = new csml.Transition { to = "emergency" }
@@ -107,14 +99,12 @@ local const checkCoolingFan: csml.State = new {
     new csml.Transition {
       to = "cooling"
       iif = Guards.roomToHot
-      or = "fanOnlyLoop" // Stay in Fan mode (Safe return)
+      or = "fanOnlyLoop"
     }
   }
 }
 
-// -------------------- HEATING --------------------
-
-// Start State
+// Statet to start heating
 local const heating: csml.State = new {
   entry {
     new csml.Invoke { type = ServiceTypes.stSetHVAC input { ["mode"] = "'heat'" } }
@@ -123,11 +113,11 @@ local const heating: csml.State = new {
   always { new csml.Transition { to = "heatingLoop" } }
 }
 
-// Loop State
+// Loop State for re-checking
 local const heatingLoop: csml.State = new {
   after {
     ["periodicTempCheck"] = new csml.Timeout {
-      delay = "600000" // 10 min
+      delay = "600000"
       do = Actions.aRaiseIndoorTempCheck
     }
   }
@@ -160,7 +150,7 @@ local const heatingLoop: csml.State = new {
   }
 }
 
-// Helper: Check Overshoot or Return to Loop
+// Check Overshoot or Return to Loop
 local const checkOverheat: csml.State = new {
   always {
     new csml.Transition {
@@ -171,9 +161,7 @@ local const checkOverheat: csml.State = new {
   }
 }
 
-// -------------------- COOLING --------------------
-
-// Start State
+// Start Cooling State
 local const cooling: csml.State = new {
   entry {
     new csml.Invoke { type = ServiceTypes.stSetHVAC input { ["mode"] = "'cool'" } }
@@ -182,11 +170,11 @@ local const cooling: csml.State = new {
   always { new csml.Transition { to = "coolingLoop" } }
 }
 
-// Loop State
+// Loop State for re-check
 local const coolingLoop: csml.State = new {
   after {
     ["periodicTempCheck"] = new csml.Timeout {
-      delay = "600000" // 10 min
+      delay = "600000"
       do = Actions.aRaiseIndoorTempCheck
     }
   }
@@ -219,7 +207,7 @@ local const coolingLoop: csml.State = new {
   }
 }
 
-// Helper: Check Overshoot or Return to Loop
+// Check Overshoot or Return to Loop
 local const checkOvercool: csml.State = new {
   always {
     new csml.Transition {
@@ -230,8 +218,7 @@ local const checkOvercool: csml.State = new {
   }
 }
 
-// -------------------- EMERGENCY --------------------
-
+// emergency state shutting off hvac systems
 local const emergency: csml.State = new {
   entry {
     new csml.Invoke { type = ServiceTypes.stSetHVAC input { ["mode"] = "'off'" } }

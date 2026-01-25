@@ -16,7 +16,6 @@ sm = new csml.StateMachine {
   states {
     ["init"] = init
     ["vacant"] = vacant
-    ["stayVacant"] = stayVacant
     ["occupied"] = occupied
     ["transient"] = transientState
   }
@@ -36,27 +35,21 @@ local const vacant: csml.State = new {
     new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'vacant'" }
   }
   on {
-    // Trigger: External script sends image data
     ["sensorOccupancyReceived"] = new csml.Transition {
       do {
         new csml.Invoke {
           type = ServiceTypes.stDetectOccupancy
-          // Input: Pass the payload from the event to the service
           input { ["imageData"] = "$imageData" }
           raises { new csml.Internal { topic = Events.eDetectionComplete } }
         }
       }
     }
-
-    // 1. Assign Data
     [Events.eDetectionComplete] = new csml.Transition {
       do {
         new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
         new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
       }
     }
-
-    // 2. Logic Check
     ["processDetection"] = new csml.Transition {
       to = "occupied"
       iif = Guards.occupancyDetected
@@ -64,18 +57,6 @@ local const vacant: csml.State = new {
         Actions.aRaiseOccupancyDetected
       }
       or = "vacant"
-    }
-  }
-}
-
-// Pseudo-state to handle 'else' logic (stay vacant)
-local const stayVacant: csml.State = new {
-  always {
-    new csml.Transition {
-      to = "vacant"
-      do {
-        Actions.aRaiseOccupancyVacant
-      }
     }
   }
 }
@@ -95,26 +76,20 @@ local const occupied: csml.State = new {
         }
       }
     }
-
-    // 1. Assign Data
     [Events.eDetectionComplete] = new csml.Transition {
       do {
         new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
         new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
       }
     }
-
-    // 2. Logic Check
     ["processDetection"] = new csml.Transition {
-      to = "occupied" // Stay occupied
+      to = "occupied"
       iif = Guards.occupancyDetected
       do {
         Actions.aRaiseOccupancyDetected
       }
-      or = "transient" // Grace period
+      or = "transient"
     }
-
-    // Energy saving logic
     [Events.eActivateEnergySaving] = new csml.Transition {
       to = "transient"
       do {
@@ -141,23 +116,19 @@ local const transientState: csml.State = new {
         }
       }
     }
-
-    // 1. Assign Data
     [Events.eDetectionComplete] = new csml.Transition {
       do {
         new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
         new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
       }
     }
-
-    // 2. Logic Check
     ["processDetection"] = new csml.Transition {
       to = "occupied"
       iif = Guards.occupancyDetected
       do  {
         Actions.aRaiseOccupancyDetected
       }
-      or = "vacant" // Actually left
+      or = "vacant"
     }
   }
 }

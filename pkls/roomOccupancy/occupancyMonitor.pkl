@@ -23,7 +23,6 @@ local const init: csml.Initial = new {
 
 local const idle: csml.State = new {
   on {
-    // When the main SM gets sensor data, we start monitoring the service duration
     ["sensorOccupancyReceived"] = new csml.Transition {
       to = "monitoring"
     }
@@ -41,7 +40,6 @@ local const monitoring: csml.State = new {
     [Events.eMaintenanceRequired] = new csml.Transition {
       to = "maintenance"
     }
-    // If detection completes before timeout, go back to idle
     [Events.eDetectionComplete] = new csml.Transition {
       to = "idle"
     }
@@ -55,7 +53,6 @@ local const maintenance: csml.State = new {
     }
   }
   on {
-    // Manual intervention or service recovery
     [Events.eMaintenanceDone] = new csml.Transition {
       to = "idle"
     }

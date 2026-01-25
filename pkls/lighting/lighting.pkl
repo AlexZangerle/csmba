@@ -12,7 +12,7 @@ sm = new csml.StateMachine {
   transient = Context.lightingContext
   states {
     ["init"] = init
-    ["off"] = offState // Mapped to avoid keyword conflict
+    ["off"] = offState
     ["on"] = turnOn
     ["dim"] = dim
     ["userLevel"] = userLevel
@@ -40,31 +40,22 @@ local const offState: csml.State = new {
     [Events.eOccupancyDetected] = new csml.Transition {
       to = "on"
       iif = Guards.energySavingInactive
-      or = "dim" // If energy saving is active, go to dim instead
+      or = "dim"
     }
-
     [Events.eActivateLightUserLevel] = new csml.Transition {
       to = "userLevel"
-      // Capture the level from the event payload
       do { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
-
     [Events.eAccessGranted] = new csml.Transition {
       to = "on"
       iif = Guards.isMyZone
     }
-
-    // Security Alarm Override
     [Events.eFlashAllLights] = new csml.Transition {
       to = "flashingAlarm_Off"
     }
-
-    // Fire Evacuation Override
     [Events.eFireAlarm] = new csml.Transition {
       to = "fire"
     }
-
-    // Context Updates
     [Events.eActivateEnergySaving] = new csml.Transition {
       do { new csml.Eval { expression = "\(Vars.vEnergySaving) = true" } }
     }
@@ -115,16 +106,13 @@ local const dim: csml.State = new {
     [Events.eOccupancyDetected] = new csml.Transition {
       to = "on"
       iif = Guards.energySavingInactive
-      // Implicit else: stay in dim if energy saving is active
     }
 
     [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
-
     [Events.eActivateLightUserLevel] = new csml.Transition {
       to = "userLevel"
       do { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
-
     [Events.eZoneActive] = new csml.Transition {
       to = "on"
       iif = Guards.isMyZone
@@ -133,11 +121,8 @@ local const dim: csml.State = new {
       to = "off"
       iif = Guards.isMyZone
     }
-
     [Events.eFlashAllLights] = new csml.Transition { to = "flashingAlarm_Off" }
     [Events.eFireAlarm] = new csml.Transition { to = "fire" }
-
-    // Context Updates
     [Events.eActivateEnergySaving] = new csml.Transition {
       do { new csml.Eval { expression = "\(Vars.vEnergySaving) = true" } }
     }

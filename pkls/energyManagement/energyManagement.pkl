@@ -48,12 +48,10 @@ local const normal: csml.State = new {
     }
     ["priceCheckComplete"] = new csml.Transition {
       do {
-        // Assign Price from service payload to context variable
         new csml.Eval { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
       }
       to = "fetchingGridStatus"
     }
-    // Schedule Updates (In-place assignments without leaving normal state)
     [Events.eEnterBusinessHours] = new csml.Transition {
       do { new csml.Eval { expression = "\(Vars.vCurrentSystemScheduleMode) = 'businessHours'" } }
     }
@@ -77,9 +75,7 @@ local const fetchingGridStatus: csml.State = new {
   on {
     [Events.eEnergyCheckComplete] = new csml.Transition {
       do {
-        // Assign Grid Status from service payload to context variable
         new csml.Eval { expression = "\(Vars.vGridStatus) = $gridStatus" }
-        // Trigger Evaluation logic
         new csml.Raise { event = new csml.Internal { topic = "processEnergyStatus" } }
       }
     }
@@ -96,7 +92,7 @@ local const fetchingGridStatus: csml.State = new {
   }
 }
 
-// Logic State: Route based on Context Data (Binary Branching)
+// Route based on data
 local const evaluatingStatus: csml.State = new {
   always {
     new csml.Transition {
@@ -107,7 +103,7 @@ local const evaluatingStatus: csml.State = new {
   }
 }
 
-// Helper state for Binary Branching logic
+// Helper state for Branching
 local const checkPeak: csml.State = new {
   always {
     new csml.Transition {
@@ -144,7 +140,6 @@ local const peak: csml.State = new {
       }
       to = "fetchingGridStatus"
     }
-    // Schedule Updates
     [Events.eEnterBusinessHours] = new csml.Transition {
       do { new csml.Eval { expression = "\(Vars.vCurrentSystemScheduleMode) = 'businessHours'" } }
     }
@@ -190,7 +185,6 @@ local const gridRequestResponse: csml.State = new {
       }
       to = "fetchingGridStatus"
     }
-    // Schedule Updates
     [Events.eEnterBusinessHours] = new csml.Transition {
       do { new csml.Eval { expression = "\(Vars.vCurrentSystemScheduleMode) = 'businessHours'" } }
     }
@@ -200,7 +194,6 @@ local const gridRequestResponse: csml.State = new {
     [Events.eEnterWeekend] = new csml.Transition {
       do { new csml.Eval { expression = "\(Vars.vCurrentSystemScheduleMode) = 'weekendClosed'" } }
     }
-    // Safety
     [Events.eFireAlarm] = new csml.Transition { to = "normal" }
     [Events.eGasLeakDetected] = new csml.Transition { to = "normal" }
     [Events.eSecurityBreachNotification] = new csml.Transition {
