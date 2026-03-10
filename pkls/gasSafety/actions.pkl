@@ -13,7 +13,7 @@ aRaiseStartGasLeakDetection = new csml.Emit {
 // Raise once a gas leak has been detected
 // includes location of gas leak as payload
 aRaiseGasLeakDetected = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eGasLeakDetected
     data {
       ["gasLeakLocation"] = Vars.vGasLeakLocation

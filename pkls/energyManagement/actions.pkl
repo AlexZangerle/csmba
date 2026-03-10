@@ -5,7 +5,7 @@ import "../events.pkl" as Events
 
 // Raise to deactivate energy saving
 aRaiseDeactiveEnergySaving = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eDeactivateEnergySaving
   }
 }
@@ -19,20 +19,20 @@ aRaiseStartDetectingEnergy = new csml.Emit {
 
 // Raise to activate energy saving
 aRaiseEnergySaving = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eActivateEnergySaving
   }
 }
 
 // Raise to activate drastic energy saving
 aRaiseDrasticEnergySaving = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eDrasticEnergySaving
   }
 }
 
 aRaiseEnergyShutdown = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eEnergyShutdown
   }
 }

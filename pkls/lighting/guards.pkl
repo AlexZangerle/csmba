@@ -19,8 +19,6 @@ occupancyOccupiedGuard = "\(Vars.vCurrentOccupancy) == 'occupied'"
 // Guard to verify if current occupancy is transient
 occupancyTransientGuard = "\(Vars.vCurrentOccupancy) == 'transient'"
 
-
-// Guard to check if event carries the current zone as data
-isMyZone = "$zoneId == \(Vars.vZoneId)"
-
 isFireActive = "\(Vars.vFireAlarm)"
+
+isSafeToExitEmergency = "!\(Vars.vGasActive) && !\(Vars.vFireAlarm) && !\(Vars.vArcFault)"

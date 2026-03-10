@@ -10,10 +10,4 @@ isAfterHours = "\(Vars.vCurrentScheduleMode) == 'afterHours'"
 // Guard to check if building is in weekend
 isWeekend = "\(Vars.vCurrentScheduleMode) == 'weekendClosed'"
 
-// Guard to check if an extended stay has been requested for this zone
-requestedStay = "$zoneId == \(Vars.vZoneId)"
-
-// Guard to check if user left this zone
-userLeftZone = "$zoneId == \(Vars.vZoneId)"
-
 isSafeToExitEmergency = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"

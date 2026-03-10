@@ -1,5 +1,3 @@
 import "../variables.pkl" as Vars
 
 occupancyDetected = "\(Vars.vOccupancyDetected)"
-
-isMyZone = "\(Vars.vZoneId) == $zoneId"

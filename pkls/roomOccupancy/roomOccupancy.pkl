@@ -29,7 +29,7 @@ local vacant: csml.Initial = new {
   }
   on {
     ["sensorOccupancyReceived"] {
-      provided = Guards.isMyZone
+
       yields {
         new csml.Invoke {
           type = ServiceTypes.stDetectOccupancy
@@ -64,7 +64,7 @@ local occupied: csml.State = new {
   }
   on {
     ["sensorOccupancyReceived"] {
-      provided = Guards.isMyZone
+
       yields {
         new csml.Invoke {
           type = ServiceTypes.stDetectOccupancy
@@ -110,7 +110,7 @@ local transientState: csml.State = new {
   }
   on {
     ["sensorOccupancyReceived"] {
-      provided = Guards.isMyZone
+
       yields {
         new csml.Invoke {
           type = ServiceTypes.stDetectOccupancy

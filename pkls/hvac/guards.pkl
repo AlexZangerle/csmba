@@ -11,9 +11,6 @@ roomToHot = "\(Vars.vIndoorTemp) > (\(Vars.vDesiredTemp) + \(Vars.vTempTolerance
 // Guard to check if desired temperature has been reached (within tolerance band)
 roomComfortable = "\(Vars.vIndoorTemp) >= (\(Vars.vDesiredTemp) - \(Vars.vTempTolerance)) && \(Vars.vIndoorTemp) <= (\(Vars.vDesiredTemp) + \(Vars.vTempTolerance))"
 
-// Guard to check if event carries the current zone as data
-isMyZone = "$zoneId == \(Vars.vZoneId)"
-
 // Guard to check if drastic energy saving is not active
 isNotDrasticSaving = "!\(Vars.vDrasticSaving)"
 

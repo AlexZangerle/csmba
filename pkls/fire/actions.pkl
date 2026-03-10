@@ -13,7 +13,7 @@ aRaiseStartDetectingFire = new csml.Emit {
 
 // Raised to trigger fire alarm or smoke alert
 aRaiseFireAlarm = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eFireAlarm
     data {
       [Vars.vEmergencyInRoom] = Vars.vEmergencyInRoom
@@ -22,7 +22,7 @@ aRaiseFireAlarm = new csml.Emit {
 }
 
 aRaiseSmokeAlert = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eSmokeAlert
   }
 }

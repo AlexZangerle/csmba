@@ -5,7 +5,7 @@ import "../variables.pkl" as Vars
 
 // Raise to signify elevated security breach
 aRaiseSecurityBreach = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eSecurityBreachNotification
     data {
       ["level"] = "'Elevated'"
@@ -16,7 +16,7 @@ aRaiseSecurityBreach = new csml.Emit {
 
 // Raise to signify high security breach
 aRaiseServereSecurityBreach = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eSecurityBreachNotification
     data {
       ["level"] = "'High'"
@@ -26,21 +26,21 @@ aRaiseServereSecurityBreach = new csml.Emit {
 }
 
 // Raise to start flashing lights
-aRaiseFlashLights = new csml.Emit { event = new csml.Global { topic = Events.eFlashAllLights } }
+aRaiseFlashLights = new csml.Emit { event { topic = Events.eFlashAllLights } }
 
 // Raise to start the building alarm
 aRaiseBuildingAlarm = new csml.Emit {
-  event = new csml.Global { topic = Events.eActivateBuildingAlarm }
+  event { topic = Events.eActivateBuildingAlarm }
 }
 
 // Raise to unlock evacuation routes
 aRaiseUnlockEvacuationRoutes = new csml.Emit {
-  event = new csml.Global { topic = Events.eUnlockAllEvacuationRoutes }
+  event { topic = Events.eUnlockAllEvacuationRoutes }
 }
 
 // Raise if access was denied based on authentication
 aRaiseAccessDeniedAuth = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eAccessDenied
     data {
       ["doorId"] = Vars.vDoorId
@@ -53,12 +53,12 @@ aRaiseAccessDeniedAuth = new csml.Emit {
 
 // Raise if access was denied based on rule
 aRaiseAccessDeniedRule = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eAccessDenied
     data {
       ["doorId"] = Vars.vDoorId
       ["zoneId"] = Vars.vZoneId
-      ["user"] = Vars.vUserId
+      ["user"] = "'unknown'"
       ["reason"] = "'Access Rule Denied'"
     }
   }
@@ -66,7 +66,7 @@ aRaiseAccessDeniedRule = new csml.Emit {
 
 // Raise if access was granted
 aRaiseAccessGranted = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eAccessGranted
     data {
       ["doorId"] = Vars.vDoorId
@@ -89,7 +89,7 @@ aRaiseReturnToLock = new csml.Emit {
 
 // Raise to signify forced entry attempt
 aRaiseForcedEntry = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eForcedEntry
     data {
       ["doorId"] = Vars.vDoorId

@@ -43,11 +43,11 @@ local init: csml.Initial = new {
 
 local locked: csml.State = new {
   on {
-    [Events.eAuthenticationRequest] { to = "authenticating"; provided = Guards.isCurrentDoor }
+    [Events.eAuthenticationRequest] { to = "authenticating"; }
     [Events.eFireAlarm] { to = "emergencyUnlock" }
     [Events.eGasLeakDetected] { to = "emergencyUnlock"; provided = Guards.checkIsEvacuationRoute }
     [Events.eUnlockAllEvacuationRoutes] { to = "emergencyUnlock"; provided = Guards.checkIsEvacuationRoute }
-    [Events.eLockdownZone] { provided = Guards.isCurrentZone }
+    [Events.eLockdownZone] {}
     [Events.eDoorForcedOpen] { to = "forcedOpenAlarm" }
     [Events.ePhysicalTamper] { to = "forcedOpenAlarm" }
     [Events.eForceUnlockRequest] { to = "unlocked" }
@@ -144,7 +144,7 @@ local unlocked: csml.State = new {
   }
   on {
     ["autoRelock"] { to = "locked" }
-    [Events.eLockdownZone] { to = "locked"; provided = Guards.isCurrentZone }
+    [Events.eLockdownZone] { to = "locked"; }
     [Events.eFireAlarm] { to = "emergencyUnlock" }
     [Events.eDoorForcedOpen] { to = "forcedOpenAlarm" }
     [Events.ePhysicalTamper] { to = "forcedOpenAlarm" }

@@ -46,6 +46,9 @@ vRoomTemp = "roomTemp"
 // Variable containing the location where arc fault occured (String)
 vArcFaultLocation = "arcFaultLocation"
 
+// Variable showing if arc fault is still active
+vArcFault = "arcFault"
+
 // Variable containing the location where gas leak occured (String)
 vGasLeakLocation = "gasLeakLocation"
 

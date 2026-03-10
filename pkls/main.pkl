@@ -36,6 +36,7 @@ collaborativeStateMachine {
     [Vars.vFireAlarm] = "false"
     [Vars.vGasActive] = "false"
     [Vars.vSmokeAlert] = "false"
+    [Vars.vArcFault] = "false"
     [Vars.vTempThreshold] = "'60'"
     [Vars.vMaxEnergyPrice] = "'45.0'"
     [Vars.vDesiredTemp] = "'21.0'"

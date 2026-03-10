@@ -1,9 +1,7 @@
 import "../variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 // This module contains all contexts for the shading SM
 
 blindLockContext = new Mapping {
   [Vars.vIsLocked] = "false"
-  [Vars.vZoneId] = "'testZone'"
   [Vars.vOutdoorTemp] = "'0'"
 }

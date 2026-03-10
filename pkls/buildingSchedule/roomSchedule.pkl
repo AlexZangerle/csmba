@@ -2,7 +2,6 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/ref
 import "../events.pkl" as Events
 import "../serviceTypes.pkl" as ServiceTypes
 import "actions.pkl" as Actions
-import "context.pkl" as Context
 import "guards.pkl" as Guards
 
 // Room schedule state machine definition.
@@ -10,7 +9,6 @@ import "guards.pkl" as Guards
 // Manages per-room/zone lifecycle based on the global building schedule.
 // Handles user override requests for extended stays and safety emergencies.
 sm = new csml.StateMachine {
-  transient = Context.roomContext
   states {
     ["init"] = init
     ["active"] = active
@@ -52,7 +50,7 @@ local inactive: csml.State = new {
   }
   on {
     [Events.eEnterBusinessHours] { to = "active" }
-    [Events.eRequestStay] { to = "authorizedStay"; provided = Guards.requestedStay }
+    [Events.eRequestStay] { to = "authorizedStay"; }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
   }
@@ -71,7 +69,7 @@ local warning: csml.State = new {
   }
   on {
     [Events.eShutdownRoom] { to = "inactive" }
-    [Events.eRequestStay] { to = "authorizedStay"; provided = Guards.requestedStay }
+    [Events.eRequestStay] { to = "authorizedStay"; }
     [Events.eEnterBusinessHours] { to = "active" }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
@@ -91,7 +89,7 @@ local authorizedStay: csml.State = new {
   }
   on {
     [Events.eRecheckOverride] { to = "warning" }
-    [Events.eUserLeftZone] { to = "inactive"; provided = Guards.userLeftZone }
+    [Events.eUserLeftZone] { to = "inactive" }
     [Events.eEnterBusinessHours] { to = "active" }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }

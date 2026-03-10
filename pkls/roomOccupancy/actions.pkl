@@ -11,28 +11,28 @@ aRaiseStartDetectingOccupancy = new csml.Emit {
 
 // Raise action when occupancy detection results in occupied
 aRaiseOccupancyDetected = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eOccupancyDetected
   }
 }
 
 // Raise action when occupancy detection results in vacant
 aRaiseOccupancyVacant = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eOccupancyVacant
   }
 }
 
 // Raise action when occupancy detection results in transient
 aRaiseOccupancyTransient = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eOccupancyTransient
   }
 }
 
 // Raise action when occupancy detection took unusually long
 aRaiseMaintenance = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eMaintenanceRequired
   }
 }

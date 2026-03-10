@@ -30,7 +30,7 @@ local off: csml.Initial = new {
   }
   on {
     [Events.eOccupancyDetected] { to = "fanOnly" }
-    [Events.eZoneActive] { to = "fanOnly"; provided = Guards.isMyZone }
+    [Events.eZoneActive] { to = "fanOnly"; }
     [Events.eEnterBusinessHours] {
       yields { new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" } }
     }
@@ -44,6 +44,7 @@ local off: csml.Initial = new {
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -91,7 +92,7 @@ local fanOnly: csml.State = new {
     ["goHeating"] { to = "heating" }
     ["goCooling"] { to = "cooling" }
     [Events.eOccupancyVacant] { to = "off" }
-    [Events.eZoneInactive] { to = "off"; provided = Guards.isMyZone }
+    [Events.eZoneInactive] { to = "off"; }
     [Events.eEnterBusinessHours] {
       yields {
         new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
@@ -116,6 +117,7 @@ local fanOnly: csml.State = new {
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -162,7 +164,7 @@ local heating: csml.State = new {
     ["goFanOnly"] { to = "fanOnly" }
     ["goCooling"] { to = "cooling" }
     [Events.eOccupancyVacant] { to = "off" }
-    [Events.eZoneInactive] { to = "off"; provided = Guards.isMyZone }
+    [Events.eZoneInactive] { to = "off"; }
     [Events.eEnterBusinessHours] {
       yields {
         new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
@@ -187,6 +189,7 @@ local heating: csml.State = new {
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -233,7 +236,7 @@ local cooling: csml.State = new {
     ["goFanOnly"] { to = "fanOnly" }
     ["goHeating"] { to = "heating" }
     [Events.eOccupancyVacant] { to = "off" }
-    [Events.eZoneInactive] { to = "off"; provided = Guards.isMyZone }
+    [Events.eZoneInactive] { to = "off"; }
     [Events.eEnterBusinessHours] {
       yields {
         new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
@@ -258,6 +261,7 @@ local cooling: csml.State = new {
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -312,7 +316,7 @@ local energySaving: csml.State = new {
     }
     [Events.eDeactivateEnergySaving] { to = "fanOnly" }
     [Events.eOccupancyVacant] { to = "off" }
-    [Events.eZoneInactive] { to = "off"; provided = Guards.isMyZone }
+    [Events.eZoneInactive] { to = "off"; }
     [Events.eEnterBusinessHours] {
       yields { new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" } }
     }
@@ -326,6 +330,7 @@ local energySaving: csml.State = new {
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -348,6 +353,10 @@ local emergency: csml.State = new {
       provided = Guards.isSafeToExitEmergency
     }
     [Events.eDisarmSmokeAlert] {
+      to = "off"
+      provided = Guards.isSafeToExitEmergency
+    }
+    [Events.eResetElectricalFault] {
       to = "off"
       provided = Guards.isSafeToExitEmergency
     }

@@ -9,18 +9,8 @@ failedAttemptSoftlimitReached = "\(Vars.vFailedAttemptsCount) >= 3"
 // Guard to check if hard limit has been reached for failed attempts
 failedAttemptHardlimitReached = "\(Vars.vFailedAttemptsCount) >= 5"
 
-
-// Guard to check if event concerns this door
-isCurrentDoor = "$doorId == \(Vars.vDoorId)"
-
-
 // Guard to check if door is part of an evacuation route
 checkIsEvacuationRoute = Vars.vIsEvacuationRoute
-
-
-// Guard to check if event concerns the current zone
-isCurrentZone = "$zoneId == \(Vars.vZoneId)"
-
 
 // Guard to check if authentication was successful
 authSuccessful = "\(Vars.vAuthenticationStatus) == 'Success'"

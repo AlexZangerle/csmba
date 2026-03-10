@@ -21,7 +21,4 @@ noFireAlarm = "!\(Vars.vFireAlarm)"
 
 noSmokeAlert = "!\(Vars.vSmokeAlert)"
 
-
-isMyZone = "$zoneId == \(Vars.vZoneId)"
-
-isSafeToExitEmergency = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive) && !\(Vars.vSmokeAlert)"
+isSafeToExitEmergency = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive) && !\(Vars.vSmokeAlert) && !\(Vars.vArcFault)"

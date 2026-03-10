@@ -4,7 +4,6 @@ import "../variables.pkl" as Vars
 // hvacContext includes the current indoor temperature and the zone
 hvacContext = new Mapping {
   [Vars.vIndoorTemp] = "'21.0'"
-  [Vars.vZoneId] = "'testZone'"
   [Vars.vBusinessHoursTemp] = "'21.0'"
   [Vars.vAfterHoursTemp] = "'17.0'"
   [Vars.vTempTolerance] = "'1.0'"

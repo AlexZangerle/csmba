@@ -14,7 +14,7 @@ aRaiseStartArcFaultDetection = new csml.Emit {
 // Raise if an arc fault has been detected 
 // Includes location of arcFault as payload
 aRaiseArcFaultDetected = new csml.Emit {
-  event = new csml.Global {
+  event {
     topic = Events.eArcFaultDetected
     data {
       ["arcFaultLocation"] = Vars.vArcFaultLocation

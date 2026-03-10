@@ -3,5 +3,4 @@ import "../variables.pkl" as Vars
 
 occupancyLocalContext = new Mapping {
   [Vars.vOccupancyDetected] = "false"
-  [Vars.vZoneId] = "'testZone'"
 }

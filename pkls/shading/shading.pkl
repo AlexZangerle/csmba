@@ -67,12 +67,13 @@ local half: csml.Initial = new {
     [Events.eLockBlinds] { yields { Actions.aBlindLock } }
     [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
 
-    [Events.eZoneInactive] { to = "close"; provided = Guards.isMyZone }
-    [Events.eLockdownZone] { to = "close"; provided = Guards.isMyZone }
+    [Events.eZoneInactive] { to = "close"; }
+    [Events.eLockdownZone] { to = "close"; }
 
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -124,13 +125,12 @@ local fullyOpen: csml.State = new {
     }
     [Events.eLockBlinds] { yields { Actions.aBlindLock } }
     [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
-
-    [Events.eZoneInactive] { to = "close"; provided = Guards.isMyZone }
-    [Events.eLockdownZone] { to = "close"; provided = Guards.isMyZone }
-
+    [Events.eZoneInactive] { to = "close"; }
+    [Events.eLockdownZone] { to = "close"; }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -183,12 +183,13 @@ local close: csml.State = new {
     [Events.eLockBlinds] { yields { Actions.aBlindLock } }
     [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
 
-    [Events.eZoneActive] { to = "half"; provided = Guards.isMyZone }
-    [Events.eClearSecurityAlert] { to = "half"; provided = Guards.isMyZone }
+    [Events.eZoneActive] { to = "half"; }
+    [Events.eClearSecurityAlert] { to = "half"; }
 
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -246,12 +247,13 @@ local userLevel: csml.State = new {
     [Events.eLockBlinds] { yields { Actions.aBlindLock } }
     [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
 
-    [Events.eZoneInactive] { to = "close"; provided = Guards.isMyZone }
-    [Events.eLockdownZone] { to = "close"; provided = Guards.isMyZone }
+    [Events.eZoneInactive] { to = "close"; }
+    [Events.eLockdownZone] { to = "close"; }
 
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eSmokeAlert] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eArcFaultDetected] { to = "emergency" }
   }
 }
 
@@ -272,6 +274,10 @@ local emergency: csml.State = new {
       provided = Guards.isSafeToExitEmergency
     }
     [Events.eDisarmSmokeAlert] {
+      to = "half"
+      provided = Guards.isSafeToExitEmergency
+    }
+    [Events.eResetElectricalFault] {
       to = "half"
       provided = Guards.isSafeToExitEmergency
     }
