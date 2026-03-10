@@ -14,4 +14,4 @@ roomComfortable = "\(Vars.vIndoorTemp) >= (\(Vars.vDesiredTemp) - \(Vars.vTempTo
 // Guard to check if drastic energy saving is not active
 isNotDrasticSaving = "!\(Vars.vDrasticSaving)"
 
-isSafeToExitEmergency = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive) && !\(Vars.vSmokeAlert)"
+isSafeToExitEmergency = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive) && !\(Vars.vSmokeAlert) && !\(Vars.vArcFault)"

@@ -84,6 +84,6 @@ local smokeAlert: csml.State = new {
       to = "detecting"
       yields { new csml.Assign { expression = "\(Vars.vSmokeAlert) = false" } }
     }
-    [Events.eSensorFireDataReceived] { to = "fireAlarm" yields { new csml.Assign { expression = "smokeAlert = false" } } }
+    [Events.eSensorFireDataReceived] { to = "fireAlarm" yields { new csml.Assign { expression = "\(Vars.vSmokeAlert) = false" } } }
   }
 }

@@ -33,7 +33,7 @@ local off: csml.Initial = new {
     }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
-      to = "fire"
+      to = "safetyOff"
       yields { new csml.Invoke { type = ServiceTypes.stEvacuationLights input { ["roomId"] = "$emergencyInRoom" } } }
     }
     [Events.eGasLeakDetected] {
@@ -66,7 +66,7 @@ local on: csml.State = new {
     }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
-      to = "fire"
+      to = "safetyOff"
       yields { new csml.Invoke { type = ServiceTypes.stEvacuationLights input { ["roomId"] = "$emergencyInRoom" } } }
     }
     [Events.eGasLeakDetected] {
@@ -96,7 +96,7 @@ local dim: csml.State = new {
     }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
-      to = "fire"
+      to = "safetyOff"
       yields { new csml.Invoke { type = ServiceTypes.stEvacuationLights input { ["roomId"] = "$emergencyInRoom" } } }
     }
     [Events.eGasLeakDetected] {
@@ -130,7 +130,7 @@ local userLevel: csml.State = new {
     [Events.eDeactivateLightUserLevel] { to = "off" }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
-      to = "fire"
+      to = "safetyOff"
       yields { new csml.Invoke { type = ServiceTypes.stEvacuationLights input { ["roomId"] = "$emergencyInRoom" } } }
     }
     [Events.eGasLeakDetected] {
@@ -191,8 +191,18 @@ local flashingAlarmOff: csml.State = new {
   on {
     ["flashOn"] { to = "flashingAlarm_On" }
     [Events.eClearSecurityAlert] { to = "off" }
-    [Events.eFireAlarm] { to = "fire" }
-    [Events.eGasLeakDetected] { to = "safetyOff" }
+    [Events.eFireAlarm] {
+      to = "safetyOff"
+      yields { new csml.Invoke { type = ServiceTypes.stEvacuationLights input { ["roomId"] = "$emergencyInRoom" } } }
+    }
+    [Events.eGasLeakDetected] {
+      to = "safetyOff"
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+    }
+    [Events.eArcFaultDetected] {
+      to = "safetyOff"
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+    }
   }
 }
 
@@ -209,7 +219,17 @@ local flashingAlarmOn: csml.State = new {
   on {
     ["flashOff"] { to = "flashingAlarm_Off" }
     [Events.eClearSecurityAlert] { to = "off" }
-    [Events.eFireAlarm] { to = "fire" }
-    [Events.eGasLeakDetected] { to = "safetyOff" }
+    [Events.eFireAlarm] {
+      to = "safetyOff"
+      yields { new csml.Invoke { type = ServiceTypes.stEvacuationLights input { ["roomId"] = "$emergencyInRoom" } } }
+    }
+    [Events.eGasLeakDetected] {
+      to = "safetyOff"
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+    }
+    [Events.eArcFaultDetected] {
+      to = "safetyOff"
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+    }
   }
 }

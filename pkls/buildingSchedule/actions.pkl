@@ -1,5 +1,4 @@
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/events.pkl" as Events
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 
@@ -21,7 +20,6 @@ aRaiseEnterWeekend = new csml.Emit { event { topic = Events.eEnterWeekend } }
 aRaiseZoneActive = new csml.Emit {
   event {
     topic = Events.eZoneActive
-    data { ["zoneId"] = Vars.vZoneId }
   }
 }
 
@@ -30,7 +28,6 @@ aRaiseZoneActive = new csml.Emit {
 aRaiseZoneInactive = new csml.Emit {
   event {
     topic = Events.eZoneInactive
-    data { ["zoneId"] = Vars.vZoneId }
   }
 }
 
@@ -39,7 +36,6 @@ aRaiseZoneInactive = new csml.Emit {
 aRaiseZoneWarning = new csml.Emit {
   event {
     topic = Events.eZoneWarning
-    data { ["zoneId"] = Vars.vZoneId }
   }
 }
 
