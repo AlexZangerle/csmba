@@ -29,7 +29,7 @@ local monitoring: csml.State = new {
   }
   on {
     [Events.eMaintenanceRequired] { to = "maintenance" }
-    [Events.eDetectionComplete] { to = "idle" }
+    ["detectionDone"] { to = "idle" }
   }
 }
 

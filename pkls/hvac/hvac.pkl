@@ -43,6 +43,7 @@ local off: csml.Initial = new {
     [Events.eEnergyShutdown] { to = "emergency" }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eSmokeAlert] { to = "emergency" }
   }
 }
 
@@ -114,6 +115,7 @@ local fanOnly: csml.State = new {
     [Events.eEnergyShutdown] { to = "emergency" }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eSmokeAlert] { to = "emergency" }
   }
 }
 
@@ -184,6 +186,7 @@ local heating: csml.State = new {
     [Events.eEnergyShutdown] { to = "emergency" }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eSmokeAlert] { to = "emergency" }
   }
 }
 
@@ -254,6 +257,7 @@ local cooling: csml.State = new {
     [Events.eEnergyShutdown] { to = "emergency" }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eSmokeAlert] { to = "emergency" }
   }
 }
 
@@ -321,6 +325,7 @@ local energySaving: csml.State = new {
     [Events.eEnergyShutdown] { to = "emergency" }
     [Events.eFireAlarm] { to = "emergency" }
     [Events.eGasLeakDetected] { to = "emergency" }
+    [Events.eSmokeAlert] { to = "emergency" }
   }
 }
 
@@ -342,7 +347,7 @@ local emergency: csml.State = new {
       to = "off"
       provided = Guards.isSafeToExitEmergency
     }
-    [Events.eDeactivateEnergySaving] {
+    [Events.eDisarmSmokeAlert] {
       to = "off"
       provided = Guards.isSafeToExitEmergency
     }

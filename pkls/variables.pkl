@@ -65,6 +65,18 @@ vIndoorTemp = "indoorTemp"
 
 vDesiredTemp = "desiredTemp"
 
+vBusinessHoursTemp = "businessHoursTemp"
+
+vAfterHoursTemp = "afterHoursTemp"
+
+vDefaultTolerance = "defaultTolerance"
+
+vTempTolerance = "tempTolerance"
+
+vEnergySavingTolerance = "energySavingTolerance"
+
+vDrasticSaving = "drasticSaving"
+
 vCurrentScheduleMode = "currentSchedule"
 
 vZoneId = "zoneId"
@@ -79,4 +91,3 @@ vUserId = "userId"
 vUserRole = "userRole"
 vAuthenticationStatus = "authenticationStatus"
 vAccessDecision = "accessDecision"
-vCurrentSystemScheduleMode = "currentSystemSchedule"

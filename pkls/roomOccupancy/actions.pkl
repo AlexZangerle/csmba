@@ -1,45 +1,43 @@
-import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 // This module contains actions for the room occupancy SM
 
 // Raise action to start detecting occupancy
-aRaiseStartDetectingOccupancy = new csml.Raise {
+aRaiseStartDetectingOccupancy = new csml.Emit {
   event = new csml.Internal {
     topic = Events.eStartDetectingOccupancy
   }
 }
 
 // Raise action when occupancy detection results in occupied
-aRaiseOccupancyDetected = new csml.Raise {
+aRaiseOccupancyDetected = new csml.Emit {
   event = new csml.Global {
     topic = Events.eOccupancyDetected
   }
 }
 
 // Raise action when occupancy detection results in vacant
-aRaiseOccupancyVacant = new csml.Raise {
+aRaiseOccupancyVacant = new csml.Emit {
   event = new csml.Global {
     topic = Events.eOccupancyVacant
   }
 }
 
 // Raise action when occupancy detection results in transient
-aRaiseOccupancyTransient = new csml.Raise {
+aRaiseOccupancyTransient = new csml.Emit {
   event = new csml.Global {
     topic = Events.eOccupancyTransient
   }
 }
 
 // Raise action when occupancy detection took unusually long
-aRaiseMaintenance = new csml.Raise {
+aRaiseMaintenance = new csml.Emit {
   event = new csml.Global {
     topic = Events.eMaintenanceRequired
   }
 }
 
-aRaiseStartGasLeakDetection = new csml.Raise {
+aRaiseStartGasLeakDetection = new csml.Emit {
   event = new csml.Internal {
     topic = Events.eStartGasLeakDetection
   }

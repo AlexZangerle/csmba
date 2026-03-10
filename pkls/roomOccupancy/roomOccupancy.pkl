@@ -137,6 +137,6 @@ local transientState: csml.State = new {
       to = "occupied"
       yields { Actions.aRaiseOccupancyDetected }
     }
-    ["goVacant"] { to = "vacant" }
+    ["goVacant"] { to = "vacant" yields { Actions.aRaiseOccupancyVacant } }
   }
 }

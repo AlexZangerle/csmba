@@ -1,4 +1,3 @@
-
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../variables.pkl" as Vars
@@ -6,19 +5,19 @@ import "../variables.pkl" as Vars
 
 
 // Raise to start arc fault detection
-aRaiseStartArcFaultDetection = new csml.Raise {
-    event = new csml.Internal {
-        topic = Events.eStartArcFaultDetection
-    }
+aRaiseStartArcFaultDetection = new csml.Emit {
+  event = new csml.Internal {
+    topic = Events.eStartArcFaultDetection
+  }
 }
 
 // Raise if an arc fault has been detected 
 // Includes location of arcFault as payload
-aRaiseArcFaultDetected = new csml.Raise {
-    event = new csml.Global{
-        topic = Events.eArcFaultDetected
-        data {
-             ["arcFaultLocation"] = Vars.vArcFaultLocation
-        }
+aRaiseArcFaultDetected = new csml.Emit {
+  event = new csml.Global {
+    topic = Events.eArcFaultDetected
+    data {
+      ["arcFaultLocation"] = Vars.vArcFaultLocation
     }
+  }
 }

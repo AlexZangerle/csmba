@@ -1,23 +1,22 @@
-
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../variables.pkl" as Vars
 // This module contains actions for the gasSafety SM
 
 // Raise to start gas leak detection
-aRaiseStartGasLeakDetection = new csml.Raise {
-    event = new csml.Internal {
-        topic = Events.eStartGasLeakDetection
-    }
+aRaiseStartGasLeakDetection = new csml.Emit {
+  event = new csml.Internal {
+    topic = Events.eStartGasLeakDetection
+  }
 }
 
 // Raise once a gas leak has been detected
 // includes location of gas leak as payload
-aRaiseGasLeakDetected = new csml.Raise {
-    event = new csml.Global {
-        topic = Events.eGasLeakDetected
-        data {
-            ["gasLeakLocation"] = Vars.vGasLeakLocation
-        }
+aRaiseGasLeakDetected = new csml.Emit {
+  event = new csml.Global {
+    topic = Events.eGasLeakDetected
+    data {
+      ["gasLeakLocation"] = Vars.vGasLeakLocation
     }
+  }
 }

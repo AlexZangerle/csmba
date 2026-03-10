@@ -1,12 +1,10 @@
-import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../variables.pkl" as Vars
 // This module contains actions for the accessControlSM and securityManagerSM
 
 // Raise to signify elevated security breach
-aRaiseSecurityBreach = new csml.Raise {
+aRaiseSecurityBreach = new csml.Emit {
   event = new csml.Global {
     topic = Events.eSecurityBreachNotification
     data {
@@ -17,7 +15,7 @@ aRaiseSecurityBreach = new csml.Raise {
 }
 
 // Raise to signify high security breach
-aRaiseServereSecurityBreach = new csml.Raise {
+aRaiseServereSecurityBreach = new csml.Emit {
   event = new csml.Global {
     topic = Events.eSecurityBreachNotification
     data {
@@ -28,20 +26,20 @@ aRaiseServereSecurityBreach = new csml.Raise {
 }
 
 // Raise to start flashing lights
-aRaiseFlashLights = new csml.Raise { event = new csml.Global { topic = Events.eFlashAllLights } }
+aRaiseFlashLights = new csml.Emit { event = new csml.Global { topic = Events.eFlashAllLights } }
 
 // Raise to start the building alarm
-aRaiseBuildingAlarm = new csml.Raise {
+aRaiseBuildingAlarm = new csml.Emit {
   event = new csml.Global { topic = Events.eActivateBuildingAlarm }
 }
 
 // Raise to unlock evacuation routes
-aRaiseUnlockEvacuationRoutes = new csml.Raise {
+aRaiseUnlockEvacuationRoutes = new csml.Emit {
   event = new csml.Global { topic = Events.eUnlockAllEvacuationRoutes }
 }
 
 // Raise if access was denied based on authentication
-aRaiseAccessDeniedAuth = new csml.Raise {
+aRaiseAccessDeniedAuth = new csml.Emit {
   event = new csml.Global {
     topic = Events.eAccessDenied
     data {
@@ -54,43 +52,43 @@ aRaiseAccessDeniedAuth = new csml.Raise {
 }
 
 // Raise if access was denied based on rule
-aRaiseAccessDeniedRule = new csml.Raise {
+aRaiseAccessDeniedRule = new csml.Emit {
   event = new csml.Global {
     topic = Events.eAccessDenied
     data {
       ["doorId"] = Vars.vDoorId
       ["zoneId"] = Vars.vZoneId
-      ["user"] = "'unknown'"
-      ["reason"] = "'Authentication Failed'"
+      ["user"] = Vars.vUserId
+      ["reason"] = "'Access Rule Denied'"
     }
   }
 }
 
 // Raise if access was granted
-aRaiseAccessGranted = new csml.Raise {
+aRaiseAccessGranted = new csml.Emit {
   event = new csml.Global {
     topic = Events.eAccessGranted
     data {
       ["doorId"] = Vars.vDoorId
       ["zoneId"] = Vars.vZoneId
-      ["user"] = "'unknown'"
+      ["user"] = Vars.vUserId
       ["role"] = Vars.vUserRole
     }
   }
 }
 
 // Raise to auto relock door
-aRaiseAutoRelock = new csml.Raise {
-  event = new csml.Internal{ topic = "autoRelock"}
+aRaiseAutoRelock = new csml.Emit {
+  event = new csml.Internal { topic = "autoRelock" }
 }
 
 // Raise to return to locked state
-aRaiseReturnToLock = new csml.Raise {
+aRaiseReturnToLock = new csml.Emit {
   event = new csml.Internal { topic = "returnToLock" }
 }
 
 // Raise to signify forced entry attempt
-aRaiseForcedEntry = new csml.Raise {
+aRaiseForcedEntry = new csml.Emit {
   event = new csml.Global {
     topic = Events.eForcedEntry
     data {

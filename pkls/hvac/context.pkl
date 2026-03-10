@@ -1,9 +1,14 @@
 import "../variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 // This module contains all contexts for the hvac SM
 
 // hvacContext includes the current indoor temperature and the zone
 hvacContext = new Mapping {
   [Vars.vIndoorTemp] = "'21.0'"
   [Vars.vZoneId] = "'testZone'"
+  [Vars.vBusinessHoursTemp] = "'21.0'"
+  [Vars.vAfterHoursTemp] = "'17.0'"
+  [Vars.vTempTolerance] = "'1.0'"
+  [Vars.vDefaultTolerance] = "'1.0'"
+  [Vars.vEnergySavingTolerance] = "'3.0'"
+  [Vars.vDrasticSaving] = "false"
 }

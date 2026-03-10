@@ -6,19 +6,19 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/ref
 // This module contains actions for the buildingScheduleSM and roomScheduleSM
 
 // Raise to signal entry of business hours
-aRaiseEnterBusinessHours = new csml.Raise { event = new csml.Global { topic = Events.eEnterBusinessHours} }
+aRaiseEnterBusinessHours = new csml.Emit { event = new csml.Global { topic = Events.eEnterBusinessHours } }
 
 // Raise to start a schedule check
-aRaiseStartScheduleCheck = new csml.Raise { event = new csml.Internal { topic = Events.eStartScheduleCheck} }
+aRaiseStartScheduleCheck = new csml.Emit { event = new csml.Internal { topic = Events.eStartScheduleCheck } }
 
 // Raise to signal entry of after hours
-aRaiseEnterAfterHours = new csml.Raise { event = new csml.Global { topic = Events.eEnterAfterHoursMode} }
+aRaiseEnterAfterHours = new csml.Emit { event = new csml.Global { topic = Events.eEnterAfterHoursMode } }
 
 // Raise to signal entry of weekend
-aRaiseEnterWeekend = new csml.Raise { event = new csml.Global { topic = Events.eEnterWeekend} }
+aRaiseEnterWeekend = new csml.Emit { event = new csml.Global { topic = Events.eEnterWeekend } }
 
 // Raise to signify activation of zone
-aRaiseZoneActive = new csml.Raise {
+aRaiseZoneActive = new csml.Emit {
   event = new csml.Global {
     topic = Events.eZoneActive
     data { ["zoneId"] = Vars.vZoneId }
@@ -27,7 +27,7 @@ aRaiseZoneActive = new csml.Raise {
 
 
 // Raise to signify deactivation of zone
-aRaiseZoneInactive = new csml.Raise {
+aRaiseZoneInactive = new csml.Emit {
   event = new csml.Global {
     topic = Events.eZoneInactive
     data { ["zoneId"] = Vars.vZoneId }
@@ -36,7 +36,7 @@ aRaiseZoneInactive = new csml.Raise {
 
 
 // Raise to signify the zone entering a warning state
-aRaiseZoneWarning = new csml.Raise {
+aRaiseZoneWarning = new csml.Emit {
   event = new csml.Global {
     topic = Events.eZoneWarning
     data { ["zoneId"] = Vars.vZoneId }
@@ -44,11 +44,11 @@ aRaiseZoneWarning = new csml.Raise {
 }
 
 // Raise to put room to inactive
-aRaiseShutdownRoom = new csml.Raise {
+aRaiseShutdownRoom = new csml.Emit {
   event = new csml.Internal { topic = Events.eShutdownRoom }
 }
 
 // Raise to recheck override
-aRaiseRecheckOverride = new csml.Raise {
+aRaiseRecheckOverride = new csml.Emit {
   event = new csml.Internal { topic = Events.eRecheckOverride }
 }

@@ -1,13 +1,12 @@
-
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 // This module contains actions for the fireSafety SM
 
 
 // Raise to get current temperature of critical equipment in room
-aRaiseGetRoomTemp = new csml.Raise {
-    event = new csml.Internal {
-        topic = Events.eStartTempReading
-        channel = "internal"
-    }
+aRaiseGetRoomTemp = new csml.Emit {
+  event = new csml.Internal {
+    topic = Events.eStartTempReading
+    channel = "internal"
+  }
 }

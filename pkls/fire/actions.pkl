@@ -1,18 +1,18 @@
-import "../events.pkl" as Events
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../events.pkl" as Events
 import "../variables.pkl" as Vars
 // This module contains actions for the fireDetection SM
 
 
 // Raise to start detecting fire
-aRaiseStartDetectingFire = new csml.Raise {
+aRaiseStartDetectingFire = new csml.Emit {
   event = new csml.Internal {
     topic = Events.eStartDetectingFire
   }
 }
 
 // Raised to trigger fire alarm or smoke alert
-aRaiseFireAlarm = new csml.Raise {
+aRaiseFireAlarm = new csml.Emit {
   event = new csml.Global {
     topic = Events.eFireAlarm
     data {
@@ -21,7 +21,7 @@ aRaiseFireAlarm = new csml.Raise {
   }
 }
 
-aRaiseSmokeAlert = new csml.Raise {
+aRaiseSmokeAlert = new csml.Emit {
   event = new csml.Global {
     topic = Events.eSmokeAlert
   }

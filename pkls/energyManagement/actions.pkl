@@ -4,34 +4,34 @@ import "../events.pkl" as Events
 
 
 // Raise to deactivate energy saving
-aRaiseDeactiveEnergySaving = new csml.Raise {
+aRaiseDeactiveEnergySaving = new csml.Emit {
   event = new csml.Global {
     topic = Events.eDeactivateEnergySaving
   }
 }
 
 // Raise to start detecting energy prices
-aRaiseStartDetectingEnergy = new csml.Raise {
+aRaiseStartDetectingEnergy = new csml.Emit {
   event = new csml.Internal {
     topic = Events.eStartEnergyCheck
   }
 }
 
 // Raise to activate energy saving
-aRaiseEnergySaving = new csml.Raise {
+aRaiseEnergySaving = new csml.Emit {
   event = new csml.Global {
     topic = Events.eActivateEnergySaving
   }
 }
 
 // Raise to activate drastic energy saving
-aRaiseDrasticEnergySaving = new csml.Raise {
+aRaiseDrasticEnergySaving = new csml.Emit {
   event = new csml.Global {
     topic = Events.eDrasticEnergySaving
   }
 }
 
-aRaiseEnergyShutdown = new csml.Raise {
+aRaiseEnergyShutdown = new csml.Emit {
   event = new csml.Global {
     topic = Events.eEnergyShutdown
   }

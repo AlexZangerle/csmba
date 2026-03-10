@@ -271,5 +271,9 @@ local emergency: csml.State = new {
       to = "half"
       provided = Guards.isSafeToExitEmergency
     }
+    [Events.eDisarmSmokeAlert] {
+      to = "half"
+      provided = Guards.isSafeToExitEmergency
+    }
   }
 }
