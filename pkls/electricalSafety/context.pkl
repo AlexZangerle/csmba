@@ -1,9 +1,7 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/Csml.pkl"
 import "../variables.pkl" as Vars
 // This module contains all contexts for the eletricalSafety SM
 
 electricalSafetyContext = new Mapping {
-  [Vars.vArcFaultLocation] ="'none'"
+  [Vars.vArcFaultLocation] = "'none'"
 }
 

@@ -58,7 +58,7 @@ aRaiseAccessDeniedRule = new csml.Emit {
     data {
       ["doorId"] = Vars.vDoorId
       ["zoneId"] = Vars.vZoneId
-      ["user"] = "'unknown'"
+      ["user"] = Vars.vUserId
       ["reason"] = "'Access Rule Denied'"
     }
   }
