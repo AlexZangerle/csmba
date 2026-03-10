@@ -1,82 +1,66 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
 import "actions.pkl" as Actions
 import "context.pkl" as Context
 import "guards.pkl" as Guards
-import "../serviceTypes.pkl" as ServiceTypes
-import "../variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
-/// This module defines the central securityManagerSM for the building.
+// Security manager state machine definition.
+//
+// Failed access attempts increment a counter; soft limit triggers elevated,
+// hard limit triggers intrusion. Forced entry / tamper skip straight to intrusion.
 sm = new csml.StateMachine {
   transient = Context.securityManagerContext
   states {
-    ["init"] = init
     ["secure"] = secure
-    ["checkAccessLimits_Secure"] = checkAccessLimits_Secure
     ["elevatedRisk"] = elevatedRisk
-    ["checkAccessLimits_Elevated"] = checkAccessLimits_Elevated
     ["intrusionAlert"] = intrusionAlert
-    ["emergencyResponseActive"] = emergencyResponseActive
+    ["emergencyResponse"] = emergencyResponse
   }
 }
 
-local const init: csml.Initial = new {
-  always {
-    new csml.Transition { to = "secure" }
-  }
-}
-
-/// Secure state, monitors for suspicious activity.
-local const secure: csml.State = new {
+local secure: csml.Initial = new {
   entry {
-    new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = 0" }
-    new csml.Eval { expression = "\(Vars.vAlertDetails) = ''" }
+    new csml.Assign { expression = "\(Vars.vFailedAttemptsCount) = 0" }
+    new csml.Assign { expression = "\(Vars.vAlertDetails) = ''" }
   }
   on {
-    [Events.eForcedEntry] = new csml.Transition {
+    [Events.eForcedEntry] {
       to = "intrusionAlert"
-      do {
-        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Forced entry detected at door ' + $doorId + ' in zone ' + $zone" }
+      yields {
+        new csml.Assign { expression = "\(Vars.vAlertDetails) = 'Forced entry detected at door ' + $doorId + ' in zone ' + $zone" }
       }
     }
-    [Events.eTamperDetected] = new csml.Transition {
+    [Events.eTamperDetected] {
       to = "intrusionAlert"
-      do {
-        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Tamper detected on device ' + $deviceId + ' at ' + $location" }
+      yields {
+        new csml.Assign { expression = "\(Vars.vAlertDetails) = 'Tamper detected on device ' + $deviceId + ' at ' + $location" }
       }
     }
-    [Events.eManualSecurityAlert] = new csml.Transition {
-      to = "intrusionAlert"
+    [Events.eManualSecurityAlert] { to = "intrusionAlert" }
+    [Events.eAccessDenied] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
+        new csml.Assign { expression = "\(Vars.vAlertDetails) = 'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.failedAttemptSoftlimitReached
+              yields { new csml.Emit { event = new csml.Internal { topic = "goElevated" } } }
+            }
+          }
+        }
+      }
+    }
+    ["goElevated"] { to = "elevatedRisk" }
 
-    }
-    [Events.eAccessDenied] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
-        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
-        new csml.Raise { event = new csml.Internal { topic = "checkSoftLimit" } }
-      }
-    }
-    ["checkSoftLimit"] = new csml.Transition {
-      to = "checkAccessLimits_Secure"
-    }
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyResponseActive" }
-    [Events.eGasLeakDetected] = new csml.Transition { to = "emergencyResponseActive" }
+    [Events.eFireAlarm] { to = "emergencyResponse" }
+    [Events.eGasLeakDetected] { to = "emergencyResponse" }
   }
 }
 
-// Logic state to evaluate Soft Limit
-local const checkAccessLimits_Secure: csml.State = new {
-  always {
-    new csml.Transition {
-      to = "elevatedRisk"
-      iif = Guards.failedAttemptSoftlimitReached
-      or = "secure"
-    }
-  }
-}
-
-/// Minor suspicious activity detected
-local const elevatedRisk: csml.State = new {
+local elevatedRisk: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stNotifySecurityPersonnel
@@ -85,48 +69,41 @@ local const elevatedRisk: csml.State = new {
     Actions.aRaiseSecurityBreach
   }
   after {
-    ["riskDecayTimer"] = new csml.Timeout {
+    ["riskDecay"] = new csml.Timeout {
       delay = "1800000"
-      do = new csml.Raise { event = new csml.Internal { topic = "decayRisk" } }
+      triggers = new csml.Emit { event = new csml.Internal { topic = "decayRisk" } }
     }
   }
   on {
-    ["decayRisk"] = new csml.Transition {
-      to = "secure"
-    }
-    [Events.eAccessDenied] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
-        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
-        new csml.Raise { event = new csml.Internal { topic = "checkHardLimit" } }
+    ["decayRisk"] { to = "secure" }
+
+    [Events.eAccessDenied] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
+        new csml.Assign { expression = "\(Vars.vAlertDetails) = 'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.failedAttemptHardlimitReached
+              yields { new csml.Emit { event = new csml.Internal { topic = "goIntrusion" } } }
+            }
+          }
+        }
       }
     }
+    ["goIntrusion"] { to = "intrusionAlert" }
 
-    ["checkHardLimit"] = new csml.Transition {
-      to = "checkAccessLimits_Elevated"
-    }
-    [Events.eForcedEntry] = new csml.Transition { to = "intrusionAlert" }
-    [Events.eTamperDetected] = new csml.Transition { to = "intrusionAlert" }
-    [Events.eManualSecurityAlert] = new csml.Transition { to = "intrusionAlert" }
-    [Events.eClearSecurityAlert] = new csml.Transition { to = "secure" }
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyResponseActive" }
-    [Events.eGasLeakDetected] = new csml.Transition { to = "emergencyResponseActive" }
+    [Events.eForcedEntry] { to = "intrusionAlert" }
+    [Events.eTamperDetected] { to = "intrusionAlert" }
+    [Events.eManualSecurityAlert] { to = "intrusionAlert" }
+    [Events.eClearSecurityAlert] { to = "secure" }
+
+    [Events.eFireAlarm] { to = "emergencyResponse" }
+    [Events.eGasLeakDetected] { to = "emergencyResponse" }
   }
 }
 
-// Logic state to evaluate Hard Limit
-local const checkAccessLimits_Elevated: csml.State = new {
-  always {
-    new csml.Transition {
-      to = "intrusionAlert"
-      iif = Guards.failedAttemptHardlimitReached
-      or = "elevatedRisk"
-    }
-  }
-}
-
-/// High-severity event detected. Trigger alarms and lockdown.
-local const intrusionAlert: csml.State = new {
+local intrusionAlert: csml.State = new {
   entry {
     Actions.aRaiseServereSecurityBreach
     Actions.aRaiseFlashLights
@@ -137,19 +114,24 @@ local const intrusionAlert: csml.State = new {
     }
   }
   on {
-    [Events.eClearSecurityAlert] = new csml.Transition { to = "secure" }
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyResponseActive" }
-    [Events.eGasLeakDetected] = new csml.Transition { to = "emergencyResponseActive" }
+    [Events.eClearSecurityAlert] { to = "secure" }
+    [Events.eFireAlarm] { to = "emergencyResponse" }
+    [Events.eGasLeakDetected] { to = "emergencyResponse" }
   }
 }
 
-/// Security heeds to safety
-local const emergencyResponseActive: csml.State = new {
+local emergencyResponse: csml.State = new {
   entry {
     Actions.aRaiseUnlockEvacuationRoutes
   }
   on {
-    [Events.eDisarmFireAlarm] = new csml.Transition { to = "secure" }
-    [Events.eGasPurged] = new csml.Transition { to = "secure" }
+    [Events.eDisarmFireAlarm] {
+      to = "secure"
+      provided = Guards.isSafeToExitEmergency
+    }
+    [Events.eGasPurged] {
+      to = "secure"
+      provided = Guards.isSafeToExitEmergency
+    }
   }
 }

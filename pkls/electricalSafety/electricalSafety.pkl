@@ -1,6 +1,4 @@
-import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
@@ -8,100 +6,77 @@ import "actions.pkl" as Actions
 import "context.pkl" as Context
 import "guards.pkl" as Guards
 
-// This module contains the definition for the eletricalSafety SM
+// Electrical safety state machine definition.
+//
+// Periodically checks for arc faults every 30s. If detected, trips the
+// circuit breaker and waits for manual reset before resuming monitoring.
 sm = new csml.StateMachine {
   transient = Context.electricalSafetyContext
   states {
-    ["init"] = init
     ["monitoring"] = monitoring
     ["arcFault"] = arcFault
     ["acknowledged"] = acknowledged
-    ["gas"] = gas
   }
 }
 
-local const init: csml.Initial = new {
-  always {
-    new csml.Transition { to = "monitoring" }
+local monitoring: csml.Initial = new {
+  entry {
+    new csml.Emit { event = new csml.Internal { topic = "startCheck" } }
   }
-}
-
-// Always starts in monitoring state
-// Invokes service to check for arc faults every 30 seconds
-local const monitoring: csml.State = new {
   after {
-    ["checkArcFault"] = new csml.Timeout {
+    ["arcFaultPoll"] = new csml.Timeout {
       delay = "30000"
-      do = Actions.aRaiseStartArcFaultDetection
+      triggers = new csml.Emit { event = new csml.Internal { topic = "startCheck" } }
     }
   }
   on {
-    [Events.eStartArcFaultDetection] = new csml.Transition {
-      do {
+    ["startCheck"] {
+      yields {
         new csml.Invoke {
           type = ServiceTypes.stCheckArcFault
-          raises { new csml.Internal { topic = Events.eArcFaultDetectionComplete } }
+          emits { new csml.Internal { topic = "checkDone" } }
         }
       }
     }
-    // If an arc fault is found, transition to corresponding state
-    [Events.eArcFaultDetectionComplete] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vArcFaultLocation) = $arcFaultLocation"}
-        new csml.Raise { event = new csml.Internal { topic = Events.eCheckArcFault }}
+    ["checkDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vArcFaultLocation) = $arcFaultLocation" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.foundArcFault
+              yields { new csml.Emit { event = new csml.Internal { topic = "goArcFault" } } }
+            }
+          }
+        }
       }
     }
-    [Events.eCheckArcFault] = new csml.Transition {
-      to = "arcFault"
-      iif = Guards.foundArcFault
-    }
+    ["goArcFault"] { to = "arcFault" }
   }
 }
 
-// If an arc fault is detected, invoke service to trip the corresponding circuit breaker
-local const arcFault: csml.State = new {
+// Trips the breaker and waits for manual reset.
+local arcFault: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stTripCircuitBreaker
-      input {
-        ["arcFaultLocation"] = Vars.vArcFaultLocation
-      }
+      input { ["arcFaultLocation"] = Vars.vArcFaultLocation }
     }
     Actions.aRaiseArcFaultDetected
   }
   on {
-    [Events.eResetElectricalFault] = new csml.Transition {
-      to = "acknowledged"
-    }
-    [Events.eGasLeakDetected] = new csml.Transition {
-      to = "gas"
-    }
+    [Events.eResetElectricalFault] { to = "acknowledged" }
   }
 }
 
-// Invokes Ack Service and transitions back to monitoring state
-local const acknowledged: csml.State = new {
+local acknowledged: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stAcknowledgedEletrical
+      emits { new csml.Internal { topic = "ackComplete" } }
     }
   }
-  always {
-    new csml.Transition {
-      to = "monitoring"
-    }
-  }
-}
-
-// Testing purposes / Critical Safety
-// Terminal state
-local const gas: csml.State = new {
-  entry {
-    new csml.Invoke {
-      type = ServiceTypes.stCutPower
-      input {
-        ["gasLeakLocation"] = "$gasLeakLocation"
-      }
-    }
+  on {
+    ["ackComplete"] { to = "monitoring" }
   }
 }

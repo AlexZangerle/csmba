@@ -1,18 +1,20 @@
-import "actions.pkl" as Actions
-import "context.pkl" as Context
-import "guards.pkl" as Guards
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "actions.pkl" as Actions
+import "context.pkl" as Context
+import "guards.pkl" as Guards
 
-/// This module defines the buildingScheduleSM
+// Building schedule state machine definition.
+//
+// Periodically checks a schedule service to determine the current
+// operational mode: businessHours | afterHours | weekendClosed.
+// Each mode re-evaluates on a timer (15 min weekday, 2 hr weekend).
 sm = new csml.StateMachine {
   transient = Context.scheduleContext
   states {
-    ["init"] = init
     ["evaluating"] = evaluating
-    ["evaluateSchedule"] = evaluateSchedule
     ["businessHours"] = businessHours
     ["afterHours"] = afterHours
     ["weekendClosed"] = weekendClosed
@@ -20,119 +22,101 @@ sm = new csml.StateMachine {
   }
 }
 
-local const init: csml.Initial = new {
-  always {
-    new csml.Transition { to = "evaluating"}
-  }
-}
-
-/// The central state calling the time service and routing to the corresponding operational mode.
-local const evaluating: csml.State = new {
+// Fetches current schedule from the time service
+local evaluating: csml.Initial = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stGetScheduleMode
-      raises { new csml.Internal { topic = Events.eScheduleCheckComplete}}
+      emits { new csml.Internal { topic = "scheduleCheckDone" } }
     }
   }
   on {
-    [Events.eScheduleCheckComplete] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = $currentSchedule"}
-        new csml.Raise { event = new csml.Global { topic = Events.eCheckIsWeekend }}
+    ["scheduleCheckDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = $currentSchedule" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.isWeekend
+              yields { new csml.Emit { event = new csml.Internal { topic = "goWeekend" } } }
+            }
+            new csml.Case {
+              of = Guards.isBusinessHours
+              yields { new csml.Emit { event = new csml.Internal { topic = "goBusiness" } } }
+            }
+          }
+          default = new csml.Emit { event = new csml.Internal { topic = "goAfterHours" } }
+        }
       }
     }
-    [Events.eCheckIsWeekend] = new csml.Transition {
-      to = "weekendClosed"
-      iif = Guards.isWeekend
-      or = "evaluateSchedule"
-    }
+    ["goWeekend"] { to = "weekendClosed" }
+    ["goBusiness"] { to = "businessHours" }
+    ["goAfterHours"] { to = "afterHours" }
+    [Events.eFireAlarm] { to = "emergencyOverride" }
+    [Events.eGasLeakDetected] { to = "emergencyOverride" }
   }
 }
 
-local const evaluateSchedule: csml.State = new {
-  always {
-    new csml.Transition {
-      to = "businessHours"
-      iif = Guards.isBusinessHours
-      or = "afterHours"
-    }
-  }
-}
-
-/// The state signifying that the building is currently in its normal operating hours
-/// Re-checks every 15 minutes
-local const businessHours: csml.State = new {
-  entry {
-    Actions.aRaiseEnterBusinessHours
-  }
+// Re-checks every 15 minutes.
+local businessHours: csml.State = new {
+  entry { Actions.aRaiseEnterBusinessHours }
   after {
     ["scheduleCheck"] = new csml.Timeout {
       delay = "900000"
-      do = Actions.aRaiseStartScheduleCheck
+      triggers = Actions.aRaiseStartScheduleCheck
     }
   }
   on {
-    [Events.eStartScheduleCheck] = new csml.Transition {
-      to = "evaluating"
-    }
-    [Events.eFireAlarm] = new csml.Transition {
-      to = "emergencyOverride"
-    }
+    [Events.eStartScheduleCheck] { to = "evaluating" }
+    [Events.eFireAlarm] { to = "emergencyOverride" }
+    [Events.eGasLeakDetected] { to = "emergencyOverride" }
   }
 }
 
-
-/// State to signify the building is currently between businessHours on a weekday
-local const afterHours: csml.State = new {
+local afterHours: csml.State = new {
   entry {
     Actions.aRaiseEnterAfterHours
   }
   after {
     ["scheduleCheck"] = new csml.Timeout {
       delay = "900000"
-      do = Actions.aRaiseStartScheduleCheck
+      triggers = Actions.aRaiseStartScheduleCheck
     }
   }
   on {
-    [Events.eStartScheduleCheck] = new csml.Transition {
-      to = "evaluating"
-    }
-    [Events.eFireAlarm] = new csml.Transition {
-      to = "emergencyOverride"
-    }
+    [Events.eStartScheduleCheck] { to = "evaluating" }
+    [Events.eFireAlarm] { to = "emergencyOverride" }
+    [Events.eGasLeakDetected] { to = "emergencyOverride" }
   }
 }
 
-/// State to signify it is currently weekend
-/// Less frequent schedule check
-local const weekendClosed: csml.State = new {
+// Re-checks every 2 hours.
+local weekendClosed: csml.State = new {
   entry {
     Actions.aRaiseEnterWeekend
   }
   after {
     ["scheduleCheck"] = new csml.Timeout {
-      delay = "900000"
-      do = Actions.aRaiseStartScheduleCheck
+      delay = "7200000"
+      triggers = Actions.aRaiseStartScheduleCheck
     }
   }
   on {
-    [Events.eStartScheduleCheck] = new csml.Transition {
-      to = "evaluating"
-    }
-    [Events.eFireAlarm] = new csml.Transition {
-      to = "emergencyOverride"
-    }
+    [Events.eStartScheduleCheck] { to = "evaluating" }
+    [Events.eFireAlarm] { to = "emergencyOverride" }
+    [Events.eGasLeakDetected] { to = "emergencyOverride" }
   }
 }
 
-/// State signifying the building is currently in an emergency
-local const emergencyOverride: csml.State = new {
+local emergencyOverride: csml.State = new {
   on {
-    [Events.eDisarmFireAlarm] = new csml.Transition {
+    [Events.eDisarmFireAlarm] {
       to = "evaluating"
+      provided = Guards.isSafeToExitEmergency
     }
-    [Events.eGasPurged] = new csml.Transition {
+    [Events.eGasPurged] {
       to = "evaluating"
+      provided = Guards.isSafeToExitEmergency
     }
   }
 }

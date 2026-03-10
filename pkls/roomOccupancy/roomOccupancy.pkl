@@ -1,134 +1,142 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
 import "actions.pkl" as Actions
 import "context.pkl" as Context
 import "guards.pkl" as Guards
-import "../serviceTypes.pkl" as ServiceTypes
-import "../variables.pkl" as Vars
 import "occupancyMonitor.pkl"
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
-// This module contains the definition for the room occupancy SM
+// Room occupancy state machine definition.
+//
+// Listens for sensor data, invokes an occupancy detection service,
+// and transitions between vacant -> occupied -> transient based on results.
 sm = new csml.StateMachine {
   transient = Context.occupancyLocalContext
-  stateMachines {
+  nested {
     ["occupancyMonitor"] = occupancyMonitor.sm
   }
   states {
-    ["init"] = init
     ["vacant"] = vacant
     ["occupied"] = occupied
     ["transient"] = transientState
   }
 }
 
-// Initially the SM will always transition to vacant
-local const init: csml.Initial = new {
-  always {
-    new csml.Transition { to = "vacant" }
-  }
-}
-
-// State: Vacant
-// Waits for external sensor data event
-local const vacant: csml.State = new {
+local vacant: csml.Initial = new {
   entry {
-    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'vacant'" }
+    new csml.Assign { expression = "\(Vars.vCurrentOccupancy) = 'vacant'" }
   }
   on {
-    ["sensorOccupancyReceived"] = new csml.Transition {
-      do {
+    ["sensorOccupancyReceived"] {
+      provided = Guards.isMyZone
+      yields {
         new csml.Invoke {
           type = ServiceTypes.stDetectOccupancy
           input { ["imageData"] = "$imageData" }
-          raises { new csml.Internal { topic = Events.eDetectionComplete } }
+          emits { new csml.Internal { topic = "detectionDone" } }
         }
       }
     }
-    [Events.eDetectionComplete] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
-        new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
+    ["detectionDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.occupancyDetected
+              yields { new csml.Emit { event = new csml.Internal { topic = "goOccupied" } } }
+            }
+          }
+        }
       }
     }
-    ["processDetection"] = new csml.Transition {
+    ["goOccupied"] {
       to = "occupied"
-      iif = Guards.occupancyDetected
-      do {
-        Actions.aRaiseOccupancyDetected
-      }
-      or = "vacant"
+      yields { Actions.aRaiseOccupancyDetected }
     }
   }
 }
 
-// State: Occupied
-local const occupied: csml.State = new {
+local occupied: csml.State = new {
   entry {
-    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'occupied'" }
+    new csml.Assign { expression = "\(Vars.vCurrentOccupancy) = 'occupied'" }
   }
   on {
-    ["sensorOccupancyReceived"] = new csml.Transition {
-      do {
+    ["sensorOccupancyReceived"] {
+      provided = Guards.isMyZone
+      yields {
         new csml.Invoke {
           type = ServiceTypes.stDetectOccupancy
           input { ["imageData"] = "$imageData" }
-          raises { new csml.Internal { topic = Events.eDetectionComplete } }
+          emits { new csml.Internal { topic = "detectionDone" } }
         }
       }
     }
-    [Events.eDetectionComplete] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
-        new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
+    ["detectionDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.occupancyDetected
+              yields { new csml.Emit { event = new csml.Internal { topic = "goOccupied" } } }
+            }
+          }
+          default = new csml.Emit { event = new csml.Internal { topic = "goTransient" } }
+        }
       }
     }
-    ["processDetection"] = new csml.Transition {
+    ["goOccupied"] {
       to = "occupied"
-      iif = Guards.occupancyDetected
-      do {
-        Actions.aRaiseOccupancyDetected
-      }
-      or = "transient"
+      yields { Actions.aRaiseOccupancyDetected }
     }
-    [Events.eActivateEnergySaving] = new csml.Transition {
+    ["goTransient"] { to = "transient" }
+
+    [Events.eActivateEnergySaving] {
       to = "transient"
-      do {
-        new csml.Eval { expression = "\(Vars.vEnergySaving) = true" }
+      yields {
+        new csml.Assign { expression = "\(Vars.vEnergySaving) = true" }
         Actions.aRaiseOccupancyTransient
       }
     }
   }
 }
 
-// State: Transient (Grace Period)
-local const transientState: csml.State = new {
+local transientState: csml.State = new {
   entry {
-    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'transient'" }
+    new csml.Assign { expression = "\(Vars.vCurrentOccupancy) = 'transient'" }
     Actions.aRaiseOccupancyTransient
   }
   on {
-    ["sensorOccupancyReceived"] = new csml.Transition {
-      do {
+    ["sensorOccupancyReceived"] {
+      provided = Guards.isMyZone
+      yields {
         new csml.Invoke {
           type = ServiceTypes.stDetectOccupancy
           input { ["imageData"] = "$imageData" }
-          raises { new csml.Internal { topic = Events.eDetectionComplete } }
+          emits { new csml.Internal { topic = "detectionDone" } }
         }
       }
     }
-    [Events.eDetectionComplete] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
-        new csml.Raise { event = new csml.Internal { topic = "processDetection" } }
+    ["detectionDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.occupancyDetected
+              yields { new csml.Emit { event = new csml.Internal { topic = "goOccupied" } } }
+            }
+          }
+          default = new csml.Emit { event = new csml.Internal { topic = "goVacant" } }
+        }
       }
     }
-    ["processDetection"] = new csml.Transition {
+    ["goOccupied"] {
       to = "occupied"
-      iif = Guards.occupancyDetected
-      do  {
-        Actions.aRaiseOccupancyDetected
-      }
-      or = "vacant"
+      yields { Actions.aRaiseOccupancyDetected }
     }
+    ["goVacant"] { to = "vacant" }
   }
 }

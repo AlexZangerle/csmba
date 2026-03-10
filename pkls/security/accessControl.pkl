@@ -1,24 +1,21 @@
-import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
-import "context.pkl" as Context
 import "actions.pkl" as Actions
+import "context.pkl" as Context
 import "guards.pkl" as Guards
 
-/// This module defines the accessControlSM for a single access-controlled door.
+// Access control state machine definition.
+//
+// Per-door controller handling authentication, rule checks, and physical security.
 sm = new csml.StateMachine {
   transient = Context.accessControlContext
   states {
     ["init"] = init
-    ["initializing"] = initializing
     ["locked"] = locked
     ["authenticating"] = authenticating
-    ["checkAuthResult"] = checkAuthResult
     ["checkingRules"] = checkingRules
-    ["checkRuleResult"] = checkRuleResult
     ["unlocked"] = unlocked
     ["accessDenied"] = accessDenied
     ["emergencyUnlock"] = emergencyUnlock
@@ -26,97 +23,73 @@ sm = new csml.StateMachine {
   }
 }
 
-local const init: csml.Initial = new {
-  always {
-    new csml.Transition { to = "initializing" }
-  }
-}
-
-// Setup state: Determines if this door is an evacuation route
-local const initializing: csml.State = new {
+local init: csml.Initial = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stGetDoorRouteType
       input { ["doorId"] = Vars.vDoorId }
-      raises { new csml.Internal { topic = "doorTypeDetermined" } }
+      emits { new csml.Internal { topic = "doorTypeDetermined" } }
     }
   }
   on {
-    ["doorTypeDetermined"] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vIsEvacuationRoute) = $isEvacuationRoute" }
-      }
+    ["doorTypeDetermined"] {
       to = "locked"
+      yields {
+        new csml.Assign { expression = "\(Vars.vIsEvacuationRoute) = $isEvacuationRoute" }
+      }
     }
   }
 }
 
-/// Default locked state, listens for access attempts and overrides.
-local const locked: csml.State = new {
+local locked: csml.State = new {
   on {
-    [Events.eAuthenticationRequest] = new csml.Transition {
-      to = "authenticating"
-      iif = Guards.isCurrentDoor
-    }
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
-    [Events.eGasLeakDetected] = new csml.Transition {
-      to = "emergencyUnlock"
-      iif = Guards.checkIsEvacuationRoute
-    }
-    [Events.eUnlockAllEvacuationRoutes] = new csml.Transition {
-      to = "emergencyUnlock"
-      iif = Guards.checkIsEvacuationRoute
-    }
-
-    [Events.eLockdownZone] = new csml.Transition {
-      iif = Guards.isCurrentZone
-    }
-
-    [Events.eDoorForcedOpen] = new csml.Transition { to = "forcedOpenAlarm" }
-    [Events.ePhysicalTamper] = new csml.Transition { to = "forcedOpenAlarm" }
-    [Events.eForceUnlockRequest] = new csml.Transition { to = "unlocked" }
+    [Events.eAuthenticationRequest] { to = "authenticating"; provided = Guards.isCurrentDoor }
+    [Events.eFireAlarm] { to = "emergencyUnlock" }
+    [Events.eGasLeakDetected] { to = "emergencyUnlock"; provided = Guards.checkIsEvacuationRoute }
+    [Events.eUnlockAllEvacuationRoutes] { to = "emergencyUnlock"; provided = Guards.checkIsEvacuationRoute }
+    [Events.eLockdownZone] { provided = Guards.isCurrentZone }
+    [Events.eDoorForcedOpen] { to = "forcedOpenAlarm" }
+    [Events.ePhysicalTamper] { to = "forcedOpenAlarm" }
+    [Events.eForceUnlockRequest] { to = "unlocked" }
   }
 }
 
-/// Calls the authentication service.
-local const authenticating: csml.State = new {
+local authenticating: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stAuthenticateUser
       input { ["cardId"] = "$cardId" }
-      raises { new csml.Internal { topic = "authComplete" } }
+      emits { new csml.Internal { topic = "authDone" } }
     }
   }
   on {
-    ["authComplete"] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vUserId) = $userId" }
-        new csml.Eval { expression = "\(Vars.vUserRole) = $userRole" }
-        new csml.Eval { expression = "\(Vars.vAuthenticationStatus) = $authenticationStatus" }
-        new csml.Raise { event = new csml.Internal { topic = "checkAuth" } }
+    ["authDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vUserId) = $userId" }
+        new csml.Assign { expression = "\(Vars.vUserRole) = $userRole" }
+        new csml.Assign { expression = "\(Vars.vAuthenticationStatus) = $authenticationStatus" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.authSuccessful
+              yields { new csml.Emit { event = new csml.Internal { topic = "goCheckRules" } } }
+            }
+          }
+          default = new csml.Emit { event = new csml.Internal { topic = "goDeniedAuth" } }
+        }
       }
     }
-    ["checkAuth"] = new csml.Transition {
-      to = "checkAuthResult"
+    ["goCheckRules"] { to = "checkingRules" }
+    ["goDeniedAuth"] {
+      to = "accessDenied"
+      yields { Actions.aRaiseAccessDeniedAuth }
     }
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
+
+    [Events.eFireAlarm] { to = "emergencyUnlock" }
   }
 }
 
-// Logic State for Auth
-local const checkAuthResult: csml.State = new {
-  always {
-    new csml.Transition {
-      to = "checkingRules"
-      iif = Guards.authSuccessful
-      or = "accessDenied"
-      do { Actions.aRaiseAccessDeniedAuth }
-    }
-  }
-}
-
-/// Calls the rule checking service based on authenticated role and current schedule.
-local const checkingRules: csml.State = new {
+local checkingRules: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stCheckAccessRule
@@ -125,114 +98,101 @@ local const checkingRules: csml.State = new {
         ["zoneId"] = Vars.vZoneId
         ["currentScheduleMode"] = Vars.vCurrentScheduleMode
       }
-      raises { new csml.Internal { topic = "rulesChecked" } }
+      emits { new csml.Internal { topic = "rulesDone" } }
     }
   }
   on {
-    ["rulesChecked"] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vAccessDecision) = $accessDecision" }
-        new csml.Raise { event = new csml.Internal { topic = "checkRules" } }
+    ["rulesDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vAccessDecision) = $accessDecision" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.allowAccess
+              yields { new csml.Emit { event = new csml.Internal { topic = "goUnlocked" } } }
+            }
+          }
+          default = new csml.Emit { event = new csml.Internal { topic = "goDeniedRule" } }
+        }
       }
     }
-    ["checkRules"] = new csml.Transition {
-      to = "checkRuleResult"
-    }
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
-  }
-}
-
-// Logic State for Rules
-local const checkRuleResult: csml.State = new {
-  always {
-    new csml.Transition {
+    ["goUnlocked"] {
       to = "unlocked"
-      iif = Guards.allowAccess
-      do {
-        Actions.aRaiseAccessGranted
-        Actions.aRaiseAccessDeniedRule
-      }
-      or = "accessDenied"
+      yields { Actions.aRaiseAccessGranted }
     }
+    ["goDeniedRule"] {
+      to = "accessDenied"
+      yields { Actions.aRaiseAccessDeniedRule }
+    }
+
+    [Events.eFireAlarm] { to = "emergencyUnlock" }
   }
 }
 
-/// Door is temporarily unlocked.
-local const unlocked: csml.State = new {
+local unlocked: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stControlDoorLock
-      input {
-        ["doorId"] = Vars.vDoorId
-        ["command"] = "'unlock'"
-      }
+      input { ["doorId"] = Vars.vDoorId; ["command"] = "'unlock'" }
     }
   }
   after {
-    ["autoRelockTimer"] = new csml.Timeout {
+    ["autoRelock"] = new csml.Timeout {
       delay = "10000"
-      do = Actions.aRaiseAutoRelock
+      triggers = Actions.aRaiseAutoRelock
     }
   }
   on {
-    ["autoRelock"] = new csml.Transition { to = "locked" }
-
-    [Events.eLockdownZone] = new csml.Transition {
-      to = "locked"
-      iif = Guards.isCurrentZone
-    }
-
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
-    [Events.eDoorForcedOpen] = new csml.Transition { to = "forcedOpenAlarm" }
-    [Events.ePhysicalTamper] = new csml.Transition { to = "forcedOpenAlarm" }
+    ["autoRelock"] { to = "locked" }
+    [Events.eLockdownZone] { to = "locked"; provided = Guards.isCurrentZone }
+    [Events.eFireAlarm] { to = "emergencyUnlock" }
+    [Events.eDoorForcedOpen] { to = "forcedOpenAlarm" }
+    [Events.ePhysicalTamper] { to = "forcedOpenAlarm" }
   }
 }
 
-/// Access was denied, briefly show status, then re-lock.
-local const accessDenied: csml.State = new {
+local accessDenied: csml.State = new {
   after {
     ["deniedDelay"] = new csml.Timeout {
       delay = "3000"
-      do = Actions.aRaiseReturnToLock
+      triggers = Actions.aRaiseReturnToLock
     }
   }
   on {
-    ["returnToLock"] = new csml.Transition { to = "locked" }
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
+    ["returnToLock"] { to = "locked" }
+    [Events.eFireAlarm] { to = "emergencyUnlock" }
   }
 }
 
-/// Highest priority state, forces door unlocked.
-local const emergencyUnlock: csml.State = new {
+local emergencyUnlock: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stControlDoorLock
-      input {
-        ["doorId"] = Vars.vDoorId
-        ["command"] = "'unlock'"
-      }
+      input { ["doorId"] = Vars.vDoorId; ["command"] = "'unlock'" }
     }
   }
   on {
-    [Events.eDisarmFireAlarm] = new csml.Transition { to = "locked" }
-    [Events.eGasPurged] = new csml.Transition { to = "locked" }
+    [Events.eDisarmFireAlarm] {
+      to = "locked"
+      provided = Guards.isSafeToExitEmergency
+    }
+    [Events.eGasPurged] {
+      to = "locked"
+      provided = Guards.isSafeToExitEmergency
+    }
   }
 }
 
-/// Alarm state if physical tampering or forced entry is detected.
-local const forcedOpenAlarm: csml.State = new {
+local forcedOpenAlarm: csml.State = new {
   entry {
     Actions.aRaiseForcedEntry
     new csml.Invoke {
       type = ServiceTypes.stControlDoorLock
-      input {
-        ["doorId"] = Vars.vDoorId
-        ["command"] = "'lock'"
-      }
+      input { ["doorId"] = Vars.vDoorId; ["command"] = "'lock'" }
     }
   }
   on {
-    [Events.eClearSecurityAlert] = new csml.Transition { to = "locked" }
-    [Events.eFireAlarm] = new csml.Transition { to = "emergencyUnlock" }
+    [Events.eClearSecurityAlert] { to = "locked" }
+    [Events.eFireAlarm] { to = "emergencyUnlock" }
   }
 }

@@ -2,88 +2,81 @@ import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/ref
 import "../events.pkl" as Events
 import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
-import "guards.pkl" as Guards
-import "context.pkl" as Context
 import "actions.pkl" as Actions
+import "context.pkl" as Context
+import "guards.pkl" as Guards
 
-// This module contains the definition for the gasSafety SM
-// gasSafety is the third part of the fire prevention system
-// gasSafety detects gas leak across multiple rooms
-// If a gas leak is detected, the location of that gas leak and a warning is published
+// Gas safety state machine definition.
+//
+// Polls for gas leaks every 30s. On detection: closes valve, cuts power,
+// raises global alert. Waits for purge confirmation before resuming.
 sm = new csml.StateMachine {
-    transient = Context.gasSafetyContext
-    states {
-        ["init"] = init
-        ["monitoring"] = monitoring
-        ["gasLeak"] = gasLeak
-        ["acknowledged"] = acknowledged
-    }
+  transient = Context.gasSafetyContext
+  states {
+    ["monitoring"] = monitoring
+    ["gasLeak"] = gasLeak
+    ["acknowledged"] = acknowledged
+  }
 }
 
-local const init: csml.Initial = new {
-    always {
-        new csml.Transition { to = "monitoring" }
+local monitoring: csml.Initial = new {
+  after {
+    ["gasLeakPoll"] = new csml.Timeout {
+      delay = "30000"
+      triggers = Actions.aRaiseStartGasLeakDetection
     }
-}
-
-// Always starts in monitoring state
-// Invokes gas detection service every 30 seconds
-local const monitoring: csml.State = new {
-    after {
-        ["checkGasLeak"] = new csml.Timeout {
-            delay = "30000"
-            do = Actions.aRaiseStartGasLeakDetection
-        }
-    }
-    on {
-        [Events.eStartGasLeakDetection] = new csml.Transition {
-            do {
-                new csml.Invoke {
-                    type = ServiceTypes.stCheckGasLeak
-                    raises { new csml.Internal { topic = Events.eGasLeakDetectionComplete } }
-                }
-            }
-        }
-        [Events.eGasLeakDetectionComplete] = new csml.Transition {
-            do {
-                new csml.Eval { expression = "\(Vars.vGasLeakLocation) = $gasLeakLocation" }
-                new csml.Raise { event = new csml.Internal { topic = "checkGasResult" } }
-            }
-        }
-        ["checkGasResult"] = new csml.Transition {
-            to = "gasLeak"
-            iif = Guards.foundGasLeak
-        }
-    }
-}
-
-// Invokes close valve service and raises global gas leak event
-local const gasLeak: csml.State = new {
-    entry {
+  }
+  on {
+    [Events.eStartGasLeakDetection] {
+      yields {
         new csml.Invoke {
-            type = ServiceTypes.stCloseGasValve
-            input {
-                ["gasLeakLocation"] = Vars.vGasLeakLocation
+          type = ServiceTypes.stCheckGasLeak
+          emits { new csml.Internal { topic = "checkDone" } }
+        }
+      }
+    }
+    ["checkDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vGasLeakLocation) = $gasLeakLocation" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.foundGasLeak
+              yields { new csml.Emit { event = new csml.Internal { topic = "goGasLeak" } } }
             }
+          }
         }
-        Actions.aRaiseGasLeakDetected
+      }
     }
-    on {
-        [Events.eGasPurged] = new csml.Transition {
-            to = "acknowledged"
-        }
-    }
+    ["goGasLeak"] { to = "gasLeak" }
+  }
 }
 
-local const acknowledged: csml.State = new {
-    entry {
-        new csml.Invoke {
-            type = ServiceTypes.stGasLeakPurged
-        }
+// Close valve, cut power, notify.
+local gasLeak: csml.State = new {
+  entry {
+    new csml.Invoke {
+      type = ServiceTypes.stCloseGasValve
+      input { ["gasLeakLocation"] = Vars.vGasLeakLocation }
     }
-    always {
-        new csml.Transition {
-            to = "monitoring"
-        }
+    new csml.Invoke {
+      type = ServiceTypes.stCutPower
+      input { ["gasLeakLocation"] = Vars.vGasLeakLocation }
     }
+    Actions.aRaiseGasLeakDetected
+    new csml.Assign { expression = "\(Vars.vGasActive) = true" }
+  }
+  on {
+    [Events.eGasPurged] { to = "acknowledged" }
+  }
+}
+
+local acknowledged: csml.State = new {
+  entry {
+    new csml.Invoke { type = ServiceTypes.stGasLeakPurged }
+    new csml.Assign { expression = "\(Vars.vGasActive) = false" }
+  }
+  always {
+    new csml.Transition { to = "monitoring" }
+  }
 }

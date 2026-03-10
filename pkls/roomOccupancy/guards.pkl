@@ -1,4 +1,5 @@
 import "../variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 occupancyDetected = "\(Vars.vOccupancyDetected)"
+
+isMyZone = "zoneId == $zoneId"

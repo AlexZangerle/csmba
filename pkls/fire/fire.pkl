@@ -1,108 +1,89 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
-import "actions.pkl" as Actions
-import "context.pkl" as Context
-import "guards.pkl" as Guards
 import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
+import "actions.pkl" as Actions
+import "context.pkl" as Context
 import "fireDoor.pkl"
+import "guards.pkl" as Guards
 
-// This module contains the definition for the fireDetection SM
+// Fire detection state machine definition.
+//
+// Waits for sensor data, invokes fire detection, and escalates
+// to fireAlarm or smokeAlert based on detection results.
+// Contains a nested fireDoor state machine.
 sm = new csml.StateMachine {
-  stateMachines {
+  nested {
     ["fireDoor"] = fireDoor.sm
   }
   transient = Context.fireDetectionContext
   states {
-    ["init"] = init
     ["detecting"] = detecting
-    ["checkSmoke"] = checkSmoke
     ["fireAlarm"] = fireAlarm
     ["smokeAlert"] = smokeAlert
   }
 }
 
-// Always transitions to detecting state
-local const init: csml.Initial = new {
-  always {
-    new csml.Transition { to = "detecting" }
-  }
-}
-
-// This state waits for sensor data and invokes detection logic
-local const detecting: csml.State = new {
+local detecting: csml.Initial = new {
   on {
-    [Events.eSensorFireDataReceived] = new csml.Transition {
-      do {
+    [Events.eSensorFireDataReceived] {
+      yields {
         new csml.Invoke {
           type = ServiceTypes.stDetectFire
           input {
             ["imageData"] = "$imageData"
             ["zoneId"] = "$zoneId"
           }
-          raises { new csml.Internal { topic = Events.eFireDetectionComplete } }
+          emits { new csml.Internal { topic = "detectionDone" } }
         }
       }
     }
-
-    [Events.eFireDetectionComplete] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vFireDetectionResult) = $fireDetectionResult" }
-        new csml.Eval { expression = "\(Vars.vEmergencyInRoom) = $emergencyInRoom" }
-        new csml.Raise { event = new csml.Internal { topic = "processDetectionResult" } }
+    ["detectionDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vFireDetectionResult) = $fireDetectionResult" }
+        new csml.Assign { expression = "\(Vars.vEmergencyInRoom) = $emergencyInRoom" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.fireDetectedGuard
+              yields { new csml.Emit { event = new csml.Internal { topic = "goFireAlarm" } } }
+            }
+            new csml.Case {
+              of = Guards.smokeDetectedGuard
+              yields { new csml.Emit { event = new csml.Internal { topic = "goSmokeAlert" } } }
+            }
+          }
+        }
       }
     }
-    ["processDetectionResult"] = new csml.Transition {
-      to = "fireAlarm"
-      iif = Guards.fireDetectedGuard
-      or = "checkSmoke"
-    }
+    ["goFireAlarm"] { to = "fireAlarm" }
+    ["goSmokeAlert"] { to = "smokeAlert" }
   }
 }
 
-// Helper state/logic for checking smoke if fire wasn't found
-local const checkSmoke: csml.State = new {
-  always {
-    new csml.Transition {
-      to = "smokeAlert"
-      iif = Guards.smokeDetectedGuard
-      or = "detecting"
-    }
-  }
-}
-
-// FireAlarm state sets the VFireAlarm variable to true and raises a global fireAlarm event
-local const fireAlarm: csml.State = new {
+local fireAlarm: csml.State = new {
   entry {
-    new csml.Eval { expression = "\(Vars.vFireAlarm) = true" }
+    new csml.Assign { expression = "\(Vars.vFireAlarm) = true" }
     Actions.aRaiseFireAlarm
   }
   on {
-    [Events.eDisarmFireAlarm] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vFireAlarm) = false" }
-      }
+    [Events.eDisarmFireAlarm] {
       to = "detecting"
+      yields { new csml.Assign { expression = "\(Vars.vFireAlarm) = false" } }
     }
   }
 }
 
-// SmokeAlert state sets the vSmokeAlert variable to true and raises a global smokeAlert event
-local const smokeAlert: csml.State = new {
+local smokeAlert: csml.State = new {
   entry {
-    new csml.Eval { expression = "\(Vars.vSmokeAlert) = true" }
+    new csml.Assign { expression = "\(Vars.vSmokeAlert) = true" }
     Actions.aRaiseSmokeAlert
   }
   on {
-    [Events.eDisarmSmokeAlert] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vSmokeAlert) = false" }
-      }
+    [Events.eDisarmSmokeAlert] {
       to = "detecting"
+      yields { new csml.Assign { expression = "\(Vars.vSmokeAlert) = false" } }
     }
-    // Escalation: If actual fire is detected while in smoke alert
-    [Events.eSensorFireDataReceived] = new csml.Transition {
-      to = "fireAlarm"
-    }
+    [Events.eSensorFireDataReceived] { to = "fireAlarm" }
   }
 }

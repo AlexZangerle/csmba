@@ -58,6 +58,8 @@ eActivateEnergySaving = "energySavingMode"
 // Raised to put the system into normal energy mode
 eDeactivateEnergySaving = "energyNormalMode"
 
+eEnergyShutdown = "energyShutdown"
+
 // Raised internally to signify the start of fire detection
 eStartDetectingFire = "startDetectingFire"
 

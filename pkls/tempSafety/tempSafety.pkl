@@ -1,94 +1,64 @@
-import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
-import "actions.pkl" as Actions
 import "context.pkl" as Context
 import "guards.pkl" as Guards
 
-// This module contains the definition for the fireSafety SM
+// Fire safety state machine definition.
+//
+// Polls room temperature every 30s. If threshold exceeded, sends a
+// high risk warning and waits for manual clearance before resuming.
 sm = new csml.StateMachine {
   transient = Context.fireSafetyContext
   states {
-    ["init"] = init
-    ["normal"] = normal
-    ["normalLoop"] = normalLoop
-    ["checkTemp"] = checkTemp
+    ["monitoring"] = monitoring
     ["highRisk"] = highRisk
-    ["highRiskWait"] = highRiskWait
   }
 }
 
-local const init: csml.Initial = new {
-  always {
-    new csml.Transition { to = "normal" }
-  }
-}
-
-/// Always start in monitoroing
-local const normal: csml.State = new {
-  always { new csml.Transition { to = "normalLoop" } }
-}
-
-/// Loop to re-evaluate
-local const normalLoop: csml.State = new {
+local monitoring: csml.Initial = new {
   after {
-    ["pullRoomTemp"] = new csml.Timeout {
+    ["tempPoll"] = new csml.Timeout {
       delay = "30000"
-      do = new csml.Raise { event = new csml.Internal { topic = "startTempCheck" } }
+      triggers = new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
     }
   }
   on {
-    ["startTempCheck"] = new csml.Transition {
-      do {
+    ["startTempCheck"] {
+      yields {
         new csml.Invoke {
           type = ServiceTypes.stTempSafety
           input { ["roomId"] = Vars.vRoomId }
-          raises { new csml.Internal { topic = Events.eTempReadingComplete } }
+          emits { new csml.Internal { topic = "tempCheckDone" } }
         }
       }
     }
-    [Events.eTempReadingComplete] = new csml.Transition {
-      do {
-        new csml.Eval { expression = "\(Vars.vRoomTemp) = $roomTemp" }
-        new csml.Raise { event = new csml.Internal { topic = "checkThreshold" } }
+    ["tempCheckDone"] {
+      yields {
+        new csml.Assign { expression = "\(Vars.vRoomTemp) = $roomTemp" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.exceedTempThreshold
+              yields { new csml.Emit { event = new csml.Internal { topic = "goHighRisk" } } }
+            }
+          }
+        }
       }
     }
-    ["checkThreshold"] = new csml.Transition {
-      to = "checkTemp"
-    }
+    ["goHighRisk"] { to = "highRisk" }
   }
 }
 
-local const checkTemp: csml.State = new {
-  always {
-    new csml.Transition {
-      to = "highRisk"
-      iif = Guards.exceedTempThreshold
-      or = "normalLoop"
-    }
-  }
-}
-
-/// Riase high risk event
-local const highRisk: csml.State = new {
+local highRisk: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stTempHighRisk
-      input { ["roomId"] = "roomId" }
-      raises { new csml.Internal { topic = "warningSent" } }
+      input { ["roomId"] = Vars.vRoomId }
     }
   }
   on {
-    ["warningSent"] = new csml.Transition { to = "highRiskWait" }
-  }
-}
-
-/// Wait for manual clearance and return to evaluating
-local const highRiskWait: csml.State = new {
-  on {
-    [Events.eTempRiskCleared] = new csml.Transition { to = "normal" }
+    [Events.eTempRiskCleared] { to = "monitoring" }
   }
 }

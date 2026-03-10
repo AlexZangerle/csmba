@@ -1,5 +1,4 @@
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/main/pkls/variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../variables.pkl" as Vars
 // This module contains all guards for buildingScheduleSM and roomScheduleSM
 
 // Guard to check if building is in businessHours
@@ -14,7 +13,7 @@ isWeekend = "\(Vars.vCurrentScheduleMode) == 'weekendClosed'"
 // Guard to check if an extended stay has been requested for this zone
 requestedStay = "$zoneId == \(Vars.vZoneId)"
 
-
 // Guard to check if user left this zone
 userLeftZone = "$zoneId == \(Vars.vZoneId)"
 
+isSafeToExitEmergency = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"

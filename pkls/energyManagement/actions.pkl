@@ -1,4 +1,3 @@
-
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 // This module contains actions for the energyManagement SM
@@ -6,28 +5,34 @@ import "../events.pkl" as Events
 
 // Raise to deactivate energy saving
 aRaiseDeactiveEnergySaving = new csml.Raise {
-    event = new csml.Global {
-        topic = Events.eDeactivateEnergySaving
-    }
+  event = new csml.Global {
+    topic = Events.eDeactivateEnergySaving
+  }
 }
 
 // Raise to start detecting energy prices
 aRaiseStartDetectingEnergy = new csml.Raise {
-    event = new csml.Internal {
-        topic = Events.eStartEnergyCheck
-    }
+  event = new csml.Internal {
+    topic = Events.eStartEnergyCheck
+  }
 }
 
 // Raise to activate energy saving
 aRaiseEnergySaving = new csml.Raise {
-    event = new csml.Global {
-        topic = Events.eActivateEnergySaving
-    }
+  event = new csml.Global {
+    topic = Events.eActivateEnergySaving
+  }
 }
 
 // Raise to activate drastic energy saving
 aRaiseDrasticEnergySaving = new csml.Raise {
-    event = new csml.Global {
-        topic = Events.eDrasticEnergySaving
-    }
+  event = new csml.Global {
+    topic = Events.eDrasticEnergySaving
+  }
+}
+
+aRaiseEnergyShutdown = new csml.Raise {
+  event = new csml.Global {
+    topic = Events.eEnergyShutdown
+  }
 }

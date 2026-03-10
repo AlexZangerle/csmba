@@ -1,8 +1,7 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../variables.pkl" as Vars
 // This module contains all contexts for the room occupancy SM
 
 occupancyLocalContext = new Mapping {
   [Vars.vOccupancyDetected] = "false"
+  [Vars.vZoneId] = "'testZone'"
 }

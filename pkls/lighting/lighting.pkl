@@ -1,167 +1,113 @@
-import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
 import "context.pkl" as Context
 import "guards.pkl" as Guards
 
-// This module contains the definition for the lighting SM
+// Lighting state machine definition.
 sm = new csml.StateMachine {
   transient = Context.lightingContext
   states {
-    ["init"] = init
-    ["off"] = offState
-    ["on"] = turnOn
+    ["off"] = off
+    ["on"] = on
     ["dim"] = dim
     ["userLevel"] = userLevel
     ["fire"] = fire
-    ["flashingAlarm_Off"] = flashingAlarm_Off
-    ["flashingAlarm_On"] = flashingAlarm_On
+    ["safetyOff"] = safetyOff
+    ["flashingAlarm_Off"] = flashingAlarmOff
+    ["flashingAlarm_On"] = flashingAlarmOn
   }
 }
 
-// Initially always transitions to off
-local const init: csml.Initial = new {
-  always {
-    new csml.Transition { to = "off" }
-  }
-}
-
-// Lights off - default state when inactive or vacant.
-local const offState: csml.State = new {
+local off: csml.Initial = new {
   entry {
-    new csml.Invoke {
-      type = ServiceTypes.stTurnOff
-    }
+    new csml.Invoke { type = ServiceTypes.stTurnOff }
   }
   on {
-    [Events.eOccupancyDetected] = new csml.Transition {
+    [Events.eOccupancyDetected] {
       to = "on"
-      iif = Guards.energySavingInactive
+      provided = Guards.energySavingInactive
       or = "dim"
     }
-    [Events.eActivateLightUserLevel] = new csml.Transition {
+    [Events.eActivateLightUserLevel] {
       to = "userLevel"
-      do { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
+      yields { new csml.Assign { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
-    [Events.eAccessGranted] = new csml.Transition {
-      to = "on"
-      iif = Guards.isMyZone
+    [Events.eFlashAllLights] { to = "flashingAlarm_On" }
+    [Events.eFireAlarm] { to = "fire" }
+    [Events.eGasLeakDetected] { to = "safetyOff" }
+    [Events.eActivateEnergySaving] {
+      yields { new csml.Assign { expression = "\(Vars.vEnergySaving) = true" } }
     }
-    [Events.eFlashAllLights] = new csml.Transition {
-      to = "flashingAlarm_Off"
-    }
-    [Events.eFireAlarm] = new csml.Transition {
-      to = "fire"
-    }
-    [Events.eActivateEnergySaving] = new csml.Transition {
-      do { new csml.Eval { expression = "\(Vars.vEnergySaving) = true" } }
-    }
-    [Events.eDeactivateEnergySaving] = new csml.Transition {
-      do { new csml.Eval { expression = "\(Vars.vEnergySaving) = false" } }
+    [Events.eDeactivateEnergySaving] {
+      yields { new csml.Assign { expression = "\(Vars.vEnergySaving) = false" } }
     }
   }
 }
 
-// Lights on - zone is active and occupied.
-local const turnOn: csml.State = new {
+local on: csml.State = new {
   entry {
-    new csml.Invoke {
-      type = ServiceTypes.stTurnOn
-    }
+    new csml.Invoke { type = ServiceTypes.stTurnOn }
   }
   on {
-    [Events.eOccupancyTransient] = new csml.Transition { to = "dim" }
-    [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
-
-    [Events.eActivateLightUserLevel] = new csml.Transition {
+    [Events.eOccupancyTransient] { to = "dim" }
+    [Events.eOccupancyVacant] { to = "off" }
+    [Events.eActivateLightUserLevel] {
       to = "userLevel"
-      do { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
+      yields { new csml.Assign { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
-
-    [Events.eZoneWarning] = new csml.Transition {
-      to = "dim"
-      iif = Guards.isMyZone
-    }
-    [Events.eZoneInactive] = new csml.Transition {
-      to = "off"
-      iif = Guards.isMyZone
-    }
-
-    [Events.eFlashAllLights] = new csml.Transition { to = "flashingAlarm_Off" }
-    [Events.eFireAlarm] = new csml.Transition { to = "fire" }
+    [Events.eFlashAllLights] { to = "flashingAlarm_On" }
+    [Events.eFireAlarm] { to = "fire" }
+    [Events.eGasLeakDetected] { to = "safetyOff" }
   }
 }
 
-// Lights dim - grace period, warning, or energy saving.
-local const dim: csml.State = new {
+local dim: csml.State = new {
   entry {
-    new csml.Invoke {
-      type = ServiceTypes.stDim
-    }
+    new csml.Invoke { type = ServiceTypes.stDim }
   }
   on {
-    [Events.eOccupancyDetected] = new csml.Transition {
+    [Events.eOccupancyDetected] {
       to = "on"
-      iif = Guards.energySavingInactive
+      provided = Guards.energySavingInactive
     }
-
-    [Events.eOccupancyVacant] = new csml.Transition { to = "off" }
-    [Events.eActivateLightUserLevel] = new csml.Transition {
+    [Events.eOccupancyVacant] { to = "off" }
+    [Events.eActivateLightUserLevel] {
       to = "userLevel"
-      do { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
+      yields { new csml.Assign { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
-    [Events.eZoneActive] = new csml.Transition {
-      to = "on"
-      iif = Guards.isMyZone
+    [Events.eFlashAllLights] { to = "flashingAlarm_On" }
+    [Events.eFireAlarm] { to = "fire" }
+    [Events.eGasLeakDetected] { to = "safetyOff" }
+    [Events.eActivateEnergySaving] {
+      yields { new csml.Assign { expression = "\(Vars.vEnergySaving) = true" } }
     }
-    [Events.eZoneInactive] = new csml.Transition {
-      to = "off"
-      iif = Guards.isMyZone
-    }
-    [Events.eFlashAllLights] = new csml.Transition { to = "flashingAlarm_Off" }
-    [Events.eFireAlarm] = new csml.Transition { to = "fire" }
-    [Events.eActivateEnergySaving] = new csml.Transition {
-      do { new csml.Eval { expression = "\(Vars.vEnergySaving) = true" } }
-    }
-    [Events.eDeactivateEnergySaving] = new csml.Transition {
-      do { new csml.Eval { expression = "\(Vars.vEnergySaving) = false" } }
+    [Events.eDeactivateEnergySaving] {
+      yields { new csml.Assign { expression = "\(Vars.vEnergySaving) = false" } }
     }
   }
 }
 
-// Lights at manual level - user override.
-local const userLevel: csml.State = new {
-  static {
-    [Vars.vUserLightLevel] = "'0'"
-  }
+local userLevel: csml.State = new {
+  static { [Vars.vUserLightLevel] = "'0'" }
   entry {
     new csml.Invoke {
       type = ServiceTypes.stTurnUserLevel
       input { ["lightLevel"] = Vars.vUserLightLevel }
+      emits { new csml.Internal { topic = "userLevelSet" } }
     }
   }
   on {
-    [Events.eDeactivateLightUserLevel] = new csml.Transition { to = "off" }
-
-    [Events.eZoneWarning] = new csml.Transition {
-      to = "dim"
-      iif = Guards.isMyZone
-    }
-    [Events.eZoneInactive] = new csml.Transition {
-      to = "off"
-      iif = Guards.isMyZone
-    }
-
-    [Events.eFlashAllLights] = new csml.Transition { to = "flashingAlarm_Off" }
-    [Events.eFireAlarm] = new csml.Transition { to = "fire" }
+    ["userLevelSet"] { to = "userLevel" }
+    [Events.eDeactivateLightUserLevel] { to = "off" }
+    [Events.eFlashAllLights] { to = "flashingAlarm_On" }
+    [Events.eFireAlarm] { to = "fire" }
+    [Events.eGasLeakDetected] { to = "safetyOff" }
   }
 }
 
-// Fire Mode: Turns on emergency lights or directs path
-local const fire: csml.State = new {
+local fire: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stEvacuationLights
@@ -169,49 +115,56 @@ local const fire: csml.State = new {
     }
   }
   on {
-    [Events.eDisarmFireAlarm] = new csml.Transition {
-      to = "off"
+    [Events.eDisarmFireAlarm] { to = "off" }
+    [Events.eGasLeakDetected] { to = "safetyOff" }
+  }
+}
+
+local safetyOff: csml.State = new {
+  entry {
+    new csml.Invoke { type = ServiceTypes.stTurnOff }
+  }
+  on {
+    [Events.eGasPurged] {
+      to = "fire"
+      provided = Guards.isFireActive
+      or = "off"
     }
   }
 }
 
-// Flashing lights states in case of intrusion
-local const flashingAlarm_Off: csml.State = new {
+local flashingAlarmOff: csml.State = new {
   entry {
     new csml.Invoke { type = ServiceTypes.stTurnOff }
   }
   after {
-    ["flashOffPeriodTimer"] = new csml.Timeout {
+    ["flashTimer"] = new csml.Timeout {
       delay = "1000"
-      do = new csml.Raise { event = new csml.Internal { topic = "flashOn" } }
+      triggers = new csml.Emit { event = new csml.Internal { topic = "flashOn" } }
     }
   }
   on {
-    ["flashOn"] = new csml.Transition {
-      to = "flashingAlarm_On"
-    }
-    [Events.eClearSecurityAlert] = new csml.Transition {
-      to = "off"
-    }
+    ["flashOn"] { to = "flashingAlarm_On" }
+    [Events.eClearSecurityAlert] { to = "off" }
+    [Events.eFireAlarm] { to = "fire" }
+    [Events.eGasLeakDetected] { to = "safetyOff" }
   }
 }
 
-local const flashingAlarm_On: csml.State = new {
+local flashingAlarmOn: csml.State = new {
   entry {
     new csml.Invoke { type = ServiceTypes.stTurnOn }
   }
   after {
-    ["flashOnPeriodTimer"] = new csml.Timeout {
+    ["flashTimer"] = new csml.Timeout {
       delay = "500"
-      do = new csml.Raise { event = new csml.Internal { topic = "flashOff" } }
+      triggers = new csml.Emit { event = new csml.Internal { topic = "flashOff" } }
     }
   }
   on {
-    ["flashOff"] = new csml.Transition {
-      to = "flashingAlarm_Off"
-    }
-    [Events.eClearSecurityAlert] = new csml.Transition {
-      to = "off"
-    }
+    ["flashOff"] { to = "flashingAlarm_Off" }
+    [Events.eClearSecurityAlert] { to = "off" }
+    [Events.eFireAlarm] { to = "fire" }
+    [Events.eGasLeakDetected] { to = "safetyOff" }
   }
 }

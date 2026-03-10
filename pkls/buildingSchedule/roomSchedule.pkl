@@ -1,14 +1,14 @@
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "../events.pkl" as Events
+import "../serviceTypes.pkl" as ServiceTypes
 import "actions.pkl" as Actions
 import "context.pkl" as Context
 import "guards.pkl" as Guards
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
-import "../variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
-/// This module defines the roomScheduleSM.
-/// It listens to the global schedule and manages local user overrides.
-/// One instance of this SM will run for each room or zone.
+// Room schedule state machine definition.
+//
+// Manages per-room/zone lifecycle based on the global building schedule.
+// Handles user override requests for extended stays and safety emergencies.
 sm = new csml.StateMachine {
   transient = Context.roomContext
   states {
@@ -21,121 +21,93 @@ sm = new csml.StateMachine {
   }
 }
 
-local const init: csml.Initial = new {
+// Initializes zone
+local init: csml.Initial = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stInitializeZone
-      raises { new csml.Internal { topic = "zoneInitialized" } }
+      emits { new csml.Internal { topic = "zoneInitialized" } }
     }
   }
   on {
-    ["zoneInitialized"] = new csml.Transition {
-      to = "inactive"
-    }
+    ["zoneInitialized"] { to = "inactive" }
   }
 }
 
-/// The room is active
-local const active: csml.State = new {
+local active: csml.State = new {
   entry {
     Actions.aRaiseZoneActive
   }
   on {
-    [Events.eEnterAfterHoursMode] = new csml.Transition {
-      to = "warning"
-    }
-    [Events.eEnterWeekend] = new csml.Transition {
-      to = "warning"
-    }
-    [Events.eFireAlarm] = new csml.Transition {
-      to = "emergency"
-    }
+    [Events.eEnterAfterHoursMode] { to = "warning" }
+    [Events.eEnterWeekend] { to = "warning" }
+    [Events.eFireAlarm] { to = "emergency" }
+    [Events.eGasLeakDetected] { to = "emergency" }
   }
 }
 
-/// The room is closed - waits for building to open or user to request stay
-local const inactive: csml.State = new {
+local inactive: csml.State = new {
   entry {
     Actions.aRaiseZoneInactive
   }
   on {
-    [Events.eEnterBusinessHours] = new csml.Transition {
-      to = "active"
-    }
-    [Events.eFireAlarm] = new csml.Transition {
-      to = "emergency"
-    }
-    [Events.eRequestStay] = new csml.Transition {
-      to = "authorizedStay"
-      iif = Guards.requestedStay
-    }
-    [Events.eGasLeakDetected] = new csml.Transition {
-      to = "emergency"
-    }
+    [Events.eEnterBusinessHours] { to = "active" }
+    [Events.eRequestStay] { to = "authorizedStay"; provided = Guards.requestedStay }
+    [Events.eFireAlarm] { to = "emergency" }
+    [Events.eGasLeakDetected] { to = "emergency" }
   }
 }
 
-/// Grace period state for building closure
-local const warning: csml.State = new {
+// 5-minute grace period before shutting down the room.
+local warning: csml.State = new {
   entry {
     Actions.aRaiseZoneWarning
   }
   after {
-    ["gracePeriodTimer"] = new csml.Timeout {
+    ["gracePeriod"] = new csml.Timeout {
       delay = "300000"
-      do = Actions.aRaiseShutdownRoom
+      triggers = Actions.aRaiseShutdownRoom
     }
   }
   on {
-    [Events.eRequestStay] = new csml.Transition {
-      to = "authorizedStay"
-      iif = Guards.requestedStay
-    }
-    [Events.eShutdownRoom] = new csml.Transition {
-      to = "inactive"
-    }
-    [Events.eEnterBusinessHours] = new csml.Transition {
-      to = "active"
-    }
-    [Events.eFireAlarm] = new csml.Transition {
-      to = "emergency"
-    }
+    [Events.eShutdownRoom] { to = "inactive" }
+    [Events.eRequestStay] { to = "authorizedStay"; provided = Guards.requestedStay }
+    [Events.eEnterBusinessHours] { to = "active" }
+    [Events.eFireAlarm] { to = "emergency" }
+    [Events.eGasLeakDetected] { to = "emergency" }
   }
 }
 
-/// A person has temporarly requested an extended stay
-local const authorizedStay: csml.State = new {
+// 2-hour lease; re-enters warning when expired.
+local authorizedStay: csml.State = new {
   entry {
     Actions.aRaiseZoneActive
   }
   after {
-    ["overrideLeaseTimer"] = new csml.Timeout {
+    ["overrideLease"] = new csml.Timeout {
       delay = "7200000"
-      do = Actions.aRaiseRecheckOverride
+      triggers = Actions.aRaiseRecheckOverride
     }
   }
   on {
-    [Events.eRecheckOverride] = new csml.Transition {
-      to = "warning"
-    }
-    [Events.eUserLeftZone] = new csml.Transition {
-      to = "inactive"
-      iif = Guards.userLeftZone
-    }
-    [Events.eEnterBusinessHours] = new csml.Transition {
-      to = "active"
-    }
-    [Events.eFireAlarm] = new csml.Transition {
-      to = "emergency"
-    }
+    [Events.eRecheckOverride] { to = "warning" }
+    [Events.eUserLeftZone] { to = "inactive"; provided = Guards.userLeftZone }
+    [Events.eEnterBusinessHours] { to = "active" }
+    [Events.eFireAlarm] { to = "emergency" }
+    [Events.eGasLeakDetected] { to = "emergency" }
   }
 }
 
-/// Safety protocols override all schedules.
-local const emergency: csml.State = new {
+// Safety protocols override all schedules.
+local emergency: csml.State = new {
   on {
-    [Events.eDisarmFireAlarm] = new csml.Transition {
+    [Events.eDisarmFireAlarm] {
       to = "inactive"
+      provided = Guards.isSafeToExitEmergency
+    }
+    [Events.eGasPurged] {
+      to = "inactive"
+      provided = Guards.isSafeToExitEmergency
     }
   }
 }

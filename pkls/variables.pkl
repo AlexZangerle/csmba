@@ -1,4 +1,3 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 // This module contains all variable definitions for the CSM BMS
 
 // Variable containing if occupancy has been detected (Boolean)
@@ -49,6 +48,9 @@ vArcFaultLocation = "arcFaultLocation"
 
 // Variable containing the location where gas leak occured (String)
 vGasLeakLocation = "gasLeakLocation"
+
+// Variable showing if gas leak is still active
+vGasActive = "gasActive"
 
 // Variable containing the current external energy prices
 vEnergyPrice = "energyPrice"

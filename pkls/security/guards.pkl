@@ -1,10 +1,9 @@
 import "../variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 // This module contains all guards for accessControlSM and securityManagerSM
 
 // Guard to check if soft limit has been reached for failed attempts
-failedAttemptSoftlimitReached =  "\(Vars.vFailedAttemptsCount) >= 3"
+failedAttemptSoftlimitReached = "\(Vars.vFailedAttemptsCount) >= 3"
 
 
 // Guard to check if hard limit has been reached for failed attempts
@@ -16,7 +15,7 @@ isCurrentDoor = "$doorId == \(Vars.vDoorId)"
 
 
 // Guard to check if door is part of an evacuation route
-checkIsEvacuationRoute =  Vars.vIsEvacuationRoute
+checkIsEvacuationRoute = Vars.vIsEvacuationRoute
 
 
 // Guard to check if event concerns the current zone
@@ -38,3 +37,4 @@ allowAccess = "\(Vars.vAccessDecision) == 'Allow'"
 // Guard to check if access has been denied
 denyAccess = "\(Vars.vAccessDecision) != 'Allow'"
 
+isSafeToExitEmergency = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
