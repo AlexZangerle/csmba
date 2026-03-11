@@ -4,7 +4,6 @@ import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
 import "actions.pkl" as Actions
 import "context.pkl" as Context
-import "fireDoor.pkl"
 import "guards.pkl" as Guards
 
 // Fire detection state machine definition.
@@ -13,9 +12,6 @@ import "guards.pkl" as Guards
 // to fireAlarm or smokeAlert based on detection results.
 // Contains a nested fireDoor state machine.
 sm = new csml.StateMachine {
-  nested {
-    ["fireDoor"] = fireDoor.sm
-  }
   transient = Context.fireDetectionContext
   states {
     ["detecting"] = detecting
@@ -40,8 +36,8 @@ local detecting: csml.Initial = new {
     }
     ["detectionDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vFireDetectionResult) = $fireDetectionResult" }
-        new csml.Assign { expression = "\(Vars.vEmergencyInRoom) = $emergencyInRoom" }
+        new csml.Eval { expression = "\(Vars.vFireDetectionResult) = $fireDetectionResult" }
+        new csml.Eval { expression = "\(Vars.vEmergencyInRoom) = $emergencyInRoom" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -63,27 +59,27 @@ local detecting: csml.Initial = new {
 
 local fireAlarm: csml.State = new {
   entry {
-    new csml.Assign { expression = "\(Vars.vFireAlarm) = true" }
+    new csml.Eval { expression = "\(Vars.vFireAlarm) = true" }
     Actions.aRaiseFireAlarm
   }
   on {
     [Events.eDisarmFireAlarm] {
       to = "detecting"
-      yields { new csml.Assign { expression = "\(Vars.vFireAlarm) = false" } }
+      yields { new csml.Eval { expression = "\(Vars.vFireAlarm) = false" } }
     }
   }
 }
 
 local smokeAlert: csml.State = new {
   entry {
-    new csml.Assign { expression = "\(Vars.vSmokeAlert) = true" }
+    new csml.Eval { expression = "\(Vars.vSmokeAlert) = true" }
     Actions.aRaiseSmokeAlert
   }
   on {
     [Events.eDisarmSmokeAlert] {
       to = "detecting"
-      yields { new csml.Assign { expression = "\(Vars.vSmokeAlert) = false" } }
+      yields { new csml.Eval { expression = "\(Vars.vSmokeAlert) = false" } }
     }
-    [Events.eSensorFireDataReceived] { to = "fireAlarm" yields { new csml.Assign { expression = "\(Vars.vSmokeAlert) = false" } } }
+    [Events.eSensorFireDataReceived] { to = "fireAlarm" yields { new csml.Eval { expression = "\(Vars.vSmokeAlert) = false" } } }
   }
 }

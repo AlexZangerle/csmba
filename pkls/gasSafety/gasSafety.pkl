@@ -37,7 +37,7 @@ local monitoring: csml.Initial = new {
     }
     ["checkDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vGasLeakLocation) = $gasLeakLocation" }
+        new csml.Eval { expression = "\(Vars.vGasLeakLocation) = $gasLeakLocation" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -64,7 +64,7 @@ local gasLeak: csml.State = new {
       input { ["gasLeakLocation"] = Vars.vGasLeakLocation }
     }
     Actions.aRaiseGasLeakDetected
-    new csml.Assign { expression = "\(Vars.vGasActive) = true" }
+    new csml.Eval { expression = "\(Vars.vGasActive) = true" }
   }
   on {
     [Events.eGasPurged] { to = "acknowledged" }
@@ -74,7 +74,7 @@ local gasLeak: csml.State = new {
 local acknowledged: csml.State = new {
   entry {
     new csml.Invoke { type = ServiceTypes.stGasLeakPurged }
-    new csml.Assign { expression = "\(Vars.vGasActive) = false" }
+    new csml.Eval { expression = "\(Vars.vGasActive) = false" }
   }
   always {
     new csml.Transition { to = "monitoring" }

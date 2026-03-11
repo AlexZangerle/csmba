@@ -1,5 +1,4 @@
 import "../variables.pkl" as Vars
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 // This module contains all contexts for the accessControlSM and securityManagerSM
 
 // securityManagerContext contains a count of failed attempts, a timestamp of the last failed attempt and the details for the alert
@@ -11,12 +10,11 @@ securityManagerContext = new Mapping {
 
 // accessControlContext contains door and zone id, a flag to signify if its part of an evacuationroute, user details, etc.
 accessControlContext = new Mapping {
-  [Vars.vDoorId] = "'testDoor'"
-  [Vars.vZoneId] = "'testZone'"
+  [Vars.vZoneId] = "''"
   [Vars.vIsEvacuationRoute] = "false"
   [Vars.vUserId] = "''"
   [Vars.vUserRole] = "''"
-  [Vars.vAuthenticationStatus] =  "''"
+  [Vars.vAuthenticationStatus] = "''"
   [Vars.vCurrentScheduleMode] = "'unknown'"
   [Vars.vAccessDecision] = "''"
 }

@@ -3,11 +3,11 @@ import "../events.pkl"
 import "../variables.pkl" as Vars
 // This module contains actions for the shading SM
 
-aBlindLock = new csml.Assign {
+aBlindLock = new csml.Eval {
   expression = "\(Vars.vIsLocked) = true"
 }
 
-aBlindUnlock = new csml.Assign {
+aBlindUnlock = new csml.Eval {
   expression = "\(Vars.vIsLocked) = false"
 }
 

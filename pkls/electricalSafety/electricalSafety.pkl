@@ -40,7 +40,7 @@ local monitoring: csml.Initial = new {
     }
     ["checkDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vArcFaultLocation) = $arcFaultLocation" }
+        new csml.Eval { expression = "\(Vars.vArcFaultLocation) = $arcFaultLocation" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -63,7 +63,7 @@ local arcFault: csml.State = new {
       input { ["arcFaultLocation"] = Vars.vArcFaultLocation }
     }
     Actions.aRaiseArcFaultDetected
-    new csml.Assign { expression = "\(Vars.vArcFault) = true" }
+    new csml.Eval { expression = "\(Vars.vArcFault) = true" }
   }
   on {
     [Events.eResetElectricalFault] { to = "acknowledged" }
@@ -72,7 +72,7 @@ local arcFault: csml.State = new {
 
 local acknowledged: csml.State = new {
   entry {
-    new csml.Assign { expression = "\(Vars.vArcFault) = false" }
+    new csml.Eval { expression = "\(Vars.vArcFault) = false" }
     new csml.Invoke {
       type = ServiceTypes.stAcknowledgedEletrical
       emits { new csml.Internal { topic = "ackComplete" } }

@@ -36,7 +36,7 @@ local monitoring: csml.Initial = new {
     }
     ["tempCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vRoomTemp) = $roomTemp" }
+        new csml.Eval { expression = "\(Vars.vRoomTemp) = $roomTemp" }
         new csml.Match {
           cases {
             new csml.Case {

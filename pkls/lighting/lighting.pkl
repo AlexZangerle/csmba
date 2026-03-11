@@ -19,7 +19,7 @@ sm = new csml.StateMachine {
 
 local off: csml.Initial = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stTurnOff }
+    new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } }
   }
   on {
     [Events.eOccupancyDetected] {
@@ -29,7 +29,7 @@ local off: csml.Initial = new {
     }
     [Events.eActivateLightUserLevel] {
       to = "userLevel"
-      yields { new csml.Assign { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
+      yields { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
@@ -38,31 +38,31 @@ local off: csml.Initial = new {
     }
     [Events.eGasLeakDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eArcFaultDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eActivateEnergySaving] {
-      yields { new csml.Assign { expression = "\(Vars.vEnergySaving) = true" } }
+      yields { new csml.Eval { expression = "\(Vars.vEnergySaving) = true" } }
     }
     [Events.eDeactivateEnergySaving] {
-      yields { new csml.Assign { expression = "\(Vars.vEnergySaving) = false" } }
+      yields { new csml.Eval { expression = "\(Vars.vEnergySaving) = false" } }
     }
   }
 }
 
 local on: csml.State = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stTurnOn }
+    new csml.Invoke { type = ServiceTypes.stTurnOn input { ["roomId"] = Vars.vRoomId } }
   }
   on {
     [Events.eOccupancyTransient] { to = "dim" }
     [Events.eOccupancyVacant] { to = "off" }
     [Events.eActivateLightUserLevel] {
       to = "userLevel"
-      yields { new csml.Assign { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
+      yields { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
@@ -71,18 +71,18 @@ local on: csml.State = new {
     }
     [Events.eGasLeakDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eArcFaultDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
   }
 }
 
 local dim: csml.State = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stDim }
+    new csml.Invoke { type = ServiceTypes.stDim input { ["roomId"] = Vars.vRoomId } }
   }
   on {
     [Events.eOccupancyDetected] {
@@ -92,7 +92,7 @@ local dim: csml.State = new {
     [Events.eOccupancyVacant] { to = "off" }
     [Events.eActivateLightUserLevel] {
       to = "userLevel"
-      yields { new csml.Assign { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
+      yields { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
     }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
@@ -101,17 +101,17 @@ local dim: csml.State = new {
     }
     [Events.eGasLeakDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eArcFaultDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eActivateEnergySaving] {
-      yields { new csml.Assign { expression = "\(Vars.vEnergySaving) = true" } }
+      yields { new csml.Eval { expression = "\(Vars.vEnergySaving) = true" } }
     }
     [Events.eDeactivateEnergySaving] {
-      yields { new csml.Assign { expression = "\(Vars.vEnergySaving) = false" } }
+      yields { new csml.Eval { expression = "\(Vars.vEnergySaving) = false" } }
     }
   }
 }
@@ -121,7 +121,7 @@ local userLevel: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stTurnUserLevel
-      input { ["lightLevel"] = Vars.vUserLightLevel }
+      input { ["lightLevel"] = Vars.vUserLightLevel; ["roomId"] = Vars.vRoomId }
       emits { new csml.Internal { topic = "userLevelSet" } }
     }
   }
@@ -135,11 +135,11 @@ local userLevel: csml.State = new {
     }
     [Events.eGasLeakDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eArcFaultDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
   }
 }
@@ -151,17 +151,17 @@ local safetyOff: csml.State = new {
       yields {
         new csml.Invoke {
           type = ServiceTypes.stEvacuationLights
-          input { ["roomId"] = "$emergencyInRoom" }
+          input { ["roomId"] = "$emergencyInRoom"; ["roomId"] = Vars.vRoomId }
         }
       }
     }
     [Events.eGasLeakDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eArcFaultDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eDisarmFireAlarm] {
       to = "off"
@@ -180,7 +180,7 @@ local safetyOff: csml.State = new {
 
 local flashingAlarmOff: csml.State = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stTurnOff }
+    new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } }
   }
   after {
     ["flashTimer"] = new csml.Timeout {
@@ -197,18 +197,18 @@ local flashingAlarmOff: csml.State = new {
     }
     [Events.eGasLeakDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eArcFaultDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
   }
 }
 
 local flashingAlarmOn: csml.State = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stTurnOn }
+    new csml.Invoke { type = ServiceTypes.stTurnOn input { ["roomId"] = Vars.vRoomId } }
   }
   after {
     ["flashTimer"] = new csml.Timeout {
@@ -225,11 +225,11 @@ local flashingAlarmOn: csml.State = new {
     }
     [Events.eGasLeakDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
     [Events.eArcFaultDetected] {
       to = "safetyOff"
-      yields { new csml.Invoke { type = ServiceTypes.stTurnOff } }
+      yields { new csml.Invoke { type = ServiceTypes.stTurnOff input { ["roomId"] = Vars.vRoomId } } }
     }
   }
 }

@@ -5,6 +5,7 @@ import "buildingSchedule/roomSchedule.pkl"
 import "electricalSafety/electricalSafety.pkl"
 import "energyManagement/energyManagement.pkl"
 import "fire/fire.pkl"
+import "fire/fireDoor.pkl"
 import "gasSafety/gasSafety.pkl"
 import "hvac/hvac.pkl"
 import "lighting/lighting.pkl"
@@ -21,6 +22,7 @@ collaborativeStateMachine {
     ["electricalSafety"] = electricalSafety.sm
     ["energyManagement"] = energyManagement.sm
     ["fire"] = fire.sm
+    ["fireDoor"] = fireDoor.sm
     ["gasSafety"] = gasSafety.sm
     ["hvac"] = hvac.sm
     ["lighting"] = lighting.sm
@@ -45,18 +47,19 @@ collaborativeStateMachine {
 
 instances {
   ["buildingSchedule"] { stateMachineName = "buildingSchedule" }
-  ["roomSchedule"] { stateMachineName = "roomSchedule" }
+  ["roomSchedule"] { stateMachineName = "roomSchedule" data { [Vars.vRoomId] = "'Room 0'" } }
   ["electricalSafety"] { stateMachineName = "electricalSafety" }
   ["energyManagement"] { stateMachineName = "energyManagement" }
   ["fire"] { stateMachineName = "fire" }
+  ["fireDoor"] { stateMachineName = "fireDoor" data { [Vars.vDoorId] = "'Door 0'" } }
   ["gasSafety"] { stateMachineName = "gasSafety" }
-  ["hvac"] { stateMachineName = "hvac" }
-  ["lighting"] { stateMachineName = "lighting" }
-  ["roomOccupancy"] { stateMachineName = "roomOccupancy" }
+  ["hvac"] { stateMachineName = "hvac" data { [Vars.vRoomId] = "'Room 0'" } }
+  ["lighting"] { stateMachineName = "lighting" data { [Vars.vRoomId] = "'Room 0'" } }
+  ["roomOccupancy"] { stateMachineName = "roomOccupancy" data { [Vars.vRoomId] = "'Room 0'" } }
   ["securityManager"] { stateMachineName = "securityManager" }
-  ["accessControl"] { stateMachineName = "accessControl" }
-  ["shading"] { stateMachineName = "shading" }
-  ["tempSafety"] { stateMachineName = "tempSafety" }
+  ["accessControl"] { stateMachineName = "accessControl" data { [Vars.vDoorId] = "'Door 0'" } }
+  ["shading"] { stateMachineName = "shading" data { [Vars.vRoomId] = "'Room 0'" } }
+  ["tempSafety"] { stateMachineName = "tempSafety" data { [Vars.vRoomId] = "'Room 0'" } }
 }
 
 bindings {

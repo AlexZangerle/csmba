@@ -35,7 +35,8 @@ local init: csml.Initial = new {
     ["doorTypeDetermined"] {
       to = "locked"
       yields {
-        new csml.Assign { expression = "\(Vars.vIsEvacuationRoute) = $isEvacuationRoute" }
+        new csml.Eval { expression = "\(Vars.vIsEvacuationRoute) = $isEvacuationRoute" }
+        new csml.Eval { expression = "\(Vars.vZoneId) = $zoneId" }
       }
     }
   }
@@ -65,9 +66,9 @@ local authenticating: csml.State = new {
   on {
     ["authDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vUserId) = $userId" }
-        new csml.Assign { expression = "\(Vars.vUserRole) = $userRole" }
-        new csml.Assign { expression = "\(Vars.vAuthenticationStatus) = $authenticationStatus" }
+        new csml.Eval { expression = "\(Vars.vUserId) = $userId" }
+        new csml.Eval { expression = "\(Vars.vUserRole) = $userRole" }
+        new csml.Eval { expression = "\(Vars.vAuthenticationStatus) = $authenticationStatus" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -104,7 +105,7 @@ local checkingRules: csml.State = new {
   on {
     ["rulesDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vAccessDecision) = $accessDecision" }
+        new csml.Eval { expression = "\(Vars.vAccessDecision) = $accessDecision" }
         new csml.Match {
           cases {
             new csml.Case {

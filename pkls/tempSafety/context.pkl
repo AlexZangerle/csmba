@@ -1,9 +1,6 @@
-
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../variables.pkl" as Vars
 // This module contains all contexts for the fireSafety SM
 
 fireSafetyContext = new Mapping {
-    [Vars.vRoomTemp] = "'0'"
-    [Vars.vRoomId] = "'0'"
+  [Vars.vRoomTemp] = "'0'"
 }

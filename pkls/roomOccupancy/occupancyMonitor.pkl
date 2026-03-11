@@ -1,6 +1,7 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "../events.pkl" as Events
 import "../serviceTypes.pkl" as ServiceTypes
+import "../variables.pkl" as Vars
 import "actions.pkl" as Actions
 
 // Occupancy monitor — nested state machine within roomOccupancy.
@@ -35,7 +36,7 @@ local monitoring: csml.State = new {
 
 local maintenance: csml.State = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stMaintenance }
+    new csml.Invoke { type = ServiceTypes.stMaintenance input { ["roomId"] = Vars.vRoomId } }
   }
   on {
     [Events.eMaintenanceDone] { to = "idle" }

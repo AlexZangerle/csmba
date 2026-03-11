@@ -42,7 +42,7 @@ local normal: csml.Initial = new {
     }
     ["priceCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
+        new csml.Eval { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
         new csml.Invoke {
           type = ServiceTypes.stCheckGridStatus
           emits { new csml.Internal { topic = "gridCheckDone" } }
@@ -51,7 +51,7 @@ local normal: csml.Initial = new {
     }
     ["gridCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vGridStatus) = $gridStatus" }
+        new csml.Eval { expression = "\(Vars.vGridStatus) = $gridStatus" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -70,19 +70,19 @@ local normal: csml.Initial = new {
     ["goPeak"] { to = "peak" }
     [Events.eEnterBusinessHours] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }
     [Events.eEnterAfterHoursMode] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }
     [Events.eEnterWeekend] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }
@@ -113,7 +113,7 @@ local peak: csml.State = new {
     }
     ["priceCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
+        new csml.Eval { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
         new csml.Invoke {
           type = ServiceTypes.stCheckGridStatus
           emits { new csml.Internal { topic = "gridCheckDone" } }
@@ -122,7 +122,7 @@ local peak: csml.State = new {
     }
     ["gridCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vGridStatus) = $gridStatus" }
+        new csml.Eval { expression = "\(Vars.vGridStatus) = $gridStatus" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -144,19 +144,19 @@ local peak: csml.State = new {
 
     [Events.eEnterBusinessHours] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }
     [Events.eEnterAfterHoursMode] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }
     [Events.eEnterWeekend] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }
@@ -187,7 +187,7 @@ local gridResponse: csml.State = new {
     }
     ["priceCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
+        new csml.Eval { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
         new csml.Invoke {
           type = ServiceTypes.stCheckGridStatus
           emits { new csml.Internal { topic = "gridCheckDone" } }
@@ -196,7 +196,7 @@ local gridResponse: csml.State = new {
     }
     ["gridCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vGridStatus) = $gridStatus" }
+        new csml.Eval { expression = "\(Vars.vGridStatus) = $gridStatus" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -218,19 +218,19 @@ local gridResponse: csml.State = new {
 
     [Events.eEnterBusinessHours] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }
     [Events.eEnterAfterHoursMode] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }
     [Events.eEnterWeekend] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
         new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
       }
     }

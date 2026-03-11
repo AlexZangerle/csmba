@@ -22,27 +22,27 @@ sm = new csml.StateMachine {
 
 local secure: csml.Initial = new {
   entry {
-    new csml.Assign { expression = "\(Vars.vFailedAttemptsCount) = 0" }
-    new csml.Assign { expression = "\(Vars.vAlertDetails) = ''" }
+    new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = 0" }
+    new csml.Eval { expression = "\(Vars.vAlertDetails) = ''" }
   }
   on {
     [Events.eForcedEntry] {
       to = "intrusionAlert"
       yields {
-        new csml.Assign { expression = "\(Vars.vAlertDetails) = 'Forced entry detected at door ' + $doorId + ' in zone ' + $zone" }
+        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Forced entry detected at door ' + $doorId + ' in zone ' + $zone" }
       }
     }
     [Events.eTamperDetected] {
       to = "intrusionAlert"
       yields {
-        new csml.Assign { expression = "\(Vars.vAlertDetails) = 'Tamper detected on device ' + $deviceId + ' at ' + $location" }
+        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Tamper detected on device ' + $deviceId + ' at ' + $location" }
       }
     }
     [Events.eManualSecurityAlert] { to = "intrusionAlert" }
     [Events.eAccessDenied] {
       yields {
-        new csml.Assign { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
-        new csml.Assign { expression = "\(Vars.vAlertDetails) = 'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
+        new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
+        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -79,8 +79,8 @@ local elevatedRisk: csml.State = new {
 
     [Events.eAccessDenied] {
       yields {
-        new csml.Assign { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
-        new csml.Assign { expression = "\(Vars.vAlertDetails) = 'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
+        new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
+        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
         new csml.Match {
           cases {
             new csml.Case {

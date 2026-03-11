@@ -33,7 +33,7 @@ local evaluating: csml.Initial = new {
   on {
     ["scheduleCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vCurrentScheduleMode) = $currentSchedule" }
+        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = $currentSchedule" }
         new csml.Match {
           cases {
             new csml.Case {

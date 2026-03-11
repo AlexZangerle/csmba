@@ -25,20 +25,20 @@ local off: csml.Initial = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stSetHVAC
-      input { ["mode"] = "'off'" }
+      input { ["mode"] = "'off'"; ["roomId"] = Vars.vRoomId }
     }
   }
   on {
     [Events.eOccupancyDetected] { to = "fanOnly" }
     [Events.eZoneActive] { to = "fanOnly"; }
     [Events.eEnterBusinessHours] {
-      yields { new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" } }
+      yields { new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" } }
     }
     [Events.eEnterAfterHoursMode] {
-      yields { new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" } }
+      yields { new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" } }
     }
     [Events.eEnterWeekend] {
-      yields { new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" } }
+      yields { new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" } }
     }
     [Events.eEnergyShutdown] { to = "emergency" }
     [Events.eFireAlarm] { to = "emergency" }
@@ -52,9 +52,9 @@ local fanOnly: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stSetHVAC
-      input { ["mode"] = "'fan'" }
+      input { ["mode"] = "'fan'"; ["roomId"] = Vars.vRoomId }
     }
-    new csml.Assign { expression = "\(Vars.vTempTolerance) = \(Vars.vDefaultTolerance)" }
+    new csml.Eval { expression = "\(Vars.vTempTolerance) = \(Vars.vDefaultTolerance)" }
     new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
   }
   after {
@@ -68,13 +68,14 @@ local fanOnly: csml.State = new {
       yields {
         new csml.Invoke {
           type = ServiceTypes.stGetIndoorTemp
+          input { ["roomId"] = Vars.vRoomId }
           emits { new csml.Internal { topic = "tempCheckDone" } }
         }
       }
     }
     ["tempCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
+        new csml.Eval { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -95,19 +96,19 @@ local fanOnly: csml.State = new {
     [Events.eZoneInactive] { to = "off"; }
     [Events.eEnterBusinessHours] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
     [Events.eEnterAfterHoursMode] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
     [Events.eEnterWeekend] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
@@ -125,7 +126,7 @@ local heating: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stSetHVAC
-      input { ["mode"] = "'heat'" }
+      input { ["mode"] = "'heat'" ; ["roomId"] = Vars.vRoomId }
     }
     new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
   }
@@ -140,13 +141,14 @@ local heating: csml.State = new {
       yields {
         new csml.Invoke {
           type = ServiceTypes.stGetIndoorTemp
+          input { ["roomId"] = Vars.vRoomId }
           emits { new csml.Internal { topic = "tempCheckDone" } }
         }
       }
     }
     ["tempCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
+        new csml.Eval { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -167,19 +169,19 @@ local heating: csml.State = new {
     [Events.eZoneInactive] { to = "off"; }
     [Events.eEnterBusinessHours] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
     [Events.eEnterAfterHoursMode] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
     [Events.eEnterWeekend] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
@@ -197,7 +199,7 @@ local cooling: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stSetHVAC
-      input { ["mode"] = "'cool'" }
+      input { ["mode"] = "'cool'" ; ["roomId"] = Vars.vRoomId }
     }
     new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
   }
@@ -212,13 +214,14 @@ local cooling: csml.State = new {
       yields {
         new csml.Invoke {
           type = ServiceTypes.stGetIndoorTemp
+          input { ["roomId"] = Vars.vRoomId }
           emits { new csml.Internal { topic = "tempCheckDone" } }
         }
       }
     }
     ["tempCheckDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
+        new csml.Eval { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -239,19 +242,19 @@ local cooling: csml.State = new {
     [Events.eZoneInactive] { to = "off"; }
     [Events.eEnterBusinessHours] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
     [Events.eEnterAfterHoursMode] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
     [Events.eEnterWeekend] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
+        new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" }
         new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
       }
     }
@@ -269,9 +272,9 @@ local energySaving: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stSetHVAC
-      input { ["mode"] = "'fan'" }
+      input { ["mode"] = "'fan'" ; ["roomId"] = Vars.vRoomId }
     }
-    new csml.Assign { expression = "\(Vars.vTempTolerance) = \(Vars.vEnergySavingTolerance)" }
+    new csml.Eval { expression = "\(Vars.vTempTolerance) = \(Vars.vEnergySavingTolerance)" }
     new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
   }
   after {
@@ -285,6 +288,7 @@ local energySaving: csml.State = new {
       yields {
         new csml.Invoke {
           type = ServiceTypes.stGetIndoorTemp
+          input { ["roomId"] = Vars.vRoomId }
           emits { new csml.Internal { topic = "tempCheckDone" } }
         }
       }
@@ -292,7 +296,7 @@ local energySaving: csml.State = new {
     ["tempCheckDone"] {
       provided = Guards.isNotDrasticSaving
       yields {
-        new csml.Assign { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
+        new csml.Eval { expression = "\(Vars.vIndoorTemp) = $indoorTemp" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -311,20 +315,20 @@ local energySaving: csml.State = new {
     ["goCooling"] { to = "cooling" }
     [Events.eDrasticEnergySaving] {
       yields {
-        new csml.Assign { expression = "\(Vars.vDrasticSaving) = true" }
+        new csml.Eval { expression = "\(Vars.vDrasticSaving) = true" }
       }
     }
     [Events.eDeactivateEnergySaving] { to = "fanOnly" }
     [Events.eOccupancyVacant] { to = "off" }
     [Events.eZoneInactive] { to = "off"; }
     [Events.eEnterBusinessHours] {
-      yields { new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" } }
+      yields { new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vBusinessHoursTemp)" } }
     }
     [Events.eEnterAfterHoursMode] {
-      yields { new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" } }
+      yields { new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" } }
     }
     [Events.eEnterWeekend] {
-      yields { new csml.Assign { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" } }
+      yields { new csml.Eval { expression = "\(Vars.vDesiredTemp) = \(Vars.vAfterHoursTemp)" } }
     }
     [Events.eEnergyShutdown] { to = "emergency" }
     [Events.eFireAlarm] { to = "emergency" }
@@ -338,10 +342,10 @@ local emergency: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stSetHVAC
-      input { ["mode"] = "'off'" }
+      input { ["mode"] = "'off'"; ["roomId"] = Vars.vRoomId }
     }
-    new csml.Assign { expression = "\(Vars.vDrasticSaving) = false" }
-    new csml.Assign { expression = "\(Vars.vTempTolerance) = \(Vars.vDefaultTolerance)" }
+    new csml.Eval { expression = "\(Vars.vDrasticSaving) = false" }
+    new csml.Eval { expression = "\(Vars.vTempTolerance) = \(Vars.vDefaultTolerance)" }
   }
   on {
     [Events.eDisarmFireAlarm] {

@@ -25,7 +25,7 @@ sm = new csml.StateMachine {
 
 local vacant: csml.Initial = new {
   entry {
-    new csml.Assign { expression = "\(Vars.vCurrentOccupancy) = 'vacant'" }
+    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'vacant'" }
   }
   on {
     ["sensorOccupancyReceived"] {
@@ -40,7 +40,7 @@ local vacant: csml.Initial = new {
     }
     ["detectionDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -60,7 +60,7 @@ local vacant: csml.Initial = new {
 
 local occupied: csml.State = new {
   entry {
-    new csml.Assign { expression = "\(Vars.vCurrentOccupancy) = 'occupied'" }
+    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'occupied'" }
   }
   on {
     ["sensorOccupancyReceived"] {
@@ -75,7 +75,7 @@ local occupied: csml.State = new {
     }
     ["detectionDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
         new csml.Match {
           cases {
             new csml.Case {
@@ -96,7 +96,7 @@ local occupied: csml.State = new {
     [Events.eActivateEnergySaving] {
       to = "transient"
       yields {
-        new csml.Assign { expression = "\(Vars.vEnergySaving) = true" }
+        new csml.Eval { expression = "\(Vars.vEnergySaving) = true" }
         Actions.aRaiseOccupancyTransient
       }
     }
@@ -105,12 +105,11 @@ local occupied: csml.State = new {
 
 local transientState: csml.State = new {
   entry {
-    new csml.Assign { expression = "\(Vars.vCurrentOccupancy) = 'transient'" }
+    new csml.Eval { expression = "\(Vars.vCurrentOccupancy) = 'transient'" }
     Actions.aRaiseOccupancyTransient
   }
   on {
     ["sensorOccupancyReceived"] {
-
       yields {
         new csml.Invoke {
           type = ServiceTypes.stDetectOccupancy
@@ -121,7 +120,7 @@ local transientState: csml.State = new {
     }
     ["detectionDone"] {
       yields {
-        new csml.Assign { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
+        new csml.Eval { expression = "\(Vars.vOccupancyDetected) = $occupancyDetected" }
         new csml.Match {
           cases {
             new csml.Case {
