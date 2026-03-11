@@ -5,7 +5,7 @@ import "../variables.pkl" as Vars
 
 // Fire door state machine definition.
 //
-// Closes on fire alarm, reopens when disarmed. Nested inside fireDetection.
+// Closes on fire alarm, reopens when disarmed
 sm = new csml.StateMachine {
   states {
     ["open"] = openDoor
