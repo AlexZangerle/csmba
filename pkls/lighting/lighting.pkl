@@ -151,7 +151,7 @@ local safetyOff: csml.State = new {
       yields {
         new csml.Invoke {
           type = ServiceTypes.stEvacuationLights
-          input { ["roomId"] = "$emergencyInRoom"; ["roomId"] = Vars.vRoomId }
+          input { ["emergencyRoomId"] = "$emergencyInRoom"; ["roomId"] = Vars.vRoomId }
         }
       }
     }

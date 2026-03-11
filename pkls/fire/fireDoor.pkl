@@ -15,7 +15,7 @@ sm = new csml.StateMachine {
 
 local openDoor: csml.Initial = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stOpenFireDoor input { ["roomId"] = Vars.vRoomId } }
+    new csml.Invoke { type = ServiceTypes.stOpenFireDoor input { ["roomId"] = Vars.vDoorId } }
   }
   on {
     [Events.eFireAlarm] { to = "close" }
@@ -24,7 +24,7 @@ local openDoor: csml.Initial = new {
 
 local closeDoor: csml.State = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stCloseFireDoor input { ["roomId"] = Vars.vRoomId } }
+    new csml.Invoke { type = ServiceTypes.stCloseFireDoor input { ["roomId"] = Vars.vDoorId } }
   }
   on {
     [Events.eDisarmFireAlarm] { to = "open" }

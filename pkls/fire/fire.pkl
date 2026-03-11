@@ -10,7 +10,6 @@ import "guards.pkl" as Guards
 //
 // Waits for sensor data, invokes fire detection, and escalates
 // to fireAlarm or smokeAlert based on detection results.
-// Contains a nested fireDoor state machine.
 sm = new csml.StateMachine {
   transient = Context.fireDetectionContext
   states {
