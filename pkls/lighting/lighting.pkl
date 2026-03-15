@@ -27,10 +27,7 @@ local off: csml.Initial = new {
       provided = Guards.energySavingInactive
       or = "dim"
     }
-    [Events.eActivateLightUserLevel] {
-      to = "userLevel"
-      yields { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
-    }
+    [Events.eActivateLightUserLevel] { to = "userLevel" }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
       to = "safetyOff"
@@ -60,10 +57,7 @@ local on: csml.State = new {
   on {
     [Events.eOccupancyTransient] { to = "dim" }
     [Events.eOccupancyVacant] { to = "off" }
-    [Events.eActivateLightUserLevel] {
-      to = "userLevel"
-      yields { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
-    }
+    [Events.eActivateLightUserLevel] { to = "userLevel" }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
       to = "safetyOff"
@@ -90,10 +84,7 @@ local dim: csml.State = new {
       provided = Guards.energySavingInactive
     }
     [Events.eOccupancyVacant] { to = "off" }
-    [Events.eActivateLightUserLevel] {
-      to = "userLevel"
-      yields { new csml.Eval { expression = "\(Vars.vUserLightLevel) = $lightLevel" } }
-    }
+    [Events.eActivateLightUserLevel] { to = "userLevel" }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {
       to = "safetyOff"
@@ -117,16 +108,15 @@ local dim: csml.State = new {
 }
 
 local userLevel: csml.State = new {
-  static { [Vars.vUserLightLevel] = "'0'" }
+  static { [Vars.vUserLightLevel] = "0" }
   entry {
+    new csml.Eval { expression = "\(Vars.vUserLightLevel) == (($lightLevel == -1) ? \(Vars.vUserLightLevel) : $lightLevel)" }
     new csml.Invoke {
       type = ServiceTypes.stTurnUserLevel
       input { ["lightLevel"] = Vars.vUserLightLevel; ["roomId"] = Vars.vRoomId }
-      emits { new csml.Internal { topic = "userLevelSet" } }
     }
   }
   on {
-    ["userLevelSet"] { to = "userLevel" }
     [Events.eDeactivateLightUserLevel] { to = "off" }
     [Events.eFlashAllLights] { to = "flashingAlarm_On" }
     [Events.eFireAlarm] {

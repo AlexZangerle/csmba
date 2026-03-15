@@ -83,7 +83,10 @@ local authenticating: csml.State = new {
     ["goCheckRules"] { to = "checkingRules" }
     ["goDeniedAuth"] {
       to = "accessDenied"
-      yields { Actions.aRaiseAccessDeniedAuth }
+      yields {
+        // Meant as a log event - currently no subscriber thus emitted for now
+        // Actions.aRaiseAccessDeniedAuth
+      }
     }
 
     [Events.eFireAlarm] { to = "emergencyUnlock" }
@@ -119,11 +122,16 @@ local checkingRules: csml.State = new {
     }
     ["goUnlocked"] {
       to = "unlocked"
-      yields { Actions.aRaiseAccessGranted }
+      yields {
+        // Meant as a log event - currently no subscriber thus emitted for now
+        // Actions.aRaiseAccessGranted
+      }
     }
     ["goDeniedRule"] {
       to = "accessDenied"
-      yields { Actions.aRaiseAccessDeniedRule }
+      yields {
+        Actions.aRaiseAccessDeniedRule
+      }
     }
 
     [Events.eFireAlarm] { to = "emergencyUnlock" }
