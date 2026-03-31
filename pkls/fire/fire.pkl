@@ -79,6 +79,35 @@ local smokeAlert: csml.State = new {
       to = "detecting"
       yields { new csml.Eval { expression = "\(Vars.vSmokeAlert) = false" } }
     }
-    [Events.eSensorFireDataReceived] { to = "fireAlarm" yields { new csml.Eval { expression = "\(Vars.vSmokeAlert) = false" } } }
+    [Events.eSensorFireDataReceived] {
+      yields {
+        new csml.Invoke {
+          type = ServiceTypes.stDetectFire
+          input {
+            ["imageData"] = "$imageData"
+            ["zoneId"] = "$zoneId"
+          }
+          emits { new csml.Internal { topic = "escalationCheckDone" } }
+        }
+      }
+    }
+    ["escalationCheckDone"] {
+      yields {
+        new csml.Eval { expression = "\(Vars.vFireDetectionResult) = $fireDetectionResult" }
+        new csml.Eval { expression = "\(Vars.vEmergencyInRoom) = $emergencyInRoom" }
+        new csml.Match {
+          cases {
+            new csml.Case {
+              of = Guards.fireDetectedGuard
+              yields { new csml.Emit { event = new csml.Internal { topic = "goFireAlarm" } } }
+            }
+          }
+        }
+      }
+    }
+    ["goFireAlarm"] {
+      to = "fireAlarm"
+      yields { new csml.Eval { expression = "\(Vars.vSmokeAlert) = false" } }
+    }
   }
 }

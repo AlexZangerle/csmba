@@ -61,10 +61,7 @@ local half: csml.Initial = new {
     ["goFullyOpen"] { to = "fullyOpen" }
     ["goClose"] { to = "close" }
 
-    [Events.eActivateBlindsUserLevel] {
-      to = "userLevel"
-      yields { new csml.Eval { expression = "\(Vars.vUserBlindLevel) = $blindLevel" } }
-    }
+    [Events.eActivateBlindsUserLevel] { to = "userLevel" }
     [Events.eLockBlinds] { yields { Actions.aBlindLock } }
     [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
 
@@ -121,10 +118,7 @@ local fullyOpen: csml.State = new {
     ["goHalf"] { to = "half" }
     ["goClose"] { to = "close" }
 
-    [Events.eActivateBlindsUserLevel] {
-      to = "userLevel"
-      yields { new csml.Eval { expression = "\(Vars.vUserBlindLevel) = $blindLevel" } }
-    }
+    [Events.eActivateBlindsUserLevel] { to = "userLevel" }
     [Events.eLockBlinds] { yields { Actions.aBlindLock } }
     [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
     [Events.eZoneInactive] { to = "close"; }
@@ -179,10 +173,7 @@ local close: csml.State = new {
     ["goFullyOpen"] { to = "fullyOpen" }
     ["goHalf"] { to = "half" }
 
-    [Events.eActivateBlindsUserLevel] {
-      to = "userLevel"
-      yields { new csml.Eval { expression = "\(Vars.vUserBlindLevel) = $blindLevel" } }
-    }
+    [Events.eActivateBlindsUserLevel] { to = "userLevel" }
     [Events.eLockBlinds] { yields { Actions.aBlindLock } }
     [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
 
@@ -197,8 +188,9 @@ local close: csml.State = new {
 }
 
 local userLevel: csml.State = new {
-  static { [Vars.vUserBlindLevel] = "'0'" }
+  static { [Vars.vUserBlindLevel] = "0" }
   entry {
+    new csml.Eval { expression = "\(Vars.vUserBlindLevel) == (($blindLevel == -1) ? \(Vars.vUserBlindLevel) : $blindLevel)" }
     new csml.Invoke {
       type = ServiceTypes.stBlindsUserLevel
       input { ["blindLevel"] = Vars.vUserBlindLevel; ["roomId"] = Vars.vRoomId }
@@ -264,7 +256,7 @@ local emergency: csml.State = new {
   entry {
     new csml.Invoke {
       type = ServiceTypes.stBlindsUserLevel
-      input { ["blindLevel"] = "'100'"; ["roomId"] = Vars.vRoomId }
+      input { ["blindLevel"] = "100"; ["roomId"] = Vars.vRoomId }
     }
   }
   on {

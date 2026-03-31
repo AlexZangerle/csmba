@@ -52,6 +52,9 @@ local locked: csml.State = new {
     [Events.eDoorForcedOpen] { to = "forcedOpenAlarm" }
     [Events.ePhysicalTamper] { to = "forcedOpenAlarm" }
     [Events.eForceUnlockRequest] { to = "unlocked" }
+    [Events.eEnterBusinessHours] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } } }
+    [Events.eEnterAfterHoursMode] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } } }
+    [Events.eEnterWeekend] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } } }
   }
 }
 
@@ -83,7 +86,10 @@ local authenticating: csml.State = new {
     ["goCheckRules"] { to = "checkingRules" }
     ["goDeniedAuth"] {
       to = "accessDenied"
-      yields { Actions.aRaiseAccessDeniedAuth }
+      yields {
+        // Meant as a log event - currently no subscriber thus emitted for now
+        // Actions.aRaiseAccessDeniedAuth
+      }
     }
 
     [Events.eFireAlarm] { to = "emergencyUnlock" }
@@ -119,11 +125,16 @@ local checkingRules: csml.State = new {
     }
     ["goUnlocked"] {
       to = "unlocked"
-      yields { Actions.aRaiseAccessGranted }
+      yields {
+        // Meant as a log event - currently no subscriber thus emitted for now
+        // Actions.aRaiseAccessGranted
+      }
     }
     ["goDeniedRule"] {
       to = "accessDenied"
-      yields { Actions.aRaiseAccessDeniedRule }
+      yields {
+        Actions.aRaiseAccessDeniedRule
+      }
     }
 
     [Events.eFireAlarm] { to = "emergencyUnlock" }
@@ -181,6 +192,9 @@ local emergencyUnlock: csml.State = new {
       to = "locked"
       provided = Guards.isSafeToExitEmergency
     }
+    [Events.eEnterBusinessHours] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } } }
+    [Events.eEnterAfterHoursMode] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } } }
+    [Events.eEnterWeekend] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } } }
   }
 }
 
@@ -195,5 +209,8 @@ local forcedOpenAlarm: csml.State = new {
   on {
     [Events.eClearSecurityAlert] { to = "locked" }
     [Events.eFireAlarm] { to = "emergencyUnlock" }
+    [Events.eEnterBusinessHours] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } } }
+    [Events.eEnterAfterHoursMode] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } } }
+    [Events.eEnterWeekend] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } } }
   }
 }
