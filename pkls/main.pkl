@@ -51,7 +51,12 @@ instances {
   ["electricalSafety"] { stateMachineName = "electricalSafety" }
   ["energyManagement"] { stateMachineName = "energyManagement" }
   ["fire"] { stateMachineName = "fire" }
-  ["fireDoor"] { stateMachineName = "fireDoor" data { [Vars.vDoorId] = "'Door 0'" } }
+  for (i in IntSeq(0, 19)) {
+    ["fireDoor\(i)"] {
+      stateMachineName = "fireDoor"
+      data { [Vars.vDoorId] = "'Door \(i)'" }
+    }
+  }
   ["gasSafety"] { stateMachineName = "gasSafety" }
   ["hvac"] { stateMachineName = "hvac" data { [Vars.vRoomId] = "'Room 0'" } }
   ["lighting"] { stateMachineName = "lighting" data { [Vars.vRoomId] = "'Room 0'" } }
