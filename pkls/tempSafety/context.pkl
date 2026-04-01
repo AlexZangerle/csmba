@@ -1,6 +1,0 @@
-import "../variables.pkl" as Vars
-// This module contains all contexts for the fireSafety SM
-
-fireSafetyContext = new Mapping {
-  [Vars.vRoomTemp] = "'0'"
-}

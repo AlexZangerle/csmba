@@ -1,16 +1,14 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
 import "../variables.pkl" as Vars
-import "context.pkl" as Context
-import "guards.pkl" as Guards
 
 // Fire safety state machine definition.
 //
 // Polls room temperature every 30s. If threshold exceeded, sends a
 // high risk warning and waits for manual clearance before resuming.
 sm = new csml.StateMachine {
-  transient = Context.fireSafetyContext
+  transient = new Mapping { [Vars.vRoomTemp] = "'0'" }
   states {
     ["monitoring"] = monitoring
     ["highRisk"] = highRisk
@@ -28,7 +26,7 @@ local monitoring: csml.Initial = new {
     ["startTempCheck"] {
       yields {
         new csml.Invoke {
-          type = ServiceTypes.stTempSafety
+          type = "equipmentTempService"
           input { ["roomId"] = Vars.vRoomId }
           emits { new csml.Internal { topic = "tempCheckDone" } }
         }
@@ -40,7 +38,7 @@ local monitoring: csml.Initial = new {
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.exceedTempThreshold
+              of = "\(Vars.vRoomTemp) > \(Vars.vTempThreshold)"
               yields { new csml.Emit { event = new csml.Internal { topic = "goHighRisk" } } }
             }
           }
@@ -54,11 +52,11 @@ local monitoring: csml.Initial = new {
 local highRisk: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stTempHighRisk
+      type = "equipmentTempHighRiskService"
       input { ["roomId"] = Vars.vRoomId }
     }
   }
   on {
-    [Events.eTempRiskCleared] { to = "monitoring" }
+    ["tempRiskCleared"] { to = "monitoring" }
   }
 }

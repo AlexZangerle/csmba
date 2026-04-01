@@ -1,5 +1,5 @@
-amends "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "variables.pkl" as Vars
+amends
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "buildingSchedule/buildingSchedule.pkl"
 import "buildingSchedule/roomSchedule.pkl"
 import "electricalSafety/electricalSafety.pkl"
@@ -14,6 +14,7 @@ import "security/accessControl.pkl"
 import "security/securityManager.pkl"
 import "shading/shading.pkl"
 import "tempSafety/tempSafety.pkl"
+import "variables.pkl" as Vars
 
 collaborativeStateMachine {
   stateMachines {
@@ -47,7 +48,7 @@ collaborativeStateMachine {
 
 instances {
   ["buildingSchedule"] { stateMachineName = "buildingSchedule" }
-  ["roomSchedule"] { stateMachineName = "roomSchedule" data { [Vars.vRoomId] = "'Room 0'" } }
+  ["roomSchedule"] { stateMachineName = "roomSchedule"; data { [Vars.vRoomId] = "'Room 0'" } }
   ["electricalSafety"] { stateMachineName = "electricalSafety" }
   ["energyManagement"] { stateMachineName = "energyManagement" }
   ["fire"] { stateMachineName = "fire" }
@@ -58,18 +59,18 @@ instances {
     }
   }
   ["gasSafety"] { stateMachineName = "gasSafety" }
-  ["hvac"] { stateMachineName = "hvac" data { [Vars.vRoomId] = "'Room 0'" } }
-  ["lighting"] { stateMachineName = "lighting" data { [Vars.vRoomId] = "'Room 0'" } }
-  ["roomOccupancy"] { stateMachineName = "roomOccupancy" data { [Vars.vRoomId] = "'Room 0'" } }
+  ["hvac"] { stateMachineName = "hvac"; data { [Vars.vRoomId] = "'Room 0'" } }
+  ["lighting"] { stateMachineName = "lighting"; data { [Vars.vRoomId] = "'Room 0'" } }
+  ["roomOccupancy"] { stateMachineName = "roomOccupancy"; data { [Vars.vRoomId] = "'Room 0'" } }
   ["securityManager"] { stateMachineName = "securityManager" }
-  ["accessControl"] { stateMachineName = "accessControl" data { [Vars.vDoorId] = "'Door 0'" } }
-  ["shading"] { stateMachineName = "shading" data { [Vars.vRoomId] = "'Room 0'" } }
-  ["tempSafety"] { stateMachineName = "tempSafety" data { [Vars.vRoomId] = "'Room 0'" } }
+  ["accessControl"] { stateMachineName = "accessControl"; data { [Vars.vDoorId] = "'Door 0'" } }
+  ["shading"] { stateMachineName = "shading"; data { [Vars.vRoomId] = "'Room 0'" } }
+  ["tempSafety"] { stateMachineName = "tempSafety"; data { [Vars.vRoomId] = "'Room 0'" } }
 }
 
 bindings {
   new HttpServiceImplementationBinding {
-    name = "checkArcFault"
+    name = "checkArcFaultService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -78,7 +79,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "tripCircuitBreaker"
+    name = "tripCircuitBreakerService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -87,7 +88,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "electricalFaultAcknowledged"
+    name = "arcFaultAckService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -96,7 +97,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "cutPower"
+    name = "cutPowerService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -105,7 +106,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "checkGasLeak"
+    name = "checkGasLeakService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -114,7 +115,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "closeGasValve"
+    name = "closeGasValveService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -123,7 +124,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "gasLeakPurged"
+    name = "gasLeakPurgedService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -132,7 +133,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "getEnergyPrices"
+    name = "getEnergyPriceService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -141,7 +142,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "checkGridStatus"
+    name = "checkGridStatusService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -186,7 +187,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "maintenance"
+    name = "maintenanceService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -231,7 +232,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "turnOnService"
+    name = "turnLightsOnService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -240,7 +241,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "turnOffService"
+    name = "turnLightsOffService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -249,7 +250,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "dimService"
+    name = "turnLightsDimService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -258,7 +259,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "turnUserLevelService"
+    name = "turnLightsUserLevelService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -294,7 +295,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "roomTemp"
+    name = "equipmentTempService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -303,7 +304,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "highRisk"
+    name = "equipmentTempHighRiskService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -312,7 +313,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "getScheduleMode"
+    name = "getScheduleModeService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -375,7 +376,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "setHVAC"
+    name = "setHvacService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -384,7 +385,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "getIndoorTemp"
+    name = "getRoomTempService"
     `local` = false
     scheme = "http"
     host = "localhost"
@@ -402,7 +403,7 @@ bindings {
     method = "POST"
   }
   new HttpServiceImplementationBinding {
-    name = "getOutdoorTemp"
+    name = "getOutdoorTempService"
     `local` = false
     scheme = "http"
     host = "localhost"

@@ -1,10 +1,5 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
-import "actions.pkl" as Actions
-import "context.pkl" as Context
-import "guards.pkl" as Guards
 
 // Building schedule state machine definition.
 //
@@ -12,7 +7,7 @@ import "guards.pkl" as Guards
 // operational mode: businessHours | afterHours | weekendClosed.
 // Each mode re-evaluates on a timer (15 min weekday, 2 hr weekend).
 sm = new csml.StateMachine {
-  transient = Context.scheduleContext
+  transient = new Mapping { [Vars.vCurrentScheduleMode] = "''" }
   states {
     ["evaluating"] = evaluating
     ["businessHours"] = businessHours
@@ -26,7 +21,7 @@ sm = new csml.StateMachine {
 local evaluating: csml.Initial = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stGetScheduleMode
+      type = "getScheduleModeService"
       emits { new csml.Internal { topic = "scheduleCheckDone" } }
     }
   }
@@ -37,11 +32,11 @@ local evaluating: csml.Initial = new {
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.isWeekend
+              of = "\(Vars.vCurrentScheduleMode) == 'weekendClosed'"
               yields { new csml.Emit { event = new csml.Internal { topic = "goWeekend" } } }
             }
             new csml.Case {
-              of = Guards.isBusinessHours
+              of = "\(Vars.vCurrentScheduleMode) == 'businessHours'"
               yields { new csml.Emit { event = new csml.Internal { topic = "goBusiness" } } }
             }
           }
@@ -52,71 +47,71 @@ local evaluating: csml.Initial = new {
     ["goWeekend"] { to = "weekendClosed" }
     ["goBusiness"] { to = "businessHours" }
     ["goAfterHours"] { to = "afterHours" }
-    [Events.eFireAlarm] { to = "emergencyOverride" }
-    [Events.eGasLeakDetected] { to = "emergencyOverride" }
+    ["fireAlarm"] { to = "emergencyOverride" }
+    ["gasLeakDetected"] { to = "emergencyOverride" }
   }
 }
 
 // Re-checks every 15 minutes.
 local businessHours: csml.State = new {
-  entry { Actions.aRaiseEnterBusinessHours }
+  entry { new csml.Emit { event { topic = "enterBusinessHours" } } }
   after {
     ["scheduleCheck"] = new csml.Timeout {
       delay = "900000"
-      triggers = Actions.aRaiseStartScheduleCheck
+      triggers = new csml.Emit { event = new csml.Internal { topic = "startScheduleCheck" } }
     }
   }
   on {
-    [Events.eStartScheduleCheck] { to = "evaluating" }
-    [Events.eFireAlarm] { to = "emergencyOverride" }
-    [Events.eGasLeakDetected] { to = "emergencyOverride" }
+    ["startScheduleCheck"] { to = "evaluating" }
+    ["fireAlarm"] { to = "emergencyOverride" }
+    ["gasLeakDetected"] { to = "emergencyOverride" }
   }
 }
 
 local afterHours: csml.State = new {
   entry {
-    Actions.aRaiseEnterAfterHours
+    new csml.Emit { event { topic = "enterAfterHours"; } }
   }
   after {
     ["scheduleCheck"] = new csml.Timeout {
       delay = "900000"
-      triggers = Actions.aRaiseStartScheduleCheck
+      triggers = new csml.Emit { event = new csml.Internal { topic = "startScheduleCheck" } }
     }
   }
   on {
-    [Events.eStartScheduleCheck] { to = "evaluating" }
-    [Events.eFireAlarm] { to = "emergencyOverride" }
-    [Events.eGasLeakDetected] { to = "emergencyOverride" }
+    ["startScheduleCheck"] { to = "evaluating" }
+    ["fireAlarm"] { to = "emergencyOverride" }
+    ["gasLeakDetected"] { to = "emergencyOverride" }
   }
 }
 
 // Re-checks every 2 hours.
 local weekendClosed: csml.State = new {
   entry {
-    Actions.aRaiseEnterWeekend
+    new csml.Emit { event { topic = "enterWeekend" } }
   }
   after {
     ["scheduleCheck"] = new csml.Timeout {
       delay = "7200000"
-      triggers = Actions.aRaiseStartScheduleCheck
+      triggers = new csml.Emit { event = new csml.Internal { topic = "startScheduleCheck" } }
     }
   }
   on {
-    [Events.eStartScheduleCheck] { to = "evaluating" }
-    [Events.eFireAlarm] { to = "emergencyOverride" }
-    [Events.eGasLeakDetected] { to = "emergencyOverride" }
+    ["startScheduleCheck"] { to = "evaluating" }
+    ["fireAlarm"] { to = "emergencyOverride" }
+    ["gasLeakDetected"] { to = "emergencyOverride" }
   }
 }
 
 local emergencyOverride: csml.State = new {
   on {
-    [Events.eDisarmFireAlarm] {
+    ["disarmFireAlarm"] {
       to = "evaluating"
-      provided = Guards.isSafeToExitEmergency
+      provided = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
     }
-    [Events.eGasPurged] {
+    ["gasPurged"] {
       to = "evaluating"
-      provided = Guards.isSafeToExitEmergency
+      provided = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
     }
   }
 }

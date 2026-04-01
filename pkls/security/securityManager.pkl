@@ -1,17 +1,16 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
 import "../variables.pkl" as Vars
-import "actions.pkl" as Actions
-import "context.pkl" as Context
-import "guards.pkl" as Guards
 
 // Security manager state machine definition.
 //
 // Failed access attempts increment a counter; soft limit triggers elevated,
 // hard limit triggers intrusion. Forced entry / tamper skip straight to intrusion.
 sm = new csml.StateMachine {
-  transient = Context.securityManagerContext
+  transient = new Mapping {
+    [Vars.vFailedAttemptsCount] = "'0'"
+    [Vars.vLastFailedAttemptTime] = "'0'"
+    [Vars.vAlertDetails] = "''"
+  }
   states {
     ["secure"] = secure
     ["elevatedRisk"] = elevatedRisk
@@ -26,27 +25,38 @@ local secure: csml.Initial = new {
     new csml.Eval { expression = "\(Vars.vAlertDetails) = ''" }
   }
   on {
-    [Events.eForcedEntry] {
+    ["forcedEntry"] {
       to = "intrusionAlert"
       yields {
-        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Forced entry detected at door ' + $doorId + ' in zone ' + $zoneId" }
+        new csml.Eval {
+          expression =
+            "\(Vars.vAlertDetails) = 'Forced entry detected at door ' + $doorId + ' in zone ' + $zoneId"
+        }
       }
     }
-    [Events.eTamperDetected] {
+    ["tamperDetected"] {
       to = "intrusionAlert"
       yields {
-        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Tamper detected on device ' + $deviceId + ' at ' + $location" }
+        new csml.Eval {
+          expression =
+            "\(Vars.vAlertDetails) = 'Tamper detected on device ' + $deviceId + ' at ' + $location"
+        }
       }
     }
-    [Events.eManualSecurityAlert] { to = "intrusionAlert" }
-    [Events.eAccessDenied] {
+    ["manualSecurityAlert"] { to = "intrusionAlert" }
+    ["accessDenied"] {
       yields {
-        new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
-        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Repeated access denied at door ' + $doorId + '. User: ' + $user" }
+        new csml.Eval {
+          expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1"
+        }
+        new csml.Eval {
+          expression =
+            "\(Vars.vAlertDetails) = 'Repeated access denied at door ' + $doorId + '. User: ' + $user"
+        }
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.failedAttemptSoftlimitReached
+              of = "\(Vars.vFailedAttemptsCount) >= 3"
               yields { new csml.Emit { event = new csml.Internal { topic = "goElevated" } } }
             }
           }
@@ -55,19 +65,28 @@ local secure: csml.Initial = new {
     }
     ["goElevated"] { to = "elevatedRisk" }
 
-    [Events.eFireAlarm] { to = "emergencyResponse" }
-    [Events.eGasLeakDetected] { to = "emergencyResponse" }
+    ["fireAlarm"] { to = "emergencyResponse" }
+    ["gasLeakDetected"] { to = "emergencyResponse" }
   }
 }
 
 local elevatedRisk: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stNotifySecurityPersonnel
+      type = "notifySecurityPersonnelService"
       input { ["message"] = Vars.vAlertDetails }
     }
     // Meant as a log event - currently no subscriber thus emitted for now
-    // Actions.aRaiseSecurityBreach
+    //new csml.Emit {
+    //event {
+    //topic = "securityBreachNotification"
+    //data {
+    //["level"] = "'Elevated'"
+    //["details"] = Vars.vAlertDetails
+    //}
+    //}
+    //}
+    //}
   }
   after {
     ["riskDecay"] = new csml.Timeout {
@@ -78,14 +97,19 @@ local elevatedRisk: csml.State = new {
   on {
     ["decayRisk"] { to = "secure" }
 
-    [Events.eAccessDenied] {
+    ["accessDenied"] {
       yields {
-        new csml.Eval { expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1" }
-        new csml.Eval { expression = "\(Vars.vAlertDetails) = 'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user" }
+        new csml.Eval {
+          expression = "\(Vars.vFailedAttemptsCount) = \(Vars.vFailedAttemptsCount) + 1"
+        }
+        new csml.Eval {
+          expression =
+            "\(Vars.vAlertDetails) = 'Escalation: Further access denied at door ' + $doorId + '. User: ' + $user"
+        }
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.failedAttemptHardlimitReached
+              of = "\(Vars.vFailedAttemptsCount) >= 5"
               yields { new csml.Emit { event = new csml.Internal { topic = "goIntrusion" } } }
             }
           }
@@ -94,45 +118,53 @@ local elevatedRisk: csml.State = new {
     }
     ["goIntrusion"] { to = "intrusionAlert" }
 
-    [Events.eForcedEntry] { to = "intrusionAlert" }
-    [Events.eTamperDetected] { to = "intrusionAlert" }
-    [Events.eManualSecurityAlert] { to = "intrusionAlert" }
-    [Events.eClearSecurityAlert] { to = "secure" }
+    ["forcedEntry"] { to = "intrusionAlert" }
+    ["tamperDetected"] { to = "intrusionAlert" }
+    ["manualSecurityAlert"] { to = "intrusionAlert" }
+    ["clearSecurityAlert"] { to = "secure" }
 
-    [Events.eFireAlarm] { to = "emergencyResponse" }
-    [Events.eGasLeakDetected] { to = "emergencyResponse" }
+    ["fireAlarm"] { to = "emergencyResponse" }
+    ["gasLeakDetected"] { to = "emergencyResponse" }
   }
 }
 
 local intrusionAlert: csml.State = new {
   entry {
-    // Actions.aRaiseServereSecurityBreach
-    Actions.aRaiseFlashLights
-    // Actions.aRaiseBuildingAlarm
+    // new csml.Emit {
+    //event {
+    //topic = "securityBreachNotification"
+    //data {
+    //["level"] = "'High'"
+    //["details"] = Vars.vAlertDetails
+    //}
+    //}
+    //}
+    new csml.Emit { event { topic = "flashAllLights" } }
+    // new csml.Emit { event { topic = "activateBuildingAlarm" } }
     new csml.Invoke {
-      type = ServiceTypes.stNotifySecurityPersonnel
+      type = "notifySecurityPersonnelService"
       input { ["message"] = "'INTRUSION ALERT:' + \(Vars.vAlertDetails)" }
     }
   }
   on {
-    [Events.eClearSecurityAlert] { to = "secure" }
-    [Events.eFireAlarm] { to = "emergencyResponse" }
-    [Events.eGasLeakDetected] { to = "emergencyResponse" }
+    ["clearSecurityAlert"] { to = "secure" }
+    ["fireAlarm"] { to = "emergencyResponse" }
+    ["gasLeakDetected"] { to = "emergencyResponse" }
   }
 }
 
 local emergencyResponse: csml.State = new {
   entry {
-    Actions.aRaiseUnlockEvacuationRoutes
+    new csml.Emit { event { topic = "unlockEvacuationRoutes" } }
   }
   on {
-    [Events.eDisarmFireAlarm] {
+    ["disarmFireAlarm"] {
       to = "secure"
-      provided = Guards.isSafeToExitEmergency
+      provided = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
     }
-    [Events.eGasPurged] {
+    ["gasPurged"] {
       to = "secure"
-      provided = Guards.isSafeToExitEmergency
+      provided = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
     }
   }
 }

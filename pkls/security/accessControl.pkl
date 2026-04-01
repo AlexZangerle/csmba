@@ -1,16 +1,21 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
+
+
 import "../variables.pkl" as Vars
-import "actions.pkl" as Actions
-import "context.pkl" as Context
-import "guards.pkl" as Guards
 
 // Access control state machine definition.
 //
 // Per-door controller handling authentication, rule checks, and physical security.
 sm = new csml.StateMachine {
-  transient = Context.accessControlContext
+  transient = new Mapping {
+    [Vars.vZoneId] = "''"
+    [Vars.vIsEvacuationRoute] = "false"
+    [Vars.vUserId] = "''"
+    [Vars.vUserRole] = "''"
+    [Vars.vAuthenticationStatus] = "''"
+    [Vars.vCurrentScheduleMode] = "'unknown'"
+    [Vars.vAccessDecision] = "''"
+  }
   states {
     ["init"] = init
     ["locked"] = locked
@@ -26,7 +31,7 @@ sm = new csml.StateMachine {
 local init: csml.Initial = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stGetDoorRouteType
+      type = "getDoorRouteTypeService"
       input { ["doorId"] = Vars.vDoorId }
       emits { new csml.Internal { topic = "doorTypeDetermined" } }
     }
@@ -44,24 +49,33 @@ local init: csml.Initial = new {
 
 local locked: csml.State = new {
   on {
-    [Events.eAuthenticationRequest] { to = "authenticating"; }
-    [Events.eFireAlarm] { to = "emergencyUnlock" }
-    [Events.eGasLeakDetected] { to = "emergencyUnlock"; provided = Guards.checkIsEvacuationRoute }
-    [Events.eUnlockAllEvacuationRoutes] { to = "emergencyUnlock"; provided = Guards.checkIsEvacuationRoute }
-    [Events.eLockdownZone] {}
-    [Events.eDoorForcedOpen] { to = "forcedOpenAlarm" }
-    [Events.ePhysicalTamper] { to = "forcedOpenAlarm" }
-    [Events.eForceUnlockRequest] { to = "unlocked" }
-    [Events.eEnterBusinessHours] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } } }
-    [Events.eEnterAfterHoursMode] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } } }
-    [Events.eEnterWeekend] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } } }
+    ["authenticationRequest"] { to = "authenticating" }
+    ["fireAlarm"] { to = "emergencyUnlock" }
+    ["gasLeakDetected"] { to = "emergencyUnlock"; provided = "\(Vars.vIsEvacuationRoute)" }
+    ["unlockEvacuationRoutes"] {
+      to = "emergencyUnlock"
+      provided = "\(Vars.vIsEvacuationRoute)"
+    }
+    ["lockdownZone"] {}
+    ["doorForcedOpen"] { to = "forcedOpenAlarm" }
+    [ "physicalTamper"] { to = "forcedOpenAlarm" }
+    ["forceUnlockRequest"] { to = "unlocked" }
+    ["enterBusinessHours"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } }
+    }
+    ["enterAfterHours"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } }
+    }
+    ["enterWeekend"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } }
+    }
   }
 }
 
 local authenticating: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stAuthenticateUser
+      type = "authenticateUserService"
       input { ["cardId"] = "$cardId" }
       emits { new csml.Internal { topic = "authDone" } }
     }
@@ -75,7 +89,7 @@ local authenticating: csml.State = new {
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.authSuccessful
+              of = "\(Vars.vAuthenticationStatus) == 'Success'"
               yields { new csml.Emit { event = new csml.Internal { topic = "goCheckRules" } } }
             }
           }
@@ -86,20 +100,16 @@ local authenticating: csml.State = new {
     ["goCheckRules"] { to = "checkingRules" }
     ["goDeniedAuth"] {
       to = "accessDenied"
-      yields {
-        // Meant as a log event - currently no subscriber thus emitted for now
-        // Actions.aRaiseAccessDeniedAuth
-      }
     }
 
-    [Events.eFireAlarm] { to = "emergencyUnlock" }
+    ["fireAlarm"] { to = "emergencyUnlock" }
   }
 }
 
 local checkingRules: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stCheckAccessRule
+      type = "checkAccessRuleService"
       input {
         ["userRole"] = Vars.vUserRole
         ["zoneId"] = Vars.vZoneId
@@ -115,7 +125,7 @@ local checkingRules: csml.State = new {
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.allowAccess
+              of = "\(Vars.vAccessDecision) == 'Allow'"
               yields { new csml.Emit { event = new csml.Internal { topic = "goUnlocked" } } }
             }
           }
@@ -125,41 +135,47 @@ local checkingRules: csml.State = new {
     }
     ["goUnlocked"] {
       to = "unlocked"
-      yields {
-        // Meant as a log event - currently no subscriber thus emitted for now
-        // Actions.aRaiseAccessGranted
-      }
     }
     ["goDeniedRule"] {
       to = "accessDenied"
       yields {
-        Actions.aRaiseAccessDeniedRule
+        new csml.Emit {
+          event {
+            topic = "accessDenied"
+            data {
+              ["doorId"] = Vars.vDoorId
+              ["zoneId"] = Vars.vZoneId
+              ["user"] = Vars.vUserId
+              ["reason"] = "'Access Rule Denied'"
+            }
+          }
+        }
       }
     }
 
-    [Events.eFireAlarm] { to = "emergencyUnlock" }
+    ["fireAlarm"] { to = "emergencyUnlock" }
   }
 }
 
 local unlocked: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stControlDoorLock
+      type = "controlDoorLockService"
       input { ["doorId"] = Vars.vDoorId; ["command"] = "'unlock'" }
     }
   }
   after {
     ["autoRelock"] = new csml.Timeout {
       delay = "10000"
-      triggers = Actions.aRaiseAutoRelock
+      triggers = new csml.Emit { event = new csml.Internal { topic = "autoRelock" } }
     }
   }
   on {
     ["autoRelock"] { to = "locked" }
-    [Events.eLockdownZone] { to = "locked"; }
-    [Events.eFireAlarm] { to = "emergencyUnlock" }
-    [Events.eDoorForcedOpen] { to = "forcedOpenAlarm" }
-    [Events.ePhysicalTamper] { to = "forcedOpenAlarm" }
+    ["lockdownZone"] { to = "locked" }
+    ["fireAlarm"] { to = "emergencyUnlock" }
+    ["doorForcedOpen"] { to = "forcedOpenAlarm" }
+    [ "physicalTamper"] { to = "forcedOpenAlarm" }
   }
 }
 
@@ -167,50 +183,70 @@ local accessDenied: csml.State = new {
   after {
     ["deniedDelay"] = new csml.Timeout {
       delay = "3000"
-      triggers = Actions.aRaiseReturnToLock
+      triggers = new csml.Emit { event = new csml.Internal { topic = "returnToLock" } }
     }
   }
   on {
     ["returnToLock"] { to = "locked" }
-    [Events.eFireAlarm] { to = "emergencyUnlock" }
+    ["fireAlarm"] { to = "emergencyUnlock" }
   }
 }
 
 local emergencyUnlock: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stControlDoorLock
+      type = "controlDoorLockService"
       input { ["doorId"] = Vars.vDoorId; ["command"] = "'unlock'" }
     }
   }
   on {
-    [Events.eDisarmFireAlarm] {
+    ["disarmFireAlarm"] {
       to = "locked"
-      provided = Guards.isSafeToExitEmergency
+      provided = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
     }
-    [Events.eGasPurged] {
+    ["gasPurged"] {
       to = "locked"
-      provided = Guards.isSafeToExitEmergency
+      provided = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
     }
-    [Events.eEnterBusinessHours] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } } }
-    [Events.eEnterAfterHoursMode] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } } }
-    [Events.eEnterWeekend] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } } }
+    ["enterBusinessHours"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } }
+    }
+    ["enterAfterHours"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } }
+    }
+    ["enterWeekend"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } }
+    }
   }
 }
 
 local forcedOpenAlarm: csml.State = new {
   entry {
-    Actions.aRaiseForcedEntry
+    new csml.Emit {
+      event {
+        topic = "forcedEntry"
+        data {
+          ["doorId"] = Vars.vDoorId
+          ["zoneId"] = Vars.vZoneId
+        }
+      }
+    }
     new csml.Invoke {
-      type = ServiceTypes.stControlDoorLock
+      type = "controlDoorLockService"
       input { ["doorId"] = Vars.vDoorId; ["command"] = "'lock'" }
     }
   }
   on {
-    [Events.eClearSecurityAlert] { to = "locked" }
-    [Events.eFireAlarm] { to = "emergencyUnlock" }
-    [Events.eEnterBusinessHours] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } } }
-    [Events.eEnterAfterHoursMode] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } } }
-    [Events.eEnterWeekend] { yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } } }
+    ["clearSecurityAlert"] { to = "locked" }
+    ["fireAlarm"] { to = "emergencyUnlock" }
+    ["enterBusinessHours"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" } }
+    }
+    ["enterAfterHours"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" } }
+    }
+    ["enterWeekend"] {
+      yields { new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekendClosed'" } }
+    }
   }
 }

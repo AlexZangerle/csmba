@@ -1,8 +1,7 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
-import "actions.pkl" as Actions
-import "guards.pkl" as Guards
+
+
+import "../variables.pkl" as Vars
 
 // Room schedule state machine definition.
 //
@@ -23,7 +22,7 @@ sm = new csml.StateMachine {
 local init: csml.Initial = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stInitializeZone
+      type = "getDoorRouteTypeService"
       emits { new csml.Internal { topic = "zoneInitialized" } }
     }
   }
@@ -34,78 +33,78 @@ local init: csml.Initial = new {
 
 local active: csml.State = new {
   entry {
-    Actions.aRaiseZoneActive
+    new csml.Emit { event { topic = "zoneActive" } }
   }
   on {
-    [Events.eEnterAfterHoursMode] { to = "warning" }
-    [Events.eEnterWeekend] { to = "warning" }
-    [Events.eFireAlarm] { to = "emergency" }
-    [Events.eGasLeakDetected] { to = "emergency" }
+    ["enterAfterHours"] { to = "warning" }
+    ["enterWeekend"] { to = "warning" }
+    ["fireAlarm"] { to = "emergency" }
+    ["gasLeakDetected"] { to = "emergency" }
   }
 }
 
 local inactive: csml.State = new {
   entry {
-    Actions.aRaiseZoneInactive
+    new csml.Emit { event { topic = "zoneInactive" } }
   }
   on {
-    [Events.eEnterBusinessHours] { to = "active" }
-    [Events.eRequestStay] { to = "authorizedStay"; }
-    [Events.eFireAlarm] { to = "emergency" }
-    [Events.eGasLeakDetected] { to = "emergency" }
+    ["enterBusinessHours"] { to = "active" }
+    ["requestStay"] { to = "authorizedStay" }
+    ["fireAlarm"] { to = "emergency" }
+    ["gasLeakDetected"] { to = "emergency" }
   }
 }
 
 // 5-minute grace period before shutting down the room.
 local warning: csml.State = new {
   entry {
-    Actions.aRaiseZoneWarning
+    new csml.Emit { event { topic = "zoneWarning" } }
   }
   after {
     ["gracePeriod"] = new csml.Timeout {
       delay = "300000"
-      triggers = Actions.aRaiseShutdownRoom
+      triggers = new csml.Emit { event = new csml.Internal { topic = "shutdownRoom" } }
     }
   }
   on {
-    [Events.eShutdownRoom] { to = "inactive" }
-    [Events.eRequestStay] { to = "authorizedStay"; }
-    [Events.eEnterBusinessHours] { to = "active" }
-    [Events.eFireAlarm] { to = "emergency" }
-    [Events.eGasLeakDetected] { to = "emergency" }
+    ["shutdownRoom"] { to = "inactive" }
+    ["requestStay"] { to = "authorizedStay" }
+    ["enterBusinessHours"] { to = "active" }
+    ["fireAlarm"] { to = "emergency" }
+    ["gasLeakDetected"] { to = "emergency" }
   }
 }
 
 // 2-hour lease; re-enters warning when expired.
 local authorizedStay: csml.State = new {
   entry {
-    Actions.aRaiseZoneActive
+    new csml.Emit { event { topic = "zoneActive" } }
   }
   after {
     ["overrideLease"] = new csml.Timeout {
       delay = "7200000"
-      triggers = Actions.aRaiseRecheckOverride
+      triggers = new csml.Emit { event = new csml.Internal { topic = "recheckOverride" } }
     }
   }
   on {
-    [Events.eRecheckOverride] { to = "warning" }
-    [Events.eUserLeftZone] { to = "inactive" }
-    [Events.eEnterBusinessHours] { to = "active" }
-    [Events.eFireAlarm] { to = "emergency" }
-    [Events.eGasLeakDetected] { to = "emergency" }
+    ["recheckOverride"] { to = "warning" }
+    ["userLeftZone"] { to = "inactive" }
+    ["enterBusinessHours"] { to = "active" }
+    ["fireAlarm"] { to = "emergency" }
+    ["gasLeakDetected"] { to = "emergency" }
   }
 }
 
 // Safety protocols override all schedules.
 local emergency: csml.State = new {
   on {
-    [Events.eDisarmFireAlarm] {
+    ["disarmFireAlarm"] {
       to = "inactive"
-      provided = Guards.isSafeToExitEmergency
+      provided = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
     }
-    [Events.eGasPurged] {
+    ["gasPurged"] {
       to = "inactive"
-      provided = Guards.isSafeToExitEmergency
+      provided = "!\(Vars.vFireAlarm) && !\(Vars.vGasActive)"
     }
   }
 }

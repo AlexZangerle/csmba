@@ -1,6 +1,0 @@
-import "../variables.pkl" as Vars
-// This module contains all contexts for the room occupancy SM
-
-occupancyLocalContext = new Mapping {
-  [Vars.vOccupancyDetected] = "false"
-}

@@ -1,17 +1,14 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
 import "../variables.pkl" as Vars
-import "actions.pkl" as Actions
-import "context.pkl" as Context
-import "guards.pkl" as Guards
 
 // Electrical safety state machine definition.
 //
 // Periodically checks for arc faults every 30s. If detected, trips the
 // circuit breaker and waits for manual reset before resuming monitoring.
 sm = new csml.StateMachine {
-  transient = Context.electricalSafetyContext
+  transient = new Mapping { [Vars.vArcFaultLocation] = "'none'" }
   states {
     ["monitoring"] = monitoring
     ["arcFault"] = arcFault
@@ -33,7 +30,7 @@ local monitoring: csml.Initial = new {
     ["startCheck"] {
       yields {
         new csml.Invoke {
-          type = ServiceTypes.stCheckArcFault
+          type = "checkArcFaultService"
           emits { new csml.Internal { topic = "checkDone" } }
         }
       }
@@ -44,7 +41,7 @@ local monitoring: csml.Initial = new {
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.foundArcFault
+              of = "\(Vars.vArcFaultLocation) != 'none'"
               yields { new csml.Emit { event = new csml.Internal { topic = "goArcFault" } } }
             }
           }
@@ -59,14 +56,19 @@ local monitoring: csml.Initial = new {
 local arcFault: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stTripCircuitBreaker
+      type = "tripCircuitBreakerService"
       input { ["arcFaultLocation"] = Vars.vArcFaultLocation }
     }
-    Actions.aRaiseArcFaultDetected
+    new csml.Emit {
+      event {
+        topic = "arcFaultDetected"
+        data { ["arcFaultLocation"] = Vars.vArcFaultLocation }
+      }
+    }
     new csml.Eval { expression = "\(Vars.vArcFault) = true" }
   }
   on {
-    [Events.eResetElectricalFault] { to = "acknowledged" }
+    ["electricalReset"] { to = "acknowledged" }
   }
 }
 
@@ -74,7 +76,7 @@ local acknowledged: csml.State = new {
   entry {
     new csml.Eval { expression = "\(Vars.vArcFault) = false" }
     new csml.Invoke {
-      type = ServiceTypes.stAcknowledgedEletrical
+      type = "arcFaultAckService"
       emits { new csml.Internal { topic = "ackComplete" } }
     }
   }

@@ -1,7 +1,0 @@
-import "../variables.pkl" as Vars
-// This module contains all contexts for the shading SM
-
-blindLockContext = new Mapping {
-  [Vars.vIsLocked] = "false"
-  [Vars.vOutdoorTemp] = "'0'"
-}

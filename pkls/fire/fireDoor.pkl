@@ -1,6 +1,6 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
 import "../variables.pkl" as Vars
 
 // Fire door state machine definition.
@@ -15,18 +15,18 @@ sm = new csml.StateMachine {
 
 local openDoor: csml.Initial = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stOpenFireDoor input { ["doorId"] = Vars.vDoorId } }
+    new csml.Invoke { type = "openFireDoorService"; input { ["doorId"] = Vars.vDoorId } }
   }
   on {
-    [Events.eFireAlarm] { to = "close" }
+    ["fireAlarm"] { to = "close" }
   }
 }
 
 local closeDoor: csml.State = new {
   entry {
-    new csml.Invoke { type = ServiceTypes.stCloseFireDoor input { ["doorId"] = Vars.vDoorId } }
+    new csml.Invoke { type = "closeFireDoorService"; input { ["doorId"] = Vars.vDoorId } }
   }
   on {
-    [Events.eDisarmFireAlarm] { to = "open" }
+    ["disarmFireAlarm"] { to = "open" }
   }
 }

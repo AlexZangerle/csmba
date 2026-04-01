@@ -1,14 +1,14 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
 import "../variables.pkl" as Vars
-import "actions.pkl" as Actions
-import "context.pkl" as Context
-import "guards.pkl" as Guards
 
 // Shading (blinds) state machine definition.
 sm = new csml.StateMachine {
-  transient = Context.blindLockContext
+  transient = new Mapping {
+    [Vars.vIsLocked] = "false"
+    [Vars.vOutdoorTemp] = "'0'"
+  }
   states {
     ["half"] = half
     ["fullyOpen"] = fullyOpen
@@ -21,7 +21,7 @@ sm = new csml.StateMachine {
 local half: csml.Initial = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stBlindsHalf
+      type = "blindsHalfService"
       input { ["roomId"] = Vars.vRoomId }
     }
   }
@@ -35,23 +35,23 @@ local half: csml.Initial = new {
     ["startOutdoorCheck"] {
       yields {
         new csml.Invoke {
-          type = ServiceTypes.stGetOutdoorTemp
+          type = "getOutdoorTempService"
           emits { new csml.Internal { topic = "outdoorCheckDone" } }
         }
       }
     }
     ["outdoorCheckDone"] {
-      provided = Guards.isLockedGuard
+      provided = "\(Vars.vIsLocked) == false"
       yields {
         new csml.Eval { expression = "\(Vars.vOutdoorTemp) = $outdoorTemp" }
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.isColdGuard
+              of = "\(Vars.vOutdoorTemp) < 15"
               yields { new csml.Emit { event = new csml.Internal { topic = "goFullyOpen" } } }
             }
             new csml.Case {
-              of = Guards.isHotGuard
+              of = "\(Vars.vOutdoorTemp) >= 22"
               yields { new csml.Emit { event = new csml.Internal { topic = "goClose" } } }
             }
           }
@@ -61,24 +61,24 @@ local half: csml.Initial = new {
     ["goFullyOpen"] { to = "fullyOpen" }
     ["goClose"] { to = "close" }
 
-    [Events.eActivateBlindsUserLevel] { to = "userLevel" }
-    [Events.eLockBlinds] { yields { Actions.aBlindLock } }
-    [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
+    ["userLevelBlinds"] { to = "userLevel" }
+    ["lockBlinds"] { yields { new csml.Eval { expression = "\(Vars.vIsLocked) = true" } } }
+    ["unlockBlinds"] { yields { new csml.Eval { expression = "\(Vars.vIsLocked) = false" } } }
 
-    [Events.eZoneInactive] { to = "close"; }
-    [Events.eLockdownZone] { to = "close"; }
+    ["zoneInactive"] { to = "close" }
+    ["lockdownZone"] { to = "close" }
 
-    [Events.eFireAlarm] { to = "emergency" }
-    [Events.eSmokeAlert] { to = "emergency" }
-    [Events.eGasLeakDetected] { to = "emergency" }
-    [Events.eArcFaultDetected] { to = "emergency" }
+    ["fireAlarm"] { to = "emergency" }
+    ["smokeAlert"] { to = "emergency" }
+    ["gasLeakDetected"] { to = "emergency" }
+    ["arcFaultDetected"] { to = "emergency" }
   }
 }
 
 local fullyOpen: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stBlindsOpen
+      type = "blindsOpenService"
       input { ["roomId"] = Vars.vRoomId }
     }
   }
@@ -92,23 +92,23 @@ local fullyOpen: csml.State = new {
     ["startOutdoorCheck"] {
       yields {
         new csml.Invoke {
-          type = ServiceTypes.stGetOutdoorTemp
+          type = "getOutdoorTempService"
           emits { new csml.Internal { topic = "outdoorCheckDone" } }
         }
       }
     }
     ["outdoorCheckDone"] {
-      provided = Guards.isLockedGuard
+      provided = "\(Vars.vIsLocked) == false"
       yields {
         new csml.Eval { expression = "\(Vars.vOutdoorTemp) = $outdoorTemp" }
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.isMediumGuard
+              of = "\(Vars.vOutdoorTemp) >= 15 && \(Vars.vOutdoorTemp) < 22"
               yields { new csml.Emit { event = new csml.Internal { topic = "goHalf" } } }
             }
             new csml.Case {
-              of = Guards.isHotGuard
+              of = "\(Vars.vOutdoorTemp) >= 22"
               yields { new csml.Emit { event = new csml.Internal { topic = "goClose" } } }
             }
           }
@@ -118,22 +118,22 @@ local fullyOpen: csml.State = new {
     ["goHalf"] { to = "half" }
     ["goClose"] { to = "close" }
 
-    [Events.eActivateBlindsUserLevel] { to = "userLevel" }
-    [Events.eLockBlinds] { yields { Actions.aBlindLock } }
-    [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
-    [Events.eZoneInactive] { to = "close"; }
-    [Events.eLockdownZone] { to = "close"; }
-    [Events.eFireAlarm] { to = "emergency" }
-    [Events.eSmokeAlert] { to = "emergency" }
-    [Events.eGasLeakDetected] { to = "emergency" }
-    [Events.eArcFaultDetected] { to = "emergency" }
+    ["userLevelBlinds"] { to = "userLevel" }
+    ["lockBlinds"] { yields { new csml.Eval { expression = "\(Vars.vIsLocked) = true" } } }
+    ["unlockBlinds"] { yields { new csml.Eval { expression = "\(Vars.vIsLocked) = false" } } }
+    ["zoneInactive"] { to = "close" }
+    ["lockdownZone"] { to = "close" }
+    ["fireAlarm"] { to = "emergency" }
+    ["smokeAlert"] { to = "emergency" }
+    ["gasLeakDetected"] { to = "emergency" }
+    ["arcFaultDetected"] { to = "emergency" }
   }
 }
 
 local close: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stBlindsClose
+      type = "blindCloseService"
       input { ["roomId"] = Vars.vRoomId }
     }
   }
@@ -147,23 +147,23 @@ local close: csml.State = new {
     ["startOutdoorCheck"] {
       yields {
         new csml.Invoke {
-          type = ServiceTypes.stGetOutdoorTemp
+          type = "getOutdoorTempService"
           emits { new csml.Internal { topic = "outdoorCheckDone" } }
         }
       }
     }
     ["outdoorCheckDone"] {
-      provided = Guards.isLockedGuard
+      provided = "\(Vars.vIsLocked) == false"
       yields {
         new csml.Eval { expression = "\(Vars.vOutdoorTemp) = $outdoorTemp" }
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.isColdGuard
+              of = "\(Vars.vOutdoorTemp) < 15"
               yields { new csml.Emit { event = new csml.Internal { topic = "goFullyOpen" } } }
             }
             new csml.Case {
-              of = Guards.isMediumGuard
+              of = "\(Vars.vOutdoorTemp) >= 15 && \(Vars.vOutdoorTemp) < 22"
               yields { new csml.Emit { event = new csml.Internal { topic = "goHalf" } } }
             }
           }
@@ -173,30 +173,33 @@ local close: csml.State = new {
     ["goFullyOpen"] { to = "fullyOpen" }
     ["goHalf"] { to = "half" }
 
-    [Events.eActivateBlindsUserLevel] { to = "userLevel" }
-    [Events.eLockBlinds] { yields { Actions.aBlindLock } }
-    [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
+    ["userLevelBlinds"] { to = "userLevel" }
+    ["lockBlinds"] { yields { new csml.Eval { expression = "\(Vars.vIsLocked) = true" } } }
+    ["unlockBlinds"] { yields { new csml.Eval { expression = "\(Vars.vIsLocked) = false" } } }
 
-    [Events.eZoneActive] { to = "half"; }
-    [Events.eClearSecurityAlert] { to = "half"; }
+    ["zoneActive"] { to = "half" }
+    ["clearSecurityAlert"] { to = "half" }
 
-    [Events.eFireAlarm] { to = "emergency" }
-    [Events.eSmokeAlert] { to = "emergency" }
-    [Events.eGasLeakDetected] { to = "emergency" }
-    [Events.eArcFaultDetected] { to = "emergency" }
+    ["fireAlarm"] { to = "emergency" }
+    ["smokeAlert"] { to = "emergency" }
+    ["gasLeakDetected"] { to = "emergency" }
+    ["arcFaultDetected"] { to = "emergency" }
   }
 }
 
 local userLevel: csml.State = new {
   static { [Vars.vUserBlindLevel] = "0" }
   entry {
-    new csml.Eval { expression = "\(Vars.vUserBlindLevel) == (($blindLevel == -1) ? \(Vars.vUserBlindLevel) : $blindLevel)" }
+    new csml.Eval {
+      expression =
+        "\(Vars.vUserBlindLevel) == (($blindLevel == -1) ? \(Vars.vUserBlindLevel) : $blindLevel)"
+    }
     new csml.Invoke {
-      type = ServiceTypes.stBlindsUserLevel
+      type = "blindsUserLevelService"
       input { ["blindLevel"] = Vars.vUserBlindLevel; ["roomId"] = Vars.vRoomId }
     }
     new csml.Invoke {
-      type = ServiceTypes.stGetOutdoorTemp
+      type = "getOutdoorTempService"
       emits { new csml.Internal { topic = "outdoorCheckDone" } }
     }
   }
@@ -210,7 +213,7 @@ local userLevel: csml.State = new {
     ["startOutdoorCheck"] {
       yields {
         new csml.Invoke {
-          type = ServiceTypes.stGetOutdoorTemp
+          type = "getOutdoorTempService"
           emits { new csml.Internal { topic = "outdoorCheckDone" } }
         }
       }
@@ -218,16 +221,16 @@ local userLevel: csml.State = new {
     ["outdoorCheckDone"] {
       yields { new csml.Eval { expression = "\(Vars.vOutdoorTemp) = $outdoorTemp" } }
     }
-    [Events.eDeactivateBlindsUserLevel] {
+    ["deactivateUserLevelBlinds"] {
       yields {
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.isColdGuard
+              of = "\(Vars.vOutdoorTemp) < 15"
               yields { new csml.Emit { event = new csml.Internal { topic = "goFullyOpen" } } }
             }
             new csml.Case {
-              of = Guards.isHotGuard
+              of = "\(Vars.vOutdoorTemp) >= 22"
               yields { new csml.Emit { event = new csml.Internal { topic = "goClose" } } }
             }
           }
@@ -239,42 +242,46 @@ local userLevel: csml.State = new {
     ["goClose"] { to = "close" }
     ["goHalf"] { to = "half" }
 
-    [Events.eLockBlinds] { yields { Actions.aBlindLock } }
-    [Events.eUnlockBlinds] { yields { Actions.aBlindUnlock } }
+    ["lockBlinds"] { yields { new csml.Eval { expression = "\(Vars.vIsLocked) = true" } } }
+    ["unlockBlinds"] { yields { new csml.Eval { expression = "\(Vars.vIsLocked) = false" } } }
 
-    [Events.eZoneInactive] { to = "close"; }
-    [Events.eLockdownZone] { to = "close"; }
+    ["zoneInactive"] { to = "close" }
+    ["lockdownZone"] { to = "close" }
 
-    [Events.eFireAlarm] { to = "emergency" }
-    [Events.eSmokeAlert] { to = "emergency" }
-    [Events.eGasLeakDetected] { to = "emergency" }
-    [Events.eArcFaultDetected] { to = "emergency" }
+    ["fireAlarm"] { to = "emergency" }
+    ["smokeAlert"] { to = "emergency" }
+    ["gasLeakDetected"] { to = "emergency" }
+    ["arcFaultDetected"] { to = "emergency" }
   }
 }
 
 local emergency: csml.State = new {
   entry {
     new csml.Invoke {
-      type = ServiceTypes.stBlindsUserLevel
+      type = "blindsUserLevelService"
       input { ["blindLevel"] = "100"; ["roomId"] = Vars.vRoomId }
     }
   }
   on {
-    [Events.eDisarmFireAlarm] {
+    ["disarmFireAlarm"] {
       to = "half"
-      provided = Guards.isSafeToExitEmergency
+      provided =
+        "!\(Vars.vFireAlarm) && !\(Vars.vGasActive) && !\(Vars.vSmokeAlert) && !\(Vars.vArcFault)"
     }
-    [Events.eGasPurged] {
+    ["gasPurged"] {
       to = "half"
-      provided = Guards.isSafeToExitEmergency
+      provided =
+        "!\(Vars.vFireAlarm) && !\(Vars.vGasActive) && !\(Vars.vSmokeAlert) && !\(Vars.vArcFault)"
     }
-    [Events.eDisarmSmokeAlert] {
+    ["disarmSmokeAlert"] {
       to = "half"
-      provided = Guards.isSafeToExitEmergency
+      provided =
+        "!\(Vars.vFireAlarm) && !\(Vars.vGasActive) && !\(Vars.vSmokeAlert) && !\(Vars.vArcFault)"
     }
-    [Events.eResetElectricalFault] {
+    ["electricalReset"] {
       to = "half"
-      provided = Guards.isSafeToExitEmergency
+      provided =
+        "!\(Vars.vFireAlarm) && !\(Vars.vGasActive) && !\(Vars.vSmokeAlert) && !\(Vars.vArcFault)"
     }
   }
 }

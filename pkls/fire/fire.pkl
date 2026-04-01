@@ -1,17 +1,17 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
-import "../events.pkl" as Events
-import "../serviceTypes.pkl" as ServiceTypes
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+
 import "../variables.pkl" as Vars
-import "actions.pkl" as Actions
-import "context.pkl" as Context
-import "guards.pkl" as Guards
 
 // Fire detection state machine definition.
 //
 // Waits for sensor data, invokes fire detection, and escalates
 // to fireAlarm or smokeAlert based on detection results.
 sm = new csml.StateMachine {
-  transient = Context.fireDetectionContext
+  transient = new Mapping {
+    [Vars.vFireDetectionResult] = "'none'"
+    [Vars.vEmergencyInRoom] = "'none'"
+  }
   states {
     ["detecting"] = detecting
     ["fireAlarm"] = fireAlarm
@@ -21,10 +21,10 @@ sm = new csml.StateMachine {
 
 local detecting: csml.Initial = new {
   on {
-    [Events.eSensorFireDataReceived] {
+    ["sensorFireDataReceived"] {
       yields {
         new csml.Invoke {
-          type = ServiceTypes.stDetectFire
+          type = "detectFireService"
           input {
             ["imageData"] = "$imageData"
             ["zoneId"] = "$zoneId"
@@ -40,11 +40,11 @@ local detecting: csml.Initial = new {
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.fireDetectedGuard
+              of = "\(Vars.vFireDetectionResult) == 'fire'"
               yields { new csml.Emit { event = new csml.Internal { topic = "goFireAlarm" } } }
             }
             new csml.Case {
-              of = Guards.smokeDetectedGuard
+              of = "\(Vars.vFireDetectionResult) == 'smoke'"
               yields { new csml.Emit { event = new csml.Internal { topic = "goSmokeAlert" } } }
             }
           }
@@ -59,10 +59,17 @@ local detecting: csml.Initial = new {
 local fireAlarm: csml.State = new {
   entry {
     new csml.Eval { expression = "\(Vars.vFireAlarm) = true" }
-    Actions.aRaiseFireAlarm
+    new csml.Emit {
+      event {
+        topic = "fireAlarm"
+        data {
+          [Vars.vEmergencyInRoom] = Vars.vEmergencyInRoom
+        }
+      }
+    }
   }
   on {
-    [Events.eDisarmFireAlarm] {
+    ["disarmFireAlarm"] {
       to = "detecting"
       yields { new csml.Eval { expression = "\(Vars.vFireAlarm) = false" } }
     }
@@ -72,17 +79,17 @@ local fireAlarm: csml.State = new {
 local smokeAlert: csml.State = new {
   entry {
     new csml.Eval { expression = "\(Vars.vSmokeAlert) = true" }
-    Actions.aRaiseSmokeAlert
+    new csml.Emit { event { topic = "smokeAlert" } }
   }
   on {
-    [Events.eDisarmSmokeAlert] {
+    ["disarmSmokeAlert"] {
       to = "detecting"
       yields { new csml.Eval { expression = "\(Vars.vSmokeAlert) = false" } }
     }
-    [Events.eSensorFireDataReceived] {
+    ["sensorFireDataReceived"] {
       yields {
         new csml.Invoke {
-          type = ServiceTypes.stDetectFire
+          type = "detectFireService"
           input {
             ["imageData"] = "$imageData"
             ["zoneId"] = "$zoneId"
@@ -98,7 +105,7 @@ local smokeAlert: csml.State = new {
         new csml.Match {
           cases {
             new csml.Case {
-              of = Guards.fireDetectedGuard
+              of = "\(Vars.vFireDetectionResult) == 'fire'"
               yields { new csml.Emit { event = new csml.Internal { topic = "goFireAlarm" } } }
             }
           }
