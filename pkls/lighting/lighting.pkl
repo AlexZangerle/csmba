@@ -35,7 +35,7 @@ sm = new csml.StateMachine {
           yields { new csml.Eval { expression = "isEnergySaving = true" } }
         }
         ["deactivateEnergySaving"] {
-          yields { new csml.Eval { expression = "isEnergySavin) = false" } }
+          yields { new csml.Eval { expression = "isEnergySaving = false" } }
         }
       }
     }
@@ -171,7 +171,7 @@ sm = new csml.StateMachine {
         }
       }
     }
-    ["flashingAlarmOff"] = new csml.State {
+    ["flashingAlarm_Off"] = new csml.State {
       entry { new csml.Invoke { type = "turnLightsOffService"; input { ["roomId"] = "roomId" } } }
       after {
         ["flashTimer"] = new csml.Timeout {
@@ -201,7 +201,7 @@ sm = new csml.StateMachine {
         }
       }
     }
-    ["flashingAlarmOn"] = new csml.State {
+    ["flashingAlarm_On"] = new csml.State {
       entry { new csml.Invoke { type = "turnLightsOnService"; input { ["roomId"] = "roomId" } } }
       after {
         ["flashTimer"] = new csml.Timeout {

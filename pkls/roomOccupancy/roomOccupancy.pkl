@@ -85,7 +85,7 @@ sm = new csml.StateMachine {
         }
       }
     }
-    ["transientState"] = new csml.State {
+    ["transient"] = new csml.State {
       entry {
         new csml.Eval { expression = "currentOccupancy = 'transient'" }
         new csml.Emit { event { topic = "occupancyTransient" } }

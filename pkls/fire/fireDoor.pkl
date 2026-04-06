@@ -5,11 +5,11 @@ sm = new csml.StateMachine {
   states {
     ["openDoor"] = new csml.Initial {
       entry { new csml.Invoke { type = "openFireDoorService"; input { ["doorId"] = "doorId" } } }
-      on { ["fireAlarm"] { to = "close" } }
+      on { ["fireAlarm"] { to = "closeDoor" } }
     }
     ["closeDoor"] = new csml.State {
       entry { new csml.Invoke { type = "closeFireDoorService"; input { ["doorId"] = "doorId" } } }
-      on { ["disarmFireAlarm"] { to = "open" } }
+      on { ["disarmFireAlarm"] { to = "openDoor" } }
     }
   }
 }
