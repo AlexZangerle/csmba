@@ -1,263 +1,240 @@
 import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
-import "../variables.pkl" as Vars
-
-// Energy management state machine definition.
-//
-// Monitors energy prices and grid status every 30s to optimize building consumption.
 sm = new csml.StateMachine {
   transient = new Mapping {
-    [Vars.vEnergyPrice] = "'0'"
-    [Vars.vGridStatus] = "'normal'"
-    [Vars.vCurrentScheduleMode] = "'unknown'"
+    ["energyPrice"] = "'0'"
+    ["gridStatus"] = "'normal'"
+    ["currentSchedule"] = "'unknown'"
   }
   states {
-    ["normal"] = normal
-    ["peak"] = peak
-    ["gridResponse"] = gridResponse
-    ["safetyLockout"] = safetyLockout
-    ["gasShutdown"] = gasShutdown
-  }
-}
-
-local normal: csml.Initial = new {
-  entry {
-    new csml.Emit { event { topic = "deactivateEnergySaving" } }
-    new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-  }
-  after {
-    ["energyPoll"] = new csml.Timeout {
-      delay = "30000"
-      triggers = new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-    }
-  }
-  on {
-    ["startEnergyCheck"] {
-      yields {
-        new csml.Invoke {
-          type = "getEnergyPriceService"
-          emits { new csml.Internal { topic = "priceCheckDone" } }
+    ["normal"] = new csml.Initial {
+      entry {
+        new csml.Emit { event { topic = "deactivateEnergySaving" } }
+        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+      }
+      after {
+        ["energyPoll"] = new csml.Timeout {
+          delay = "30000"
+          triggers = new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
         }
       }
-    }
-    ["priceCheckDone"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
-        new csml.Invoke {
-          type = "checkGridStatusService"
-          emits { new csml.Internal { topic = "gridCheckDone" } }
-        }
-      }
-    }
-    ["gridCheckDone"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vGridStatus) = $gridStatus" }
-        new csml.Match {
-          cases {
-            new csml.Case {
-              of = "\(Vars.vGridStatus) == 'demandResponse'"
-              yields { new csml.Emit { event = new csml.Internal { topic = "goGridResponse" } } }
-            }
-            new csml.Case {
-              of = "\(Vars.vEnergyPrice) > \(Vars.vMaxEnergyPrice)"
-              yields { new csml.Emit { event = new csml.Internal { topic = "goPeak" } } }
+      on {
+        ["startEnergyCheck"] {
+          yields {
+            new csml.Invoke {
+              type = "getEnergyPriceService"
+              emits { new csml.Internal { topic = "priceCheckDone" } }
             }
           }
         }
-      }
-    }
-    ["goGridResponse"] { to = "gridResponse" }
-    ["goPeak"] { to = "peak" }
-    ["enterBusinessHours"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-      }
-    }
-    ["enterAfterHours"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-      }
-    }
-    ["enterWeekend"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-      }
-    }
-
-    ["fireAlarm"] { to = "safetyLockout" }
-    ["gasLeakDetected"] { to = "gasShutdown" }
-  }
-}
-
-local peak: csml.State = new {
-  entry {
-    new csml.Emit { event { topic = "energySaving" } }
-  }
-  after {
-    ["energyPoll"] = new csml.Timeout {
-      delay = "30000"
-      triggers = new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-    }
-  }
-  on {
-    ["startEnergyCheck"] {
-      yields {
-        new csml.Invoke {
-          type = "getEnergyPriceService"
-          emits { new csml.Internal { topic = "priceCheckDone" } }
-        }
-      }
-    }
-    ["priceCheckDone"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
-        new csml.Invoke {
-          type = "checkGridStatusService"
-          emits { new csml.Internal { topic = "gridCheckDone" } }
-        }
-      }
-    }
-    ["gridCheckDone"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vGridStatus) = $gridStatus" }
-        new csml.Match {
-          cases {
-            new csml.Case {
-              of = "\(Vars.vGridStatus) == 'demandResponse'"
-              yields { new csml.Emit { event = new csml.Internal { topic = "goGridResponse" } } }
-            }
-            new csml.Case {
-              of = "\(Vars.vEnergyPrice) > \(Vars.vMaxEnergyPrice)"
-              yields { new csml.Emit { event = new csml.Internal { topic = "stayPeak" } } }
+        ["priceCheckDone"] {
+          yields {
+            new csml.Eval { expression = "energyPrice = $energyPrice" }
+            new csml.Invoke {
+              type = "checkGridStatusService"
+              emits { new csml.Internal { topic = "gridCheckDone" } }
             }
           }
-          default = new csml.Emit { event = new csml.Internal { topic = "goNormal" } }
         }
-      }
-    }
-    ["goGridResponse"] { to = "gridResponse" }
-    ["stayPeak"] { to = "peak" }
-    ["goNormal"] { to = "normal" }
-
-    ["enterBusinessHours"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-      }
-    }
-    ["enterAfterHours"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-      }
-    }
-    ["enterWeekend"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-      }
-    }
-
-    ["fireAlarm"] { to = "safetyLockout" }
-    ["gasLeakDetected"] { to = "gasShutdown" }
-  }
-}
-
-local gridResponse: csml.State = new {
-  entry {
-    new csml.Emit { event { topic = "drasticEnergySaving" } }
-  }
-  after {
-    ["energyPoll"] = new csml.Timeout {
-      delay = "30000"
-      triggers = new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
-    }
-  }
-  on {
-    ["startEnergyCheck"] {
-      yields {
-        new csml.Invoke {
-          type = "getEnergyPriceService"
-          emits { new csml.Internal { topic = "priceCheckDone" } }
-        }
-      }
-    }
-    ["priceCheckDone"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vEnergyPrice) = $energyPrice" }
-        new csml.Invoke {
-          type = "checkGridStatusService"
-          emits { new csml.Internal { topic = "gridCheckDone" } }
-        }
-      }
-    }
-    ["gridCheckDone"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vGridStatus) = $gridStatus" }
-        new csml.Match {
-          cases {
-            new csml.Case {
-              of = "\(Vars.vGridStatus) == 'demandResponse'"
-              yields { new csml.Emit { event = new csml.Internal { topic = "stayGrid" } } }
-            }
-            new csml.Case {
-              of = "\(Vars.vEnergyPrice) > \(Vars.vMaxEnergyPrice)"
-              yields { new csml.Emit { event = new csml.Internal { topic = "goPeak" } } }
+        ["gridCheckDone"] {
+          yields {
+            new csml.Eval { expression = "gridStatus = $gridStatus" }
+            new csml.Match {
+              cases {
+                new csml.Case {
+                  of = "gridStatus == 'demandResponse'"
+                  yields { new csml.Emit { event = new csml.Internal { topic = "goGridResponse" } } }
+                }
+                new csml.Case {
+                  of = "energyPrice > maxEnergyPrice"
+                  yields { new csml.Emit { event = new csml.Internal { topic = "goPeak" } } }
+                }
+              }
             }
           }
-          default = new csml.Emit { event = new csml.Internal { topic = "goNormal" } }
+        }
+        ["goGridResponse"] { to = "gridResponse" }
+        ["goPeak"] { to = "peak" }
+        ["enterBusinessHours"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'businessHours'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["enterAfterHours"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'afterHours'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["enterWeekend"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'weekend'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["fireAlarm"] { to = "safetyLockout" }
+        ["gasLeakDetected"] { to = "gasShutdown" }
+      }
+    }
+    ["peak"] = new csml.State {
+      entry {
+        new csml.Emit { event { topic = "energySaving" } }
+      }
+      after {
+        ["energyPoll"] = new csml.Timeout {
+          delay = "30000"
+          triggers = new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
         }
       }
-    }
-    ["stayGrid"] { to = "gridResponse" }
-    ["goPeak"] { to = "peak" }
-    ["goNormal"] { to = "normal" }
-
-    ["enterBusinessHours"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'businessHours'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+      on {
+        ["startEnergyCheck"] {
+          yields {
+            new csml.Invoke {
+              type = "getEnergyPriceService"
+              emits { new csml.Internal { topic = "priceCheckDone" } }
+            }
+          }
+        }
+        ["priceCheckDone"] {
+          yields {
+            new csml.Eval { expression = "energyPrice = $energyPrice" }
+            new csml.Invoke {
+              type = "checkGridStatusService"
+              emits { new csml.Internal { topic = "gridCheckDone" } }
+            }
+          }
+        }
+        ["gridCheckDone"] {
+          yields {
+            new csml.Eval { expression = "gridStatus = $gridStatus" }
+            new csml.Match {
+              cases {
+                new csml.Case {
+                  of = "gridStatus == 'demandResponse'"
+                  yields { new csml.Emit { event = new csml.Internal { topic = "goGridResponse" } } }
+                }
+                new csml.Case {
+                  of = "energyPrice > maxEnergyPrice"
+                  yields { new csml.Emit { event = new csml.Internal { topic = "stayPeak" } } }
+                }
+              }
+              default = new csml.Emit { event = new csml.Internal { topic = "goNormal" } }
+            }
+          }
+        }
+        ["goGridResponse"] { to = "gridResponse" }
+        ["stayPeak"] { to = "peak" }
+        ["goNormal"] { to = "normal" }
+        ["enterBusinessHours"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'businessHours'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["enterAfterHours"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'afterHours'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["enterWeekend"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'weekend'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["fireAlarm"] { to = "safetyLockout" }
+        ["gasLeakDetected"] { to = "gasShutdown" }
       }
     }
-    ["enterAfterHours"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'afterHours'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+    ["gridResponse"] = new csml.State {
+      entry {
+        new csml.Emit { event { topic = "drasticEnergySaving" } }
+      }
+      after {
+        ["energyPoll"] = new csml.Timeout {
+          delay = "30000"
+          triggers = new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+        }
+      }
+      on {
+        ["startEnergyCheck"] {
+          yields {
+            new csml.Invoke {
+              type = "getEnergyPriceService"
+              emits { new csml.Internal { topic = "priceCheckDone" } }
+            }
+          }
+        }
+        ["priceCheckDone"] {
+          yields {
+            new csml.Eval { expression = "energyPrice = $energyPrice" }
+            new csml.Invoke {
+              type = "checkGridStatusService"
+              emits { new csml.Internal { topic = "gridCheckDone" } }
+            }
+          }
+        }
+        ["gridCheckDone"] {
+          yields {
+            new csml.Eval { expression = "gridStatus = $gridStatus" }
+            new csml.Match {
+              cases {
+                new csml.Case {
+                  of = "gridStatus == 'demandResponse'"
+                  yields { new csml.Emit { event = new csml.Internal { topic = "stayGrid" } } }
+                }
+                new csml.Case {
+                  of = "energyPrice > maxEnergyPrice"
+                  yields { new csml.Emit { event = new csml.Internal { topic = "goPeak" } } }
+                }
+              }
+              default = new csml.Emit { event = new csml.Internal { topic = "goNormal" } }
+            }
+          }
+        }
+        ["stayGrid"] { to = "gridResponse" }
+        ["goPeak"] { to = "peak" }
+        ["goNormal"] { to = "normal" }
+        ["enterBusinessHours"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'businessHours'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["enterAfterHours"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'afterHours'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["enterWeekend"] {
+          yields {
+            new csml.Eval { expression = "currentSchedule = 'weekend'" }
+            new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+          }
+        }
+        ["fireAlarm"] { to = "safetyLockout" }
+        ["gasLeakDetected"] { to = "gasShutdown" }
       }
     }
-    ["enterWeekend"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vCurrentScheduleMode) = 'weekend'" }
-        new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
+    ["safetyLockout"] = new csml.State {
+      entry {
+        new csml.Emit { event { topic = "deactivateEnergySaving" } }
+      }
+      on {
+        ["disarmFireAlarm"] { to = "normal" }
+        ["gasLeakDetected"] { to = "gasShutdown" }
       }
     }
-
-    ["fireAlarm"] { to = "safetyLockout" }
-    ["gasLeakDetected"] { to = "gasShutdown" }
-  }
-}
-
-// Forces normal energy mode — lights/HVAC needed for evacuation.
-// Stops periodic polling to reduce system load during emergency.
-local safetyLockout: csml.State = new {
-  entry {
-    new csml.Emit { event { topic = "deactivateEnergySaving" } }
-  }
-  on {
-    ["disarmFireAlarm"] { to = "normal" }
-    ["gasLeakDetected"] { to = "gasShutdown" }
-  }
-}
-
-// Highest priority safety state — prevents sparks.
-local gasShutdown: csml.State = new {
-  entry {
-    new csml.Emit { event { topic = "energyShutdown" } }
-  }
-  on {
-    ["gasPurged"] { to = "normal" }
+    ["gasShutdown"] = new csml.State {
+      entry {
+        new csml.Emit { event { topic = "energyShutdown" } }
+      }
+      on {
+        ["gasPurged"] { to = "normal" }
+      }
+    }
   }
 }

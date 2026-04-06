@@ -14,7 +14,6 @@ import "security/accessControl.pkl"
 import "security/securityManager.pkl"
 import "shading/shading.pkl"
 import "tempSafety/tempSafety.pkl"
-import "variables.pkl" as Vars
 
 collaborativeStateMachine {
   stateMachines {
@@ -34,38 +33,38 @@ collaborativeStateMachine {
     ["tempSafety"] = tempSafety.sm
   }
   persistent {
-    [Vars.vEnergySaving] = "false"
-    [Vars.vCurrentOccupancy] = "'vacant'"
-    [Vars.vFireAlarm] = "false"
-    [Vars.vGasActive] = "false"
-    [Vars.vSmokeAlert] = "false"
-    [Vars.vArcFault] = "false"
-    [Vars.vDesiredTemp] = "21.0"
-    [Vars.vTempThreshold] = "60"
-    [Vars.vMaxEnergyPrice] = "45.0"
+    ["isEnergySaving"] = "false"
+    ["currentOccupancy"] = "'vacant'"
+    ["isFireAlarm"] = "false"
+    ["isGasActive"] = "false"
+    ["isSmokeAlert"] = "false"
+    ["arcFault"] = "false"
+    ["desiredTemp"] = "21.0"
+    ["tempThreshold"] = "60"
+    ["maxEnergyPrice"] = "45.0"
   }
 }
 
 instances {
   ["buildingSchedule"] { stateMachineName = "buildingSchedule" }
-  ["roomSchedule"] { stateMachineName = "roomSchedule"; data { [Vars.vRoomId] = "'Room 0'" } }
+  ["roomSchedule"] { stateMachineName = "roomSchedule"; data { ["roomId"] = "'Room 0'" } }
   ["electricalSafety"] { stateMachineName = "electricalSafety" }
   ["energyManagement"] { stateMachineName = "energyManagement" }
   ["fire"] { stateMachineName = "fire" }
   for (i in IntSeq(0, 19)) {
     ["fireDoor\(i)"] {
       stateMachineName = "fireDoor"
-      data { [Vars.vDoorId] = "'Door \(i)'" }
+      data { ["doorId"] = "'Door \(i)'" }
     }
   }
   ["gasSafety"] { stateMachineName = "gasSafety" }
-  ["hvac"] { stateMachineName = "hvac"; data { [Vars.vRoomId] = "'Room 0'" } }
-  ["lighting"] { stateMachineName = "lighting"; data { [Vars.vRoomId] = "'Room 0'" } }
-  ["roomOccupancy"] { stateMachineName = "roomOccupancy"; data { [Vars.vRoomId] = "'Room 0'" } }
+  ["hvac"] { stateMachineName = "hvac"; data { ["roomId"] = "'Room 0'" } }
+  ["lighting"] { stateMachineName = "lighting"; data { ["roomId"] = "'Room 0'" } }
+  ["roomOccupancy"] { stateMachineName = "roomOccupancy"; data { ["roomId"] = "'Room 0'" } }
   ["securityManager"] { stateMachineName = "securityManager" }
-  ["accessControl"] { stateMachineName = "accessControl"; data { [Vars.vDoorId] = "'Door 0'" } }
-  ["shading"] { stateMachineName = "shading"; data { [Vars.vRoomId] = "'Room 0'" } }
-  ["tempSafety"] { stateMachineName = "tempSafety"; data { [Vars.vRoomId] = "'Room 0'" } }
+  ["accessControl"] { stateMachineName = "accessControl"; data { ["doorId"] = "'Door 0'" } }
+  ["shading"] { stateMachineName = "shading"; data { ["roomId"] = "'Room 0'" } }
+  ["tempSafety"] { stateMachineName = "tempSafety"; data { ["roomId"] = "'Room 0'" } }
 }
 
 bindings {
@@ -411,13 +410,4 @@ bindings {
     endPoint = "/getOutdoorTemp"
     method = "POST"
   }
-  // new HttpServiceImplementationBinding {
-  //   name = "notifyPoliceService"
-  //   `local` = false
-  //   scheme = "http"
-  //   host = "localhost"
-  //   port = 8005
-  //   endPoint = "/notifyPolice"
-  //   method = "POST"
-  // }
 }

@@ -1,86 +1,69 @@
 import
   "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
-import "../variables.pkl" as Vars
-
-// Electrical safety state machine definition.
-//
-// Periodically checks for arc faults every 30s. If detected, trips the
-// circuit breaker and waits for manual reset before resuming monitoring.
 sm = new csml.StateMachine {
-  transient = new Mapping { [Vars.vArcFaultLocation] = "'none'" }
+  transient = new Mapping { ["arcFaultLocation"] = "'none'" }
   states {
-    ["monitoring"] = monitoring
-    ["arcFault"] = arcFault
-    ["acknowledged"] = acknowledged
-  }
-}
-
-local monitoring: csml.Initial = new {
-  entry {
-    new csml.Emit { event = new csml.Internal { topic = "startCheck" } }
-  }
-  after {
-    ["arcFaultPoll"] = new csml.Timeout {
-      delay = "30000"
-      triggers = new csml.Emit { event = new csml.Internal { topic = "startCheck" } }
-    }
-  }
-  on {
-    ["startCheck"] {
-      yields {
-        new csml.Invoke {
-          type = "checkArcFaultService"
-          emits { new csml.Internal { topic = "checkDone" } }
+    ["monitoring"] = new csml.Initial {
+      entry { new csml.Emit { event = new csml.Internal { topic = "startCheck" } } }
+      after {
+        ["arcFaultPoll"] = new csml.Timeout {
+          delay = "30000"
+          triggers = new csml.Emit { event = new csml.Internal { topic = "startCheck" } }
         }
       }
-    }
-    ["checkDone"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vArcFaultLocation) = $arcFaultLocation" }
-        new csml.Match {
-          cases {
-            new csml.Case {
-              of = "\(Vars.vArcFaultLocation) != 'none'"
-              yields { new csml.Emit { event = new csml.Internal { topic = "goArcFault" } } }
+      on {
+        ["startCheck"] {
+          yields {
+            new csml.Invoke {
+              type = "checkArcFaultService"
+              emits { new csml.Internal { topic = "checkDone" } }
             }
           }
         }
+        ["checkDone"] {
+          yields {
+            new csml.Eval { expression = "arcFaultLocation = $arcFaultLocation" }
+            new csml.Match {
+              cases {
+                new csml.Case {
+                  of = "arcFaultLocation != 'none'"
+                  yields { new csml.Emit { event = new csml.Internal { topic = "goArcFault" } } }
+                }
+              }
+            }
+          }
+        }
+        ["goArcFault"] { to = "arcFault" }
       }
     }
-    ["goArcFault"] { to = "arcFault" }
-  }
-}
-
-// Trips the breaker and waits for manual reset.
-local arcFault: csml.State = new {
-  entry {
-    new csml.Invoke {
-      type = "tripCircuitBreakerService"
-      input { ["arcFaultLocation"] = Vars.vArcFaultLocation }
-    }
-    new csml.Emit {
-      event {
-        topic = "arcFaultDetected"
-        data { ["arcFaultLocation"] = Vars.vArcFaultLocation }
+    ["arcFault"] = new csml.State {
+      entry {
+        new csml.Invoke {
+          type = "tripCircuitBreakerService"
+          input { ["arcFaultLocation"] = "arcFaultLocation" }
+        }
+        new csml.Emit {
+          event {
+            topic = "arcFaultDetected"
+            data { ["arcFaultLocation"] = "arcFaultLocation" }
+          }
+        }
+        new csml.Eval { expression = "arcFault = true" }
+      }
+      on {
+        ["electricalReset"] { to = "acknowledged" }
       }
     }
-    new csml.Eval { expression = "\(Vars.vArcFault) = true" }
-  }
-  on {
-    ["electricalReset"] { to = "acknowledged" }
-  }
-}
-
-local acknowledged: csml.State = new {
-  entry {
-    new csml.Eval { expression = "\(Vars.vArcFault) = false" }
-    new csml.Invoke {
-      type = "arcFaultAckService"
-      emits { new csml.Internal { topic = "ackComplete" } }
+    ["acknowledged"] = new csml.State {
+      entry {
+        new csml.Eval { expression = "arcFault = false" }
+        new csml.Invoke {
+          type = "arcFaultAckService"
+          emits { new csml.Internal { topic = "ackComplete" } }
+        }
+      }
+      on { ["ackComplete"] { to = "monitoring" } }
     }
-  }
-  on {
-    ["ackComplete"] { to = "monitoring" }
   }
 }

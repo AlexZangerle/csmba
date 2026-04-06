@@ -1,62 +1,53 @@
 import
   "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
-import "../variables.pkl" as Vars
-
-// Fire safety state machine definition.
-//
-// Polls room temperature every 30s. If threshold exceeded, sends a
-// high risk warning and waits for manual clearance before resuming.
 sm = new csml.StateMachine {
-  transient = new Mapping { [Vars.vRoomTemp] = "'0'" }
+  transient = new Mapping { ["roomTemp"] = "'0'" }
   states {
-    ["monitoring"] = monitoring
-    ["highRisk"] = highRisk
-  }
-}
-
-local monitoring: csml.Initial = new {
-  after {
-    ["tempPoll"] = new csml.Timeout {
-      delay = "30000"
-      triggers = new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
-    }
-  }
-  on {
-    ["startTempCheck"] {
-      yields {
-        new csml.Invoke {
-          type = "equipmentTempService"
-          input { ["roomId"] = Vars.vRoomId }
-          emits { new csml.Internal { topic = "tempCheckDone" } }
+    ["monitoring"] = new csml.Initial {
+      after {
+        ["tempPoll"] = new csml.Timeout {
+          delay = "30000"
+          triggers = new csml.Emit { event = new csml.Internal { topic = "startTempCheck" } }
         }
       }
-    }
-    ["tempCheckDone"] {
-      yields {
-        new csml.Eval { expression = "\(Vars.vRoomTemp) = $roomTemp" }
-        new csml.Match {
-          cases {
-            new csml.Case {
-              of = "\(Vars.vRoomTemp) > \(Vars.vTempThreshold)"
-              yields { new csml.Emit { event = new csml.Internal { topic = "goHighRisk" } } }
+      on {
+        ["startTempCheck"] {
+          yields {
+            new csml.Invoke {
+              type = "equipmentTempService"
+              input { ["roomId"] = "roomId" }
+              emits { new csml.Internal { topic = "tempCheckDone" } }
             }
           }
         }
+        ["tempCheckDone"] {
+          yields {
+            new csml.Eval { expression = "roomTemp = $roomTemp" }
+            new csml.Match {
+              cases {
+                new csml.Case {
+                  of = "roomTemp > tempThreshold"
+                  yields { new csml.Emit { event = new csml.Internal { topic = "goHighRisk" } } }
+                }
+              }
+            }
+          }
+        }
+        ["goHighRisk"] { to = "highRisk" }
       }
     }
-    ["goHighRisk"] { to = "highRisk" }
+    ["highRisk"] = new csml.State {
+      entry {
+        new csml.Invoke {
+          type = "equipmentTempHighRiskService"
+          input { ["roomId"] = "roomId" }
+        }
+      }
+      on {
+        ["tempRiskCleared"] { to = "monitoring" }
+      }
+    }
   }
 }
 
-local highRisk: csml.State = new {
-  entry {
-    new csml.Invoke {
-      type = "equipmentTempHighRiskService"
-      input { ["roomId"] = Vars.vRoomId }
-    }
-  }
-  on {
-    ["tempRiskCleared"] { to = "monitoring" }
-  }
-}

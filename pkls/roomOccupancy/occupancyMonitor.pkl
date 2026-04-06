@@ -1,43 +1,30 @@
 import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+"https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
-import "../variables.pkl" as Vars
-
-// Occupancy monitor — nested state machine within roomOccupancy.
-// Watches for sensor events, starts a timeout, and escalates to
-// maintenance if the detection service doesn't respond in time.
 sm = new csml.StateMachine {
   states {
-    ["idle"] = idle
-    ["monitoring"] = monitoring
-    ["maintenance"] = maintenance
-  }
-}
-
-local idle: csml.Initial = new {
-  on {
-    ["sensorOccupancyReceived"] { to = "monitoring" }
-  }
-}
-
-local monitoring: csml.State = new {
-  after {
-    ["serviceTimeout"] = new csml.Timeout {
-      delay = "5000"
-      triggers = new csml.Emit { event { topic = "maintenanceRequired" } }
+    ["idle"] = new csml.Initial {
+      on { ["sensorOccupancyReceived"] { to = "monitoring" } }
     }
-  }
-  on {
-    ["maintenanceRequired"] { to = "maintenance" }
-    ["detectionDone"] { to = "idle" }
-  }
-}
-
-local maintenance: csml.State = new {
-  entry {
-    new csml.Invoke { type = "maintenanceService"; input { ["roomId"] = Vars.vRoomId } }
-  }
-  on {
-    ["maintenanceDone"] { to = "idle" }
+    ["monitoring"] = new csml.State {
+      after {
+        ["serviceTimeout"] = new csml.Timeout {
+          delay = "5000"
+          triggers = new csml.Emit { event { topic = "maintenanceRequired" } }
+        }
+      }
+      on {
+        ["maintenanceRequired"] { to = "maintenance" }
+        ["detectionDone"] { to = "idle" }
+      }
+    }
+    ["maintenance"] = new csml.State {
+      entry {
+        new csml.Invoke { type = "maintenanceService"; input { ["roomId"] = "roomId" } }
+      }
+      on {
+        ["maintenanceDone"] { to = "idle" }
+      }
+    }
   }
 }
