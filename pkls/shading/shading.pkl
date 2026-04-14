@@ -32,7 +32,7 @@ sm = new csml.StateMachine {
                 }
                 new csml.ConditionalEvent {
                   provided = "outdoorTemperature >= 22 && !isLocked"
-                  event = new csml.Internal { topic = "close" }
+                  event = new csml.Internal { topic = "goClose" }
                 }
               }
             }

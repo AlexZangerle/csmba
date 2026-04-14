@@ -8,7 +8,31 @@ sm = new csml.StateMachine {
   states {
     ["detecting"] = new csml.Initial {
       on {
-        ["sensorFireDataReceived"] {}
+        ["sensorFireDataReceived"] {
+          yields {
+            new csml.Invoke {
+              type = "detectFireService"
+              input {
+                ["imageData"] = "$imageData"
+                ["zoneId"] = "$zoneId"
+              }
+              output {
+                "imageData"
+                "zoneId"
+              }
+              emits {
+                new csml.ConditionalEvent {
+                  provided = "fireDetectionResult == 'fire'"
+                  event = new csml.Internal { topic = "goFireAlarm" }
+                }
+                new csml.ConditionalEvent {
+                  provided = "fireDetectionResult == 'smoke'"
+                  event = new csml.Internal { topic = "goSmokeAlert" }
+                }
+              }
+            }
+          }
+        }
         ["goFireAlarm"] { to = "fireAlarm" }
         ["goSmokeAlert"] { to = "smokeAlert" }
       }

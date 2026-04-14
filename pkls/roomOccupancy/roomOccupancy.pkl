@@ -89,7 +89,7 @@ sm = new csml.StateMachine {
                 }
                 new csml.ConditionalEvent {
                   provided = "!occupancyDetected"
-                  event = new csml.Internal { topic = "goTransient" }
+                  event = new csml.Internal { topic = "goVacant" }
                 }
               }
             }
