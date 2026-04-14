@@ -1,5 +1,4 @@
-import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 sm = new csml.StateMachine {
   transient = new Mapping {
@@ -9,36 +8,7 @@ sm = new csml.StateMachine {
   states {
     ["detecting"] = new csml.Initial {
       on {
-        ["sensorFireDataReceived"] {
-          yields {
-            new csml.Invoke {
-              type = "detectFireService"
-              input {
-                ["imageData"] = "$imageData"
-                ["zoneId"] = "$zoneId"
-              }
-              emits { new csml.Internal { topic = "detectionDone" } }
-            }
-          }
-        }
-        ["detectionDone"] {
-          yields {
-            new csml.Eval { expression = "fireDetectionResult = $fireDetectionResult" }
-            new csml.Eval { expression = "emergencyInRoom = $emergencyInRoom" }
-            new csml.Match {
-              cases {
-                new csml.Case {
-                  of = "fireDetectionResult == 'fire'"
-                  yields { new csml.Emit { event = new csml.Internal { topic = "goFireAlarm" } } }
-                }
-                new csml.Case {
-                  of = "fireDetectionResult == 'smoke'"
-                  yields { new csml.Emit { event = new csml.Internal { topic = "goSmokeAlert" } } }
-                }
-              }
-            }
-          }
-        }
+        ["sensorFireDataReceived"] {}
         ["goFireAlarm"] { to = "fireAlarm" }
         ["goSmokeAlert"] { to = "smokeAlert" }
       }
@@ -78,7 +48,11 @@ sm = new csml.StateMachine {
                 ["imageData"] = "$imageData"
                 ["zoneId"] = "$zoneId"
               }
-              emits { new csml.Internal { topic = "escalationCheckDone" } }
+              emits {
+                new csml.ConditionalEvent {
+                  event = new csml.Internal { topic = "escalationCheckDone" }
+                }
+              }
             }
           }
         }
