@@ -82,6 +82,7 @@ sm = new csml.StateMachine {
             new csml.Invoke {
               type = "detectOccupancyService"
               input { ["imageData"] = "$imageData" }
+              output { "occupancyDetected" }
               emits {
                 new csml.ConditionalEvent {
                   provided = "occupancyDetected"

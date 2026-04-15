@@ -17,8 +17,8 @@ sm = new csml.StateMachine {
                 ["zoneId"] = "$zoneId"
               }
               output {
-                "imageData"
-                "zoneId"
+                "fireDetectionResult"
+                "emergencyInRoom"
               }
               emits {
                 new csml.ConditionalEvent {
