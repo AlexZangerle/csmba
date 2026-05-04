@@ -1,0 +1,63 @@
+services:
+  zenoh:
+    image: eclipse/zenoh:1.4.0
+    ports: ["7447:7447"]
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.12
+    network_mode: host
+    command:
+      - /usr/local/bin/etcd
+      - --name
+      - s1
+      - --listen-client-urls
+      - http://0.0.0.0:2379
+      - --advertise-client-urls
+      - http://0.0.0.0:2379
+
+  building-service:
+    build: building-service
+    ports: ["8005:8005"]
+    volumes:
+      - ./results:/metrics
+
+  occupancy:
+    image: collaborativestatemachines/cirrina:unstable
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=roomOccupancy
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+    depends_on: [zenoh, etcd, building-service]
+
+  hvac:
+    image: collaborativestatemachines/cirrina:unstable
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=hvac
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+    depends_on: [zenoh, etcd, building-service]
+
+  lighting:
+    image: collaborativestatemachines/cirrina:unstable
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=lighting
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+    depends_on: [zenoh, etcd, building-service]
+
+  simulation:
+    build: simulation
+    network_mode: host
+    volumes:
+      - ./results:/metrics
+    depends_on: [occupancy, hvac, lighting]
+    command: ["--duration=900000", "--interval=200", "--metrics=/metrics"]

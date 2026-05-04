@@ -6,7 +6,7 @@ sm = new csml.StateMachine {
     ["monitoring"] = new csml.Initial {
       after {
         ["gasLeakPoll"] = new csml.Timeout {
-          delay = "30000"
+          delay = "1000"
           triggers = new csml.Emit {
             event = new csml.Internal { topic = "startGasLeakDetection" }
           }

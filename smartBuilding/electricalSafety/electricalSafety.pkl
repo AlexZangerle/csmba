@@ -1,13 +1,13 @@
-import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import
+  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 sm = new csml.StateMachine {
   transient = new Mapping { ["arcFaultLocation"] = "'none'" }
   states {
     ["monitoring"] = new csml.Initial {
-      entry { new csml.Emit { event = new csml.Internal { topic = "startCheck" } } }
       after {
         ["arcFaultPoll"] = new csml.Timeout {
-          delay = "30000"
+          delay = "1000"
           triggers = new csml.Emit { event = new csml.Internal { topic = "startCheck" } }
         }
       }
