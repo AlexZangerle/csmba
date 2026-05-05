@@ -1,7 +1,7 @@
 services:
   zenoh:
     image: eclipse/zenoh:1.4.0
-    ports: ["7447:7447"]
+    ports: [ "7447:7447" ]
 
   etcd:
     image: quay.io/coreos/etcd:v3.5.12
@@ -16,13 +16,15 @@ services:
       - http://0.0.0.0:2379
 
   building-service:
-    build: building-service
-    ports: ["8005:8005"]
+    image: alexzangerle/buildingservice-csm-s3
+    pull_policy: always
+    ports: [ "8005:8005" ]
     volumes:
-      - ./results:/metrics
+      - ./metrics:/metrics
 
   occupancy:
     image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
     network_mode: host
     environment:
       - MAIN_URI=file:///app/smartBuilding/main.pkl
@@ -30,10 +32,12 @@ services:
       - RUN=roomOccupancy
     volumes:
       - ../smartBuilding:/app/smartBuilding
-    depends_on: [zenoh, etcd, building-service]
+      - ./metrics:/metrics
+    depends_on: [ zenoh, etcd, building-service ]
 
   hvac:
     image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
     network_mode: host
     environment:
       - MAIN_URI=file:///app/smartBuilding/main.pkl
@@ -41,10 +45,12 @@ services:
       - RUN=hvac
     volumes:
       - ../smartBuilding:/app/smartBuilding
-    depends_on: [zenoh, etcd, building-service]
+      - ./metrics:/metrics
+    depends_on: [ zenoh, etcd, building-service ]
 
   lighting:
     image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
     network_mode: host
     environment:
       - MAIN_URI=file:///app/smartBuilding/main.pkl
@@ -52,12 +58,14 @@ services:
       - RUN=lighting
     volumes:
       - ../smartBuilding:/app/smartBuilding
-    depends_on: [zenoh, etcd, building-service]
+      - ./metrics:/metrics
+    depends_on: [ zenoh, etcd, building-service ]
 
   simulation:
-    build: simulation
+    image: alexzangerle/simulation-csm-s3
+    pull_policy: always
     network_mode: host
     volumes:
-      - ./results:/metrics
-    depends_on: [occupancy, hvac, lighting]
-    command: ["--duration=900000", "--interval=200", "--metrics=/metrics"]
+      - ./metrics:/metrics
+    depends_on: [ occupancy, hvac, lighting ]
+    command: [ "--duration=900000", "--interval=200", "--metrics=/metrics" ]

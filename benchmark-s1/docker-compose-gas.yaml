@@ -16,23 +16,23 @@ services:
       - http://0.0.0.0:2379
 
   building-service:
-    image: alexzangerle/buildingservice-csm-s2
+    image: alexzangerle/buildingservice-csm-s1
     pull_policy: always
     ports: [ "8005:8005" ]
     volumes:
-      - ./metrics:/metrics
+      - ./metricsGas2:/metrics
 
-  occupancy:
+  gas:
     image: collaborativestatemachines/cirrina:unstable
     pull_policy: always
     network_mode: host
     environment:
       - MAIN_URI=file:///app/smartBuilding/main.pkl
       - ETCD_CONTEXT_URL=http://localhost:2379
-      - RUN=roomOccupancy
+      - RUN=gasSafety
     volumes:
       - ../smartBuilding:/app/smartBuilding
-      - ./metrics:/metrics
+      - ./metricsGas3/:/metrics
     depends_on: [ zenoh, etcd, building-service ]
 
   hvac:
@@ -45,27 +45,13 @@ services:
       - RUN=hvac
     volumes:
       - ../smartBuilding:/app/smartBuilding
-      - ./metrics:/metrics
-    depends_on: [ zenoh, etcd, building-service ]
-
-  lighting:
-    image: collaborativestatemachines/cirrina:unstable
-    pull_policy: always
-    network_mode: host
-    environment:
-      - MAIN_URI=file:///app/smartBuilding/main.pkl
-      - ETCD_CONTEXT_URL=http://localhost:2379
-      - RUN=lighting
-    volumes:
-      - ../smartBuilding:/app/smartBuilding
-      - ./metrics:/metrics
+      - ./metricsGas2/:/metrics
     depends_on: [ zenoh, etcd, building-service ]
 
   simulation:
-    image: alexzangerle/simulation-csm-s2
+    image: alexzangerle/simulation-csm-s1
     pull_policy: always
-    network_mode: host
     volumes:
-      - ./metrics:/metrics
-    depends_on: [ occupancy, hvac, lighting ]
-    command: [ "--duration=900000", "--interval=200", "--metrics=/metrics" ]
+      - ./metricsGas2:/metrics
+    depends_on: [ hvac, gas ]
+    command: [ "--duration=900000", "--settle=100", "--metrics=/metrics", "--circuit=gas" ]
