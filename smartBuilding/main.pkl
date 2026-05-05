@@ -2,18 +2,17 @@ amends
   "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/buildingSchedule/buildingSchedule.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/buildingSchedule/roomSchedule.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/electricalSafety/electricalSafety.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/energyManagement/energyManagement.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/fire/fire.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/fire/fireDoor.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/gasSafety/gasSafety.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/hvac/hvac.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/lighting/lighting.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/roomOccupancy/roomOccupancy.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/security/accessControl.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/security/securityManager.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/shading/shading.pkl"
-import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/tempSafety/tempSafety.pkl"
-import "electricalSafety/electricalSafety.pkl"
-import "gasSafety/gasSafety.pkl"
 
 collaborativeStateMachine {
   stateMachines {
