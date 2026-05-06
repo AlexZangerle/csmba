@@ -13,6 +13,7 @@ import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/sma
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/security/accessControl.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/security/securityManager.pkl"
 import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/shading/shading.pkl"
+import "https://raw.githubusercontent.com/AlexZangerle/csmba/refs/heads/main/smartBuilding/tempSafety/tempSafety.pkl"
 
 collaborativeStateMachine {
   stateMachines {
