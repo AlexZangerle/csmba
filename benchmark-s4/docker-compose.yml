@@ -1,0 +1,93 @@
+services:
+  zenoh:
+    image: eclipse/zenoh:1.4.0
+    network_mode: host
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.12
+    network_mode: host
+    command:
+      - /usr/local/bin/etcd
+      - --name
+      - s4
+      - --listen-client-urls
+      - http://0.0.0.0:2379
+      - --advertise-client-urls
+      - http://0.0.0.0:2379
+  building-service:
+    build: building-service
+    network_mode: host
+    volumes:
+      - ./metrics/building-service:/metrics
+  fire:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=fire
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/fire:/metrics
+    depends_on: [ zenoh, etcd, building-service ]
+  doors0:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=0,1,2,3,4
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/doors0:/metrics
+    depends_on: [ zenoh, etcd, building-service ]
+  doors1:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=0,1,2,3,4
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/doors1:/metrics
+    depends_on: [ zenoh, etcd, building-service ]
+  doors2:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=0,1,2,3,4
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/doors2:/metrics
+    depends_on: [ zenoh, etcd, building-service ]
+  doors3:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=0,1,2,3,4
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/doors3:/metrics
+    depends_on: [ zenoh, etcd, building-service ]
+  simulation:
+    build: simulation
+    network_mode: host
+    volumes:
+      - ./metrics/simulation:/metrics
+    depends_on: [ fire, doors0, doors1, doors2, doors3 ]
+    command:
+      - --sensors=64
+      - --interval=5000
+      - --duration=900
+      - --cooldown=5000
+      - --startup-wait=15
+      - --metrics=/metrics

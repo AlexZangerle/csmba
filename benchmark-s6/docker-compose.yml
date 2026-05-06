@@ -1,0 +1,214 @@
+services:
+  zenoh:
+    image: eclipse/zenoh:1.4.0
+    network_mode: host
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.12
+    network_mode: host
+    command:
+      - /usr/local/bin/etcd
+      - --name
+      - s6
+      - --listen-client-urls
+      - http://0.0.0.0:2379
+      - --advertise-client-urls
+      - http://0.0.0.0:2379
+  building-service:
+    build: building-service
+    network_mode: host
+    volumes:
+      - ./metrics/building-service:/metrics
+  # --- State Machines (one runtime each) ---
+  buildingSchedule:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=buildingSchedule
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/buildingSchedule:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  roomSchedule:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=roomSchedule
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/roomSchedule:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  electricalSafety:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=electricalSafety
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/electricalSafety:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  energyManagement:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=energyManagement
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/energyManagement:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  fire:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=fire
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/fire:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  fireDoor:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=0
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/fireDoor:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  gasSafety:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=gasSafety
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/gasSafety:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  hvac:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=hvac
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/hvac:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  lighting:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=lighting
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/lighting:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  roomOccupancy:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=roomOccupancy
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/roomOccupancy:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  securityManager:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=securityManager
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/securityManager:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  accessControl:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=accessControl
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/accessControl:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  shading:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=shading
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/shading:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  tempSafety:
+    image: collaborativestatemachines/cirrina:unstable
+    pull_policy: always
+    network_mode: host
+    environment:
+      - MAIN_URI=file:///app/smartBuilding/main.pkl
+      - ETCD_CONTEXT_URL=http://localhost:2379
+      - RUN=tempSafety
+    volumes:
+      - ../smartBuilding:/app/smartBuilding
+      - ./metrics/tempSafety:/metrics
+    depends_on: [zenoh, etcd, building-service]
+  # --- Simulation ---
+  simulation:
+    build: simulation
+    network_mode: host
+    volumes:
+      - ./metrics/simulation:/metrics
+    depends_on:
+      - buildingSchedule
+      - roomSchedule
+      - electricalSafety
+      - energyManagement
+      - fire
+      - fireDoor
+      - gasSafety
+      - hvac
+      - lighting
+      - roomOccupancy
+      - securityManager
+      - accessControl
+      - shading
+      - tempSafety
+    command:
+      - --duration=900
+      - --startup-wait=15
+      - --metrics=/metrics
