@@ -92,11 +92,10 @@ fun main() {
   app.post("/setHVAC") { ctx ->
     val vars = parseInput(ctx)
     val mode = getValue(vars, "mode") as? String ?: "unknown"
-    if (BenchmarkLog.gasExpectsConsumer) {
-      BenchmarkLog.gasExpectsConsumer = false
-      BenchmarkLog.logEvent("gas_consumer", mode)
-      println("[HVAC] $mode")
-    }
+    BenchmarkLog.gasExpectsConsumer = false
+    BenchmarkLog.logEvent("gas_consumer", mode)
+    println("[HVAC] $mode")
+    
     respondEmpty(ctx)
   }
 
@@ -120,20 +119,18 @@ fun main() {
 
   // Lighting Consumer
   app.post("/turnOff") { ctx ->
-    if (BenchmarkLog.elecExpectsConsumer) {
-      BenchmarkLog.elecExpectsConsumer = false
-      BenchmarkLog.logEvent("elec_consumer", "turnOff")
-      println("[LIGHT] off")
-    }
+    BenchmarkLog.elecExpectsConsumer = false
+    BenchmarkLog.logEvent("elec_consumer", "turnOff")
+    println("[LIGHT] off")
+
     respondEmpty(ctx)
   }
 
   app.post("/turnOn") { ctx ->
-    if (BenchmarkLog.elecExpectsConsumer) {
-      BenchmarkLog.elecExpectsConsumer = false
-      BenchmarkLog.logEvent("elec_consumer", "turnOn")
-      println("[LIGHT] on")
-    }
+    BenchmarkLog.elecExpectsConsumer = false
+    BenchmarkLog.logEvent("elec_consumer", "turnOn")
+    println("[LIGHT] on")
+
     respondEmpty(ctx)
   }
 

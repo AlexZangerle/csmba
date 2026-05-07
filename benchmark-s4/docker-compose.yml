@@ -14,7 +14,8 @@ services:
       - --advertise-client-urls
       - http://0.0.0.0:2379
   building-service:
-    build: building-service
+    image: alexzangerle/buildingservice-csm-s4:latest
+    pull_policy: always
     network_mode: host
     volumes:
       - ./metrics/building-service:/metrics
@@ -79,7 +80,8 @@ services:
       - ./metrics/doors3:/metrics
     depends_on: [ zenoh, etcd, building-service ]
   simulation:
-    build: simulation
+    image: alexzangerle/simulation-csm-s4:latest
+    pull_policy: always
     network_mode: host
     volumes:
       - ./metrics/simulation:/metrics
@@ -87,7 +89,7 @@ services:
     command:
       - --sensors=64
       - --interval=5000
-      - --duration=900
+      - --duration=60
       - --cooldown=5000
       - --startup-wait=15
       - --metrics=/metrics
