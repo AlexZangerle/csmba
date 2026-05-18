@@ -1,5 +1,4 @@
-import
-  "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
+import "https://raw.githubusercontent.com/CollaborativeStateMachines/Cirrina/refs/heads/develop/src/main/resources/pkl/csm/csml.pkl"
 
 sm = new csml.StateMachine {
   transient = new Mapping {
@@ -15,7 +14,7 @@ sm = new csml.StateMachine {
       }
       after {
         ["energyPoll"] = new csml.Timeout {
-          delay = "300000"
+          delay = "30000"
           triggers = new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
         }
       }
@@ -148,7 +147,7 @@ sm = new csml.StateMachine {
       }
       after {
         ["energyPoll"] = new csml.Timeout {
-          delay = "300000"
+          delay = "30000"
           triggers = new csml.Emit { event = new csml.Internal { topic = "startEnergyCheck" } }
         }
       }
